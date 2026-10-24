@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="FoodWebGuard mark">
+  <rect width="64" height="64" rx="16" fill="#E6F3EC"/>
+  <path d="M13 39C14 22 28 12 48 13C47 31 36 47 19 47" fill="#14745A"/>
+  <path d="M18 48C25 38 31 31 41 23" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round"/>
+  <circle cx="48" cy="47" r="5" fill="#2B9E9B"/><circle cx="54" cy="31" r="4" fill="#2B9E9B"/>
+  <path d="M42 42L51 33M38 46L47 47" fill="none" stroke="#14745A" stroke-width="2" stroke-linecap="round"/>
+</svg>

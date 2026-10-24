@@ -1,0 +1,12 @@
+node,category,functional.group,M,N,Totalbiomass
+Phytoplankton,producer,producer,1.35E-10,1.47E+10,1.974027957
+Periphyton,producer,producer,2.64E-10,1.78E+10,4.717948562
+Macrophyte,producer,producer,470,,470
+Rotifer,invertebrate,herbivore,1.20E-06,2.44E+05,0.29
+Cladocera,invertebrate,herbivore,0.00002,9957.866964,0.2
+Snail_Others,invertebrate,herbivore,0.01470625,628,9.24
+Bellamya,invertebrate,herbivore,1.84E+00,1.64E+02,301.76
+Radix,invertebrate,herbivore,0.449593496,123,55.3
+Oligochaeta,invertebrate,herbivore,0.0005,39.25,0.02
+Insecta,invertebrate,herbivore,0.00134,588.75,0.79
+Carp,vert.ecto,Omnivore,9.62E+01,1.00E+00,96.2
