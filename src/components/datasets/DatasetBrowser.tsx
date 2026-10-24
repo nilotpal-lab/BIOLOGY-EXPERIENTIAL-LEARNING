@@ -11,7 +11,7 @@ import {
   Upload,
   X,
 } from 'lucide-react'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { RESEARCH_SLOTS, RESEARCH_SLOT_SUMMARY } from '../../data/datasetRegistry'
 import { downloadArtifact, edgesExportCsv, nodesExportCsv } from '../../core/exportUtils'
 import {
@@ -50,6 +50,23 @@ export function DatasetRow({
   showCompare?: boolean
 }) {
   const [detailsOpen, setDetailsOpen] = useState(false)
+  // Removing an imported dataset is destructive and has no undo, so it is a
+  // two-click action: the first click arms the button, the second confirms.
+  const [removeArmed, setRemoveArmed] = useState(false)
+  const removeArmedTimer = useRef<number | null>(null)
+  const disarmRemove = useCallback(() => {
+    if (removeArmedTimer.current !== null) {
+      window.clearTimeout(removeArmedTimer.current)
+      removeArmedTimer.current = null
+    }
+    setRemoveArmed(false)
+  }, [])
+  useEffect(
+    () => () => {
+      if (removeArmedTimer.current !== null) window.clearTimeout(removeArmedTimer.current)
+    },
+    [],
+  )
 
   return (
     <li
@@ -117,15 +134,47 @@ export function DatasetRow({
             <ChevronDown size={13} className={cn('transition-transform', detailsOpen && 'rotate-180')} />
           </button>
           {onRemove && dataset.userProvided ? (
-            <Button
-              size="sm"
-              variant="ghost"
-              icon={<Trash2 size={13} />}
-              onClick={() => onRemove(dataset.id)}
-              aria-label={`Remove imported dataset ${dataset.name} from this browser`}
-            >
-              Remove
-            </Button>
+            removeArmed ? (
+              <span className="inline-flex items-center gap-1.5" role="group" aria-label="Confirm removal">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  icon={<Trash2 size={13} />}
+                  onClick={() => {
+                    disarmRemove()
+                    onRemove(dataset.id)
+                  }}
+                  className="text-rose-700 hover:text-rose-800 border-rose-200"
+                  aria-label={`Confirm removing imported dataset ${dataset.name}. This cannot be undone.`}
+                >
+                  Confirm remove
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={disarmRemove}
+                  aria-label={`Cancel removing ${dataset.name}`}
+                >
+                  Cancel
+                </Button>
+              </span>
+            ) : (
+              <Button
+                size="sm"
+                variant="ghost"
+                icon={<Trash2 size={13} />}
+                onClick={() => {
+                  setRemoveArmed(true)
+                  // Re-arm auto-expires so an armed destructive button never
+                  // lingers waiting for an accidental second click.
+                  removeArmedTimer.current = window.setTimeout(disarmRemove, 6000)
+                }}
+                aria-label={`Remove imported dataset ${dataset.name} from this browser`}
+                title="Removes this imported dataset from this browser. You will be asked to confirm."
+              >
+                Remove
+              </Button>
+            )
           ) : null}
         </div>
       </div>

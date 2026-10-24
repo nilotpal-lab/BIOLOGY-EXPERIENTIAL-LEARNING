@@ -59,7 +59,7 @@ export function Shell({
   onNavigate: (route: RouteId) => void
   children: ReactNode
 }) {
-  const { dataset, datasets, graph, selectDataset, notice } = useAppState()
+  const { dataset, datasets, graph, selectDataset, notice, setNotice } = useAppState()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -75,6 +75,53 @@ export function Shell({
   const navigate = (next: RouteId) => {
     setMobileMenuOpen(false)
     onNavigate(next)
+  }
+
+  // Global search looks across loaded networks (name, id, ecosystem, summary).
+  // It loads the best match, points at the library for several matches, and
+  // says clearly when nothing matches — it never silently does nothing.
+  const submitSearch = () => {
+    const query = searchQuery.trim()
+    if (!query) {
+      setNotice({
+        tone: 'info',
+        title: 'Search is empty',
+        message: 'Type a network name, id or ecosystem (for example "Ythan", "pond" or "marine") and press Enter.',
+      })
+      return
+    }
+    const lower = query.toLowerCase()
+    const matches = datasets.filter(
+      (entry) =>
+        entry.name.toLowerCase().includes(lower) ||
+        entry.id.toLowerCase().includes(lower) ||
+        entry.ecosystem.toLowerCase().includes(lower) ||
+        entry.summary.toLowerCase().includes(lower),
+    )
+    if (matches.length === 1) {
+      const match = matches[0]
+      selectDataset(match.id)
+      navigate('explore')
+      setNotice({
+        tone: 'success',
+        title: 'Network loaded',
+        message: `Search "${query}" matched one network: ${match.name}. It is now loaded in the Explorer.`,
+      })
+    } else if (matches.length > 1) {
+      navigate('library')
+      setNotice({
+        tone: 'info',
+        title: `${matches.length} networks match "${query}"`,
+        message: 'Several loaded networks match the search. Use the library search to narrow them down.',
+      })
+    } else {
+      setNotice({
+        tone: 'warning',
+        title: `No network matches "${query}"`,
+        message:
+          'The global search looks at network names, ids, ecosystems and summaries. To find a species inside the loaded network, use the species search in the Explorer.',
+      })
+    }
   }
 
   // Active top-nav mapping
@@ -314,16 +361,20 @@ export function Shell({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search species, network or keyword..."
-                aria-label="Search species, network or keyword"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') submitSearch()
+                }}
+                placeholder="Search loaded networks by name..."
+                aria-label="Search loaded networks by name"
                 className="w-56 xl:w-72 rounded-full border border-[#DCE7E1] bg-[#F4F8F5] pl-8.5 pr-3 py-1.5 text-xs text-[#122A23] placeholder:text-[#7A8E85] focus:border-[#0F6B52] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0F6B52] transition-colors"
               />
             </div>
 
             <button
               type="button"
+              onClick={submitSearch}
               className="hidden sm:flex h-8 w-8 items-center justify-center rounded-full border border-[#DCE7E1] bg-white text-[#536960] hover:bg-[#F4F8F5] hover:text-[#0F6B52] shadow-2xs transition-colors"
-              title="Search"
+              title="Search loaded networks"
               aria-label="Submit search"
             >
               <Search size={14} />
@@ -473,7 +524,12 @@ export function Shell({
                 <p className="text-sm font-extrabold text-[#0E1622] tabular-nums">
                   {trophicLevelsCount}
                 </p>
-                <p className="text-[10px] text-[#71837B]">Trophic Levels</p>
+                <p
+                  className="text-[10px] text-[#71837B]"
+                  title="Trophic = feeding level. Counts feeding levels from producers (plants, level 1) up to top predators."
+                >
+                  Trophic Levels
+                </p>
               </div>
             </div>
           )}

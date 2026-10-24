@@ -34,7 +34,7 @@ export function EcosystemThumbnail({
           <path d="M245,24 Q248,21 252,24 Q256,21 260,24" fill="none" stroke="#FFFFFF" strokeWidth="1" opacity="0.7" />
         </svg>
         <span className="absolute bottom-2 left-2.5 rounded-md bg-black/40 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-xs">
-          Marine Estuary
+          Marine ecosystem
         </span>
       </div>
     )
@@ -61,7 +61,7 @@ export function EcosystemThumbnail({
           <path d="M110,98 Q150,96 190,98" stroke="#A7E1C7" strokeWidth="1" strokeLinecap="round" opacity="0.5" />
         </svg>
         <span className="absolute bottom-2 left-2.5 rounded-md bg-black/40 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-xs">
-          Freshwater Wetland
+          Freshwater ecosystem
         </span>
       </div>
     )
@@ -88,7 +88,7 @@ export function EcosystemThumbnail({
         <path d="M120,30 Q124,26 128,30 Q132,26 136,30" fill="none" stroke="#254727" strokeWidth="1.2" opacity="0.6" />
       </svg>
       <span className="absolute bottom-2 left-2.5 rounded-md bg-black/40 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-xs">
-        Terrestrial Forest
+        Terrestrial ecosystem
       </span>
     </div>
   )

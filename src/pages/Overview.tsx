@@ -165,6 +165,9 @@ export function Overview({ onNavigate }: { onNavigate: (route: RouteId) => void 
           <p className="mt-1 text-xs sm:text-[13px] text-[#536960] max-w-3xl">
             Comparative food-web disruption and vulnerability analysis. Explore documented feeding links and simulate structural changes.
           </p>
+          <p className="mt-2 text-[11.5px] font-medium text-[#0F6B52]">
+            New here? Pick a network → remove a species → read the impact. Start with the buttons on the right.
+          </p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
@@ -204,8 +207,8 @@ export function Overview({ onNavigate }: { onNavigate: (route: RouteId) => void 
           <p className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0E1622] tabular-nums">
             {baseline ? baseline.nodeCount : '—'}
           </p>
-          <p className="mt-1 text-[11px] text-[#71837B]">
-            Documented taxa in active network
+          <p className="mt-1 text-[11px] text-[#71837B]" title="Taxa = the documented species or species groups in this network.">
+            Documented species or groups in the active network
           </p>
         </div>
 
@@ -240,8 +243,8 @@ export function Overview({ onNavigate }: { onNavigate: (route: RouteId) => void 
           <p className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0E1622] tabular-nums">
             {maxTrophicLevel}
           </p>
-          <p className="mt-1 text-[11px] text-[#71837B]">
-            Computed longest-path food hierarchy
+          <p className="mt-1 text-[11px] text-[#71837B]" title="Trophic = feeding level. Counts feeding levels from producers (plants, level 1) up to top predators.">
+            Feeding levels from producers (level 1) to top predators
           </p>
         </div>
 
@@ -410,14 +413,30 @@ export function Overview({ onNavigate }: { onNavigate: (route: RouteId) => void 
             </p>
           </div>
           <dl className="mt-3 divide-y divide-[#E5EAE7] text-xs">
-            <div className="py-2 flex justify-between">
-              <dt className="text-[#536960]">Connectance (L / S(S-1))</dt>
-              <dd className="font-bold text-[#0E1622] tabular-nums">
-                {baseline ? formatConnectance(baseline.connectance.value) : 'N/A'}
-              </dd>
+            <div className="py-2">
+              <div className="flex justify-between">
+                <dt
+                  className="text-[#536960]"
+                  title="Connectance = recorded feeding links (L) divided by all possible links (S species can form S×(S−1) links). Higher = more tightly connected. It can rise after a removal, because the number of possible links shrinks too."
+                >
+                  Connectance (L / S(S-1))
+                </dt>
+                <dd className="font-bold text-[#0E1622] tabular-nums">
+                  {baseline ? formatConnectance(baseline.connectance.value) : 'N/A'}
+                </dd>
+              </div>
+              <p className="mt-0.5 text-[10.5px] text-[#71837B]">
+                Share of all possible feeding links that actually exist — higher = more connected
+                (L = links, S = species)
+              </p>
             </div>
             <div className="py-2 flex justify-between">
-              <dt className="text-[#536960]">Basal Nodes (In-degree = 0)</dt>
+              <dt
+                className="text-[#536960]"
+                title="Basal = species with no recorded food sources (in-degree 0), e.g. plants or detritus — the food supply at the bottom of the web."
+              >
+                Basal Nodes (In-degree = 0)
+              </dt>
               <dd className="font-bold text-[#0E1622] tabular-nums">
                 {structuralGroups.basal} ({((structuralGroups.basal / structuralGroups.total) * 100).toFixed(1)}%)
               </dd>
@@ -429,7 +448,12 @@ export function Overview({ onNavigate }: { onNavigate: (route: RouteId) => void 
               </dd>
             </div>
             <div className="py-2 flex justify-between">
-              <dt className="text-[#536960]">Top Nodes (Out-degree = 0)</dt>
+              <dt
+                className="text-[#536960]"
+                title="Top = species no one in this dataset eats (out-degree 0) — the predators at the top of the web."
+              >
+                Top Nodes (Out-degree = 0)
+              </dt>
               <dd className="font-bold text-[#0E1622] tabular-nums">
                 {structuralGroups.top} ({((structuralGroups.top / structuralGroups.total) * 100).toFixed(1)}%)
               </dd>

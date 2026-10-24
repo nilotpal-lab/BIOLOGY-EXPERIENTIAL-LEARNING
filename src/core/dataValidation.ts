@@ -72,6 +72,9 @@ export interface ImportInput {
   license?: string
   nodeUnit?: string
   options?: ImportOptions
+  /** Explicit format chosen in the UI. Overrides content-based dispatch so a
+   *  paste on one tab is never validated with the other format's rules. */
+  format?: 'csv' | 'json'
 }
 
 interface RawRecord {
@@ -767,7 +770,10 @@ export function importFromJson(input: ImportInput): ImportPreview {
 
 /** Dispatch on the supplied text so the UI can hand over whatever was dropped. */
 export function importNetwork(input: ImportInput): ImportPreview {
-  if (input.jsonText || input.fileName?.toLowerCase().endsWith('.json')) {
+  if (
+    input.format === 'json' ||
+    (!input.format && (input.jsonText || input.fileName?.toLowerCase().endsWith('.json')))
+  ) {
     return importFromJson(input)
   }
   return importFromCsv(input)

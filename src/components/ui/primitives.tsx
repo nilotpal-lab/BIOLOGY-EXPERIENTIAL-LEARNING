@@ -81,8 +81,10 @@ export function IconButton({
       aria-label={label}
       title={label}
       className={cn(
-        'inline-flex h-8 w-8 items-center justify-center rounded-[8px] border border-line bg-surface',
+        'relative inline-flex h-8 w-8 items-center justify-center rounded-[8px] border border-line bg-surface',
         'text-fg-muted transition-colors hover:border-primary hover:text-primary hover:bg-surface-2 disabled:opacity-40 shadow-2xs',
+        // Expand the touch target to ~44px without growing the visible button.
+        "after:absolute after:-inset-1.5 after:content-['']",
         className,
       )}
       {...rest}
@@ -281,7 +283,7 @@ export function SelectInput({
 export function HelpHint({ text, label }: { text: string; label?: string }) {
   return (
     <span
-      className="inline-flex cursor-help items-center text-fg-faint hover:text-primary"
+      className="relative inline-flex cursor-help items-center text-fg-faint hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary after:absolute after:-inset-3 after:content-['']"
       title={text}
       role="note"
       aria-label={label ? `${label}: ${text}` : text}

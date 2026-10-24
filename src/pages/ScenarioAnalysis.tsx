@@ -108,7 +108,10 @@ export function ScenarioAnalysis({ onNavigate }: { onNavigate: (route: RouteId) 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-[#E5EAE7] pb-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="inline-block rounded-full bg-[#E8F5EE] px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-[#0F6B52]">
+            <span
+              title="Deterministic = the same inputs always produce exactly the same result. There is no randomness in these simulations."
+              className="inline-block rounded-full bg-[#E8F5EE] px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-[#0F6B52] cursor-help"
+            >
               Deterministic Simulation Studio
             </span>
             <span className="text-xs font-semibold text-[#536960]">
@@ -151,8 +154,10 @@ export function ScenarioAnalysis({ onNavigate }: { onNavigate: (route: RouteId) 
       <div className="rounded-2xl border border-[#DCE7E1] bg-white p-3.5 shadow-2xs">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           <div className="flex flex-wrap items-center gap-3 min-w-0">
-            {/* Dataset Selector Dropdown */}
-            <div className="min-w-[240px] max-w-sm flex-1">
+            {/* Dataset Selector Dropdown — hidden on desktop, where the sidebar
+                "Current Network" picker is permanently visible; both stay in
+                sync because they write the same application state. */}
+            <div className="min-w-[240px] max-w-sm flex-1 lg:hidden">
               <label htmlFor="analytics-dataset-select" className="sr-only">
                 Loaded network
               </label>
@@ -189,43 +194,61 @@ export function ScenarioAnalysis({ onNavigate }: { onNavigate: (route: RouteId) 
               </div>
               <Badge tone="neutral">{ECOSYSTEM_LABEL[dataset.ecosystem]}</Badge>
               <StatusBadge status={dataset.sourceStatus} />
+              {dataset.sourceStatus === 'illustrative-demo' && (
+                <span className="text-[10.5px] text-[#71837B]" title="Illustrative demo data — simplified for software demonstration; not a verified empirical food-web dataset.">
+                  Illustrative teaching data — not field evidence
+                </span>
+              )}
             </div>
           </div>
 
-          <p className="text-[11.5px] text-[#71837B]">
-            All simulations are structural and deterministic. No stochastic population assumptions.
+          <p
+            className="text-[11.5px] text-[#71837B]"
+            title="Deterministic = the same inputs always produce exactly the same result. Stochastic = involving randomness, which these simulations never use."
+          >
+            All simulations are structural and deterministic (the same removal always produces the
+            same result). No stochastic (random) population assumptions.
           </p>
         </div>
       </div>
 
       {/* Primary Studio View Toggle */}
-      <div className="flex rounded-2xl bg-[#F4F8F5] p-1 border border-[#DCE7E1] max-w-md">
-        <button
-          type="button"
-          onClick={() => setStudioView('systematic')}
-          className={cn(
-            'flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-xl transition-colors',
-            studioView === 'systematic'
-              ? 'bg-white text-[#0F6B52] shadow-2xs'
-              : 'text-[#536960] hover:text-[#0E1622]',
-          )}
-        >
-          <SlidersHorizontal size={14} />
-          Systematic Sensitivity Scan
-        </button>
-        <button
-          type="button"
-          onClick={() => setStudioView('interactive')}
-          className={cn(
-            'flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-xl transition-colors',
-            studioView === 'interactive'
-              ? 'bg-white text-[#0F6B52] shadow-2xs'
-              : 'text-[#536960] hover:text-[#0E1622]',
-          )}
-        >
-          <FlaskConical size={14} />
-          Interactive Removal Studio
-        </button>
+      <div className="space-y-1.5">
+        <div className="flex rounded-2xl bg-[#F4F8F5] p-1 border border-[#DCE7E1] max-w-md">
+          <button
+            type="button"
+            onClick={() => setStudioView('systematic')}
+            title="Sensitivity scan: runs the removal rule on every species, one at a time, and ranks the results"
+            className={cn(
+              'flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-xl transition-colors',
+              studioView === 'systematic'
+                ? 'bg-white text-[#0F6B52] shadow-2xs'
+                : 'text-[#536960] hover:text-[#0E1622]',
+            )}
+          >
+            <SlidersHorizontal size={14} />
+            Systematic Sensitivity Scan
+          </button>
+          <button
+            type="button"
+            onClick={() => setStudioView('interactive')}
+            title="Interactive studio: remove one species you choose and read its impact"
+            className={cn(
+              'flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-xl transition-colors',
+              studioView === 'interactive'
+                ? 'bg-white text-[#0F6B52] shadow-2xs'
+                : 'text-[#536960] hover:text-[#0E1622]',
+            )}
+          >
+            <FlaskConical size={14} />
+            Interactive Removal Studio
+          </button>
+        </div>
+        <p className="text-[10.5px] text-[#71837B]">
+          <strong className="text-[#0E1622]">Sensitivity Scan</strong> = test every species, one at
+          a time, and rank the impact · <strong className="text-[#0E1622]">Interactive Studio</strong>{' '}
+          = remove one species you choose.
+        </p>
       </div>
 
       {/* =====================================================================
@@ -346,17 +369,33 @@ export function ScenarioAnalysis({ onNavigate }: { onNavigate: (route: RouteId) 
                 <label className="text-xs font-bold text-[#0E1622]">
                   Simulation Propagation Rule
                 </label>
+                <p className="text-[10.5px] text-[#71837B] leading-snug -mt-1">
+                  How the removal spreads through the recorded feeding links. The active rule is
+                  outlined and ticked.
+                </p>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => setMode('direct')}
+                    aria-pressed={mode === 'direct'}
+                    title="Active rule: removes the selected species and its links only"
                     className={cn(
-                      'p-2.5 rounded-xl border text-left transition-colors text-xs',
+                      'relative p-2.5 pl-8 rounded-xl border text-left transition-colors text-xs',
                       mode === 'direct'
-                        ? 'border-[#0F6B52] bg-[#E8F5EE]/40 text-[#0F6B52] font-bold'
+                        ? 'border-[#0F6B52] bg-[#E8F5EE] text-[#0F6B52] font-bold ring-2 ring-[#0F6B52]/40'
                         : 'border-[#DCE7E1] bg-white text-[#536960] hover:bg-[#F8FAF8]',
                     )}
                   >
+                    {mode === 'direct' && (
+                      <span
+                        aria-hidden="true"
+                        className="absolute left-2.5 top-1/2 -translate-y-1/2 inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#0F6B52] text-white"
+                      >
+                        <svg viewBox="0 0 12 12" className="h-2.5 w-2.5" fill="none">
+                          <path d="M2.5 6.5 L5 9 L9.5 3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </span>
+                    )}
                     <p className="font-semibold text-[#0E1622]">Direct Removal</p>
                     <p className="mt-0.5 text-[10.5px] text-[#71837B] leading-tight">
                       Immediate link loss only
@@ -366,13 +405,25 @@ export function ScenarioAnalysis({ onNavigate }: { onNavigate: (route: RouteId) 
                   <button
                     type="button"
                     onClick={() => setMode('cascade')}
+                    aria-pressed={mode === 'cascade'}
+                    title="Active rule: also removes consumers that lose all of their recorded food sources"
                     className={cn(
-                      'p-2.5 rounded-xl border text-left transition-colors text-xs',
+                      'relative p-2.5 pl-8 rounded-xl border text-left transition-colors text-xs',
                       mode === 'cascade'
-                        ? 'border-[#0F6B52] bg-[#E8F5EE]/40 text-[#0F6B52] font-bold'
+                        ? 'border-[#0F6B52] bg-[#E8F5EE] text-[#0F6B52] font-bold ring-2 ring-[#0F6B52]/40'
                         : 'border-[#DCE7E1] bg-white text-[#536960] hover:bg-[#F8FAF8]',
                     )}
                   >
+                    {mode === 'cascade' && (
+                      <span
+                        aria-hidden="true"
+                        className="absolute left-2.5 top-1/2 -translate-y-1/2 inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#0F6B52] text-white"
+                      >
+                        <svg viewBox="0 0 12 12" className="h-2.5 w-2.5" fill="none">
+                          <path d="M2.5 6.5 L5 9 L9.5 3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </span>
+                    )}
                     <p className="font-semibold text-[#0E1622]">Structural Cascade</p>
                     <p className="mt-0.5 text-[10.5px] text-[#71837B] leading-tight">
                       Consumers losing 100% food
@@ -382,25 +433,35 @@ export function ScenarioAnalysis({ onNavigate }: { onNavigate: (route: RouteId) 
               </div>
 
               {/* Run Actions */}
-              <div className="pt-3 border-t border-[#E5EAE7] flex items-center gap-2">
-                <Button
-                  variant="primary"
-                  icon={<Play size={14} />}
-                  onClick={runSelectedScenario}
-                  disabled={!selectedNodeId}
-                  className="flex-1 bg-[#0F6B52] hover:bg-[#0D5A45] text-white text-xs h-9 font-semibold shadow-xs"
-                >
-                  Run Experiment
-                </Button>
-                {result && (
+              <div className="pt-3 border-t border-[#E5EAE7] space-y-1.5">
+                <div className="flex items-center gap-2">
                   <Button
-                    variant="outline"
-                    icon={<RotateCcw size={14} />}
-                    onClick={resetScenario}
-                    className="text-xs h-9 border-[#DCE7E1]"
+                    variant="primary"
+                    icon={<Play size={14} />}
+                    onClick={runSelectedScenario}
+                    disabled={!selectedNodeId}
+                    className="flex-1 bg-[#0F6B52] hover:bg-[#0D5A45] text-white text-xs h-9 font-semibold shadow-xs"
                   >
-                    Reset
+                    Run Experiment
                   </Button>
+                  {result && (
+                    <Button
+                      variant="outline"
+                      icon={<RotateCcw size={14} />}
+                      onClick={resetScenario}
+                      className="text-xs h-9 border-[#DCE7E1]"
+                    >
+                      Reset
+                    </Button>
+                  )}
+                </div>
+                {!selectedNodeId && (
+                  <p
+                    className="text-[11px] font-medium text-[#71837B]"
+                    aria-live="polite"
+                  >
+                    Select a target species above to enable Run Experiment.
+                  </p>
                 )}
               </div>
             </div>

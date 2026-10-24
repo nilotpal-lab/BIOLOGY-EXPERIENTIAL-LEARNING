@@ -11,7 +11,14 @@ import {
   SUPPORTED_EXTENSIONS,
 } from '../../core/dataValidation'
 import { validateGraphIntegrity } from '../../core/graphModel'
-import { ECOSYSTEM_CATEGORIES, ECOSYSTEM_LABEL, type EcosystemCategory, type ImportPreview, type ValidationIssue } from '../../core/types'
+import {
+  ECOSYSTEM_CATEGORIES,
+  ECOSYSTEM_LABEL,
+  TROPHIC_ROLES,
+  type EcosystemCategory,
+  type ImportPreview,
+  type ValidationIssue,
+} from '../../core/types'
 import {
   Badge,
   Button,
@@ -153,11 +160,16 @@ export function ImportDialog({
   }
 
   const runValidation = (nextRepair = repair) => {
+    // Only the active format's inputs are passed. Stale text from the other
+    // tab must never leak into validation — otherwise, for example, an empty
+    // JSON paste on the JSON tab would be reported with the CSV error wording.
+    const isCsv = format === 'csv'
     const result = importNetwork({
-      nodesText,
-      edgesText,
-      jsonText,
-      fileName,
+      format,
+      nodesText: isCsv ? nodesText : undefined,
+      edgesText: isCsv ? edgesText : undefined,
+      jsonText: isCsv ? undefined : jsonText,
+      fileName: isCsv ? (fileName?.toLowerCase().endsWith('.json') ? undefined : fileName) : fileName,
       datasetName: datasetName || undefined,
       ecosystem,
       citation: citation || undefined,
@@ -174,16 +186,37 @@ export function ImportDialog({
 
     // A structural second opinion on the accepted network, so the preview shows
     // the same integrity checks the graph model will rely on.
+    let next: ImportPreview
     if (result.dataset) {
       const extra = validateGraphIntegrity(result.dataset).filter(
         (issue) => issue.severity !== 'info',
       )
       const known = new Set(result.issues.map((issue) => issue.code))
       const additions = extra.filter((issue) => !known.has(issue.code))
-      setPreview({ ...result, issues: [...result.issues, ...additions] })
+      next = { ...result, issues: [...result.issues, ...additions] }
     } else {
-      setPreview(result)
+      next = result
     }
+
+    // Metadata is never silently trusted: a Source URL or DOI that does not
+    // look like one is surfaced as a warning instead of being stored quietly.
+    const url = sourceUrl.trim()
+    if (url && !/^(https?:\/\/|doi:|10\.\d{4,9}\/)/i.test(url)) {
+      next = {
+        ...next,
+        issues: [
+          ...next.issues,
+          {
+            severity: 'warning',
+            code: 'METADATA_URL_UNUSUAL',
+            message:
+              'The Source URL or DOI does not start with "https://", "http://", "doi:" or a DOI prefix like "10.1234/". It is stored exactly as typed — check it is a working link or DOI.',
+          },
+        ],
+      }
+    }
+
+    setPreview(next)
   }
 
   const toggleRepair = (value: boolean) => {
@@ -263,6 +296,11 @@ export function ImportDialog({
             <p className="mt-1 text-[11px] text-fg-faint">
               Required: {REQUIRED_NODE_COLUMNS.join(', ')}. All other columns are optional.
             </p>
+            <p className="mt-1 text-[11px] text-fg-faint">
+              <span className="font-mono">trophic_role</span> accepts:{' '}
+              {TROPHIC_ROLES.join(', ')}. Unknown values are normalised to{' '}
+              <span className="font-mono">other</span> and reported as a warning.
+            </p>
           </div>
           <div className="rounded-xl border border-line-soft bg-surface-2 p-2.5">
             <p className="text-[11px] font-medium text-fg-muted">Link file columns</p>
@@ -329,11 +367,15 @@ export function ImportDialog({
             <Field label="Dataset name">
               <TextInput
                 value={datasetName}
+                maxLength={80}
                 placeholder="e.g. North pond, 2019 survey"
                 onChange={(event) => setDatasetName(event.target.value)}
               />
             </Field>
-            <Field label="Ecosystem category">
+            <Field
+              label="Ecosystem category"
+              hint="The import is filed under this ecosystem in the Data Library. Freshwater is pre-selected — change it if your network is terrestrial or marine."
+            >
               <SelectInput
                 value={ecosystem}
                 onChange={(event) => setEcosystem(event.target.value as EcosystemCategory)}
@@ -348,6 +390,7 @@ export function ImportDialog({
             <Field label="Source citation" hint="Without a citation the dataset is stored as “Research source pending” and is never marked verified.">
               <TextInput
                 value={citation}
+                maxLength={400}
                 placeholder="Author (year). Title. Journal."
                 onChange={(event) => setCitation(event.target.value)}
               />
@@ -355,6 +398,7 @@ export function ImportDialog({
             <Field label="Origin / repository">
               <TextInput
                 value={origin}
+                maxLength={200}
                 placeholder="Publisher, repository or archive"
                 onChange={(event) => setOrigin(event.target.value)}
               />
@@ -362,6 +406,7 @@ export function ImportDialog({
             <Field label="Source URL or DOI">
               <TextInput
                 value={sourceUrl}
+                maxLength={400}
                 placeholder="https://… or 10.xxxx/…"
                 onChange={(event) => setSourceUrl(event.target.value)}
               />
@@ -369,6 +414,7 @@ export function ImportDialog({
             <Field label="Licence or reuse conditions">
               <TextInput
                 value={license}
+                maxLength={200}
                 placeholder="e.g. CC-BY-4.0, or “Not provided”"
                 onChange={(event) => setLicense(event.target.value)}
               />
@@ -376,6 +422,7 @@ export function ImportDialog({
             <Field label="Node unit" hint="State whether nodes are individual species or aggregated trophic groups.">
               <TextInput
                 value={nodeUnit}
+                maxLength={120}
                 placeholder="e.g. individual species"
                 onChange={(event) => setNodeUnit(event.target.value)}
               />

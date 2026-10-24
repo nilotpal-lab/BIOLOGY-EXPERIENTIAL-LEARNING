@@ -106,6 +106,28 @@ interface AppStateValue {
 
 const AppStateContext = createContext<AppStateValue | null>(null)
 
+const SELECTED_DATASET_STORAGE_KEY = 'fwg.selectedDatasetId'
+
+/** Restores the last selected dataset id; non-fatal when storage is unavailable. */
+function loadSelectedDatasetId(available: FoodWebDataset[]): string {
+  const fallback = DEMO_LAB_DATASETS[0]?.id ?? ''
+  try {
+    const stored = window.localStorage.getItem(SELECTED_DATASET_STORAGE_KEY)
+    if (stored && available.some((entry) => entry.id === stored)) return stored
+  } catch {
+    // Storage unavailable (private mode etc.) — fall back to the first demo.
+  }
+  return fallback
+}
+
+function saveSelectedDatasetId(id: string | undefined): void {
+  try {
+    if (id) window.localStorage.setItem(SELECTED_DATASET_STORAGE_KEY, id)
+  } catch {
+    // Non-fatal: selection persistence is a convenience, never a requirement.
+  }
+}
+
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const [importedDatasets, setImportedDatasets] = useState<FoodWebDataset[]>(() =>
     loadImportedDatasets(),
@@ -115,7 +137,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     [importedDatasets],
   )
 
-  const [datasetId, setDatasetId] = useState<string>(DEMO_LAB_DATASETS[0]?.id ?? '')
+  const [datasetId, setDatasetId] = useState<string>(() =>
+    loadSelectedDatasetId([...BUILT_IN_DATASETS, ...loadImportedDatasets()]),
+  )
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
   const [mode, setModeState] = useState<ScenarioMode>('direct')
   const [result, setResult] = useState<ScenarioResult | null>(null)
@@ -140,6 +164,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     () => datasets.find((entry) => entry.id === datasetId) ?? datasets[0] ?? null,
     [datasets, datasetId],
   )
+
+  // Keep the last selection across refreshes; the resolved dataset (not the raw
+  // id) is stored so a removed imported dataset can never be restored.
+  useEffect(() => {
+    saveSelectedDatasetId(dataset?.id)
+  }, [dataset?.id])
 
   /**
    * The baseline graph model. Rebuilt only when the dataset identity changes,

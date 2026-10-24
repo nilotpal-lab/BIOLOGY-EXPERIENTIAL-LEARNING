@@ -55,11 +55,12 @@ function Routed() {
             tone: report?.outstandingWarnings.length ? 'warning' : 'success',
             title: 'Dataset imported',
             message: report
-              ? `"${preview.dataset.name}" was imported with ${report.acceptedNodeCount} node(s) and ${report.acceptedEdgeCount} link(s). ${report.duplicateEdgesRemoved} duplicate link(s) removed, ${report.selfLinksExcluded} self-link(s) excluded, ${report.invalidEdgesExcluded} invalid link(s) excluded. Status: ${preview.dataset.sourceStatus === 'research-pending' ? 'Research source pending' : 'Research source provided, validation pending'} — never verified automatically.`
-              : `"${preview.dataset.name}" was imported.`,
+              ? `"${preview.dataset.name}" was imported with ${report.acceptedNodeCount} node(s) and ${report.acceptedEdgeCount} link(s). ${report.duplicateEdgesRemoved} duplicate link(s) removed, ${report.selfLinksExcluded} self-link(s) excluded, ${report.invalidEdgesExcluded} invalid link(s) excluded. Status: ${preview.dataset.sourceStatus === 'research-pending' ? 'Research source pending' : 'Research source provided, validation pending'} — never verified automatically. It is now the active network — open the Explorer to work with it.`
+              : `"${preview.dataset.name}" was imported. It is now the active network — open the Explorer to work with it.`,
           })
           setImportOpen(false)
-          navigate('explore')
+          // Stay on the Data Library: the import already became the active
+          // network, and the notice says where to work with it next.
         }}
       />
     </>

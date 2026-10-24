@@ -2,9 +2,11 @@ import { afterEach } from 'vitest'
 import { cleanup } from '@testing-library/react'
 
 // React Testing Library mounts into a jsdom document; unmount after every test
-// so component state cannot leak between tests.
+// so component state cannot leak between tests. LocalStorage is cleared too,
+// because persisted selections and imports must not leak between tests.
 afterEach(() => {
   cleanup()
+  window.localStorage.clear()
 })
 
 // jsdom does not implement ResizeObserver, which the charting layer uses.

@@ -131,7 +131,7 @@ export function ScenarioControls({
       </div>
 
       {disabled ? (
-        <p className="mt-2 text-[11px] text-fg-faint">
+        <p className="mt-2 text-xs font-medium text-fg-muted" aria-live="polite">
           {!dataset
             ? 'Load a dataset to enable simulation.'
             : dataset.nodes.length === 0

@@ -570,8 +570,10 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
       <div className="rounded-2xl border border-line bg-surface p-3.5 shadow-2xs">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           <div className="flex flex-wrap items-center gap-3 min-w-0">
-            {/* Dataset Selector Dropdown */}
-            <div className="min-w-[240px] max-w-sm flex-1">
+            {/* Dataset Selector Dropdown — hidden on desktop, where the sidebar
+                "Current Network" picker is permanently visible; both stay in
+                sync because they write the same application state. */}
+            <div className="min-w-[240px] max-w-sm flex-1 lg:hidden">
               <label htmlFor="dataset-select" className="sr-only">
                 Loaded network
               </label>
@@ -608,6 +610,14 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
               </div>
               <Badge tone="neutral">{ECOSYSTEM_LABEL[dataset.ecosystem]}</Badge>
               <StatusBadge status={dataset.sourceStatus} />
+              {dataset.sourceStatus === 'illustrative-demo' && (
+                <span
+                  className="text-[10.5px] text-fg-faint"
+                  title="Illustrative demo data — simplified for software demonstration; not a verified empirical food-web dataset."
+                >
+                  Illustrative teaching data — not field evidence
+                </span>
+              )}
             </div>
           </div>
 
@@ -764,7 +774,10 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
                                 </p>
                               </div>
                             </div>
-                            <span className="text-[10.5px] tabular-nums text-fg-faint shrink-0">
+                            <span
+                              className="text-[10.5px] tabular-nums text-fg-faint shrink-0"
+                              title="in = recorded food sources this species eats · out = consumers that eat this species"
+                            >
                               in:{graph.foodSourcesOf.get(node.id)?.length ?? 0} out:{graph.consumersOf.get(node.id)?.length ?? 0}
                             </span>
                           </button>
@@ -911,29 +924,35 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
           </Card>
         </div>
 
-        {/* Right Region: Selected Species Inspector & Simulation */}
+        {/* Right Region: Selected Species Inspector & Simulation.
+            On small screens the simulation controls come first (right after the
+            species list) so Run is never buried below the long inspector. */}
         {rightPanelOpen ? (
-          <div className={cn('space-y-3 order-3 xl:order-3', leftPanelOpen ? 'xl:col-span-3' : 'xl:col-span-4')}>
-            <SpeciesInspector
-              graph={graph}
-              node={selectedNode}
-              result={result}
-              isSelected={Boolean(selectedNodeId)}
-              onSelectForSimulation={(id) => removeFromScenario(id)}
-              onResetSimulation={resetScenario}
-              canRun={graph.nodes.length > 0}
-            />
+          <div className={cn('space-y-3 order-3 xl:order-3 flex flex-col', leftPanelOpen ? 'xl:col-span-3' : 'xl:col-span-4')}>
+            <div className="order-2 xl:order-1">
+              <SpeciesInspector
+                graph={graph}
+                node={selectedNode}
+                result={result}
+                isSelected={Boolean(selectedNodeId)}
+                onSelectForSimulation={(id) => removeFromScenario(id)}
+                onResetSimulation={resetScenario}
+                canRun={graph.nodes.length > 0}
+              />
+            </div>
 
-            <ScenarioControls
-              dataset={dataset}
-              node={selectedNode}
-              mode={mode}
-              onModeChange={setMode}
-              onRun={runSelectedScenario}
-              onReset={resetScenario}
-              result={result}
-              onOpenReport={() => setReportModalOpen(true)}
-            />
+            <div className="order-1 xl:order-2">
+              <ScenarioControls
+                dataset={dataset}
+                node={selectedNode}
+                mode={mode}
+                onModeChange={setMode}
+                onRun={runSelectedScenario}
+                onReset={resetScenario}
+                result={result}
+                onOpenReport={() => setReportModalOpen(true)}
+              />
+            </div>
           </div>
         ) : null}
       </div>
