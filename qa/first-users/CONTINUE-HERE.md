@@ -1,83 +1,83 @@
 # FIRST-USERS QA — CONTINUE HERE AFTER REOPENING THE LAPTOP
 
 This file is the durable handoff for the FoodWebGuard first-users QA study.
-Written 2026-10-25 before a planned laptop shutdown. If the agent session lost
-context, this file plus git history is everything needed to continue at full pace.
+**UPDATED 2026-10-25 after the second shutdown notice.** Run-1, run-2, run-3 and BOTH fix passes
+are COMPLETE. Only two steps remain: the independent judge and the final report.
 
 ## Project
 
 - App: FoodWebGuard — React 19 + TS + Vite static build (no backend, no auth).
 - Root: `C:\Users\nilot\OneDrive\Desktop\IMPORTANT\JAIN\SUBJECTS\3RD SEM\BIOLOGY\EXPERIENTIAL LEARNING\BIO EXPERIENTIAL`
-- Git: initialized during this study. Branch `qa/first-users-fixes` is current.
+- Git branch `qa/first-users-fixes`, commits in order:
   - `25b9a0e` baseline (pre-QA, 133/133 tests green)
-  - `dcf20a3` fix pass: all 12 findings F1–F12 fixed, 133/133 tests green, tsc clean, lint 0 errors, dist rebuilt.
+  - `dcf20a3` fix pass 1: run-1 findings F1–F12 fixed, 133/133 tests green
+  - `ac57e25` handoff file
+  - `545224f` fix pass 2: run-2 findings (no-auto-expire confirm, 44px chips, filter empty-state,
+    fixture labels, position-neutral hint, search maxLength, cascade gloss). 133/133 green, tsc 0,
+    lint 0 errors. Final build hash `index-ChS_Ocuf.js` — this is what run-3 tested.
 - Findings list with file:line causes: `qa/first-users/findings-run-1.md`
-- Run-1 raw material: `qa/first-users/run-1/<id>/report.md` + screenshots for
-  impatient, skeptic, mobile, non-native, breaker. All 5 reached first success, 0 blockers.
+- Raw runs: `qa/first-users/run-1|run-2|run-3/<id>/report.md` + screenshots.
+  All 15 user sessions reached first success; 0 blockers in any run.
 
 ## Study contract (user-approved decisions)
 
-- First success = "pick any dataset, select a species, run a direct-removal
-  scenario, see the resulting metrics."
-- Skeptic persona re-aimed at trust & provenance (no pricing/terms/privacy exist in this app).
-- 5 personas run SEQUENTIALLY (one shared in-app browser, clean localStorage each).
-- "Needs a human" list lives in findings-run-1.md (verified-claim wording; About/Terms/Privacy).
-- Not-testable marks: console/network capture, Slow-3G/4x-CPU throttling (375px viewport IS emulated).
+- First success = "pick any dataset, select a species, run a direct-removal scenario, see the metrics."
+- Skeptic persona re-aimed at trust & provenance (no pricing/terms/privacy pages exist).
+- 5 personas, sequential (one shared in-app browser), clean localStorage per session.
+- Not-testable marks: console/network capture; Slow-3G/4x-CPU throttling (375px viewport IS emulated).
 
-## Remaining work (in order)
+## STATUS: what is already done (do NOT redo)
 
-1. **Restart the app server** (dies at shutdown):
+- **Run-1** (baseline build): 5/5 success. Merged into findings-run-1.md (F1–F12).
+- **Fix pass 1** (`dcf20a3`): all 12 findings fixed.
+- **Run-2** (`index-Ct8P0dIq.js`): 5/5 success. F1/F3/F5/F7/F12 confirmed fixed in the wild.
+  New claims: "Simulate Removal dead" (sev3), "remove resurrects after refresh" (sev3),
+  "Enter doesn't submit search" (sev2), "buttons never clickable" (sev2) — ALL FOUR verified as
+  harness input-layer artifacts or timer design by the QA lead in the live browser (geometry stable,
+  0 animations, DOM clicks navigate, confirm+reload persisted, Enter works). Real new items: species
+  chips 32px, nested 192px inner scroll, fixtures in pickers, "buttons on the right" wording.
+- **Fix pass 2** (`545224f`): those real items fixed (see commit message).
+- **Run-3** (final build): impatient 10 actions ✓, skeptic 33 ✓ (deletion test passes fully),
+  mobile 6 ✓, non-native 6 ✓ — all via independent subagents. Breaker: **DEVIATION** — QA-lead
+  executed the scripted battery because subagent spawns were blocked ~35 min by the model
+  concurrency limit (9 attempts). report.md documents this; battery fully clean (no crashes,
+  injection, duplicates, resurrection; F7/F6/confirm/no-navigation all verified live).
+- Skeptic run-3's "nav button dead on #/library" (sev3) was verified by the QA lead as a harness
+  artifact (single button exists, DOM click navigates #/library → #/experiment).
+
+## Remaining work (in order) — ONLY TWO STEPS LEFT
+
+1. **Restart the app server** (only needed if the judge wants to open the app; screenshots may suffice):
    ```bash
    cd "<project root>" && npm run preview -- --port 4173 --strictPort
    ```
-   (run in background; verify with `curl -s -o /dev/null -w "%{http_code}" http://localhost:4173/` → 200;
-   confirm served bundle is the fixed one: index html should reference an asset hash ≠ `index-BgmSF7qt.js`, which was the pre-fix build)
-2. **Run-2** — rerun all 5 personas as FRESH subagents (general-purpose), one at a time,
-   60s cooldown between spawns (model concurrency limit). Folders:
-   `qa/first-users/run-2/{impatient,skeptic,mobile,non-native,breaker}/` (currently empty).
-   Each subagent gets: the URL, its persona, first-success definition, its folder, the
-   walkthrough rules (screenshot every screen NN-slug.png to disk, friction log with
-   severity 4/3/2/1, try-twice-then-quit, 60-action cap, no code/docs reading, clean
-   localStorage, close tab at end). Persona texts + full mechanics block are in the
-   conversation; essentials:
-   - impatient: skims, 10s/screen, quits at first error/spinner/confusing field.
-   - skeptic (trust re-aim): provenance, citations, licences, verified-vs-demo labels,
-     methodology, import→remove round trip; pricing/legal marked not-found.
-   - mobile: viewport 375x667 via tab.setViewportSize, touch-only, flags <44px targets,
-     horizontal overflow (scrollWidth vs clientWidth), layout jumps; throttling honestly marked not-testable.
-   - non-native: follows UI literally, logs every jargon/idiom/unlabeled icon/placeholder-only
-     label and any wrong turn caused by wording.
-   - breaker: junk pastes (empty, 5k chars, emoji, Arabic, O'Brien, <script>, SQL), refresh/back
-     mid-submit, double-clicks, two tabs; flags crashes/duplicates/lost input/unescaped output.
-3. **Judge** — a FRESH subagent that did no fixing compares the run-1 findings list
-   (F1–F12 in findings-run-1.md) against BOTH runs' screenshots and marks each item
-   fixed / not fixed / not reached / new. Screenshots beat notes. Verdicts written to
-   `qa/first-users/verdicts.md`.
-4. If anything is not fixed: ONE more fix pass on the same branch, run-3 with all 5
-   users and a fresh judge. Stop after run 3; leftovers go to the human list.
-5. **Final report** `qa/first-users/report.md`: what couldn't be tested, run-1 vs final
-   scoreboard per user, ranked findings with status + screenshots + files changed,
-   needs-a-human list. Then commit.
+   (If port busy: `netstat -ano | grep 4173` then `taskkill //PID <pid> //F`.)
+2. **Judge** — spawn a FRESH general-purpose subagent that did no fixing. Its job: read
+   `qa/first-users/findings-run-1.md` (F1–F12), then Read the run-1 vs run-2/run-3 screenshots
+   per finding and mark each: fixed / not fixed / not reached / new. Screenshots beat notes.
+   Point it at: run-1 folder + run-2 + run-3 folders + the fix map in the two commit messages
+   (`git log` / `git show --stat dcf20a3 545224f`) and the STATUS section above.
+   Verdicts → `qa/first-users/verdicts.md`.
+   NOTE for the judge prompt: breaker run-3 was QA-lead executed (documented deviation in its
+   report.md), and four run-2 sev-2/3 claims were individually disproven live (see STATUS) —
+   the judge should weigh that evidence, not re-flag them as open.
+3. **Final report** `qa/first-users/report.md`: what couldn't be tested, run-1 vs final scoreboard
+   per user, ranked findings with status + screenshots + files changed, needs-a-human list (already
+   in findings-run-1.md: verified-claim wording, About/Terms/Privacy, plus new leftovers: duplicate
+   import buttons on library, 36px hero/Run buttons on mobile, no auto-scroll to results,
+   Explorer/Workspace naming spread, mesocosm/detritus vocabulary). Leftover small items do NOT
+   require a run-4: the stop rule is after run 3. Then `git add -A && git commit`.
 
-## Fix map (what changed in dcf20a3, for reference during judging)
+## Not tested (tooling limits, honestly marked everywhere)
 
-- F1 `ScenarioAnalysis.tsx` — ticked/ringed rule buttons + aria-pressed, adjacent disabled-Run reason; `ScenarioControls.tsx` hint enlarged.
-- F2 page-level "Loaded network" pickers now `lg:hidden` (sidebar picker is the single desktop control) — `Explore.tsx`, `ScenarioAnalysis.tsx`.
-- F3 `DatasetBrowser.tsx` — two-click remove (Confirm/Cancel, 6s auto-disarm).
-- F4 plain-language notes: Overview (connectance, basal/top, taxa, trophic), ScenarioAnalysis (deterministic/stochastic, sensitivity scan explainer, propagation rule), Shell trophic tooltip, Explore in/out tooltip, ImportDialog trophic_role vocabulary.
-- F5 `EcosystemThumbnail.tsx` — captions now "Marine/Freshwater/Terrestrial ecosystem" (was "Terrestrial Forest" for every terrestrial network).
-- F6 `Shell.tsx` — global search wired (loads unique match, library on multi-match, explicit no-match notice).
-- F7 `AppState.tsx` — selected dataset persisted to localStorage (`fwg.selectedDatasetId`), validated on restore; test setup clears storage between tests.
-- F8 `primitives.tsx` — HelpHint & IconButton ~44px touch targets via expanded ::after hit area.
-- F9 `ImportDialog.tsx` — format-scoped validation (explicit `format` hint added to `importNetwork` in `dataValidation.ts`), ecosystem hint text, metadata maxLengths + unusual-URL/DOI warning, no forced navigation after import (App.tsx notice explains the dataset became active).
-- F10 `Explore.tsx` — on <xl screens Simulation controls render above the inspector.
-- F11 `Overview.tsx` — "New here? Pick a network → remove a species → read the impact." line.
-- F12 visible "Illustrative teaching data — not field evidence" note next to the status badge in Explore/ScenarioAnalysis context bars.
+- Console error capture and network request capture — unavailable in the in-app browser runtime.
+- Mobile Slow-3G / 4x CPU throttling — unavailable (375px viewport WAS emulated).
+- Parallel isolated browser contexts — unavailable; runs were sequential clean sessions.
 
 ## Notes for the resuming agent
 
-- The vite preview process may orphan on Windows when its npm wrapper is killed;
-  `netstat -ano | grep 4173` then `taskkill //PID <pid> //F` frees the port before restart.
-- The in-app browser tabs die with the app; every QA user starts a fresh tab and clears
-  localStorage anyway, so nothing is lost by the shutdown.
-- Keep runs sequential; the model concurrency limit rejects parallel spawns (retry after ~60s).
+- Subagent spawns may hit "model concurrency limit exceeded" — retry after 60-300s waits; if
+  blocked >30 min, document a deviation like the breaker run instead of blocking the study.
+- The vite preview process orphans on Windows when its npm wrapper is killed; free the port first.
+- In-app browser tabs die with shutdown; nothing is lost — all reports/screenshots are on disk
+  and committed.
