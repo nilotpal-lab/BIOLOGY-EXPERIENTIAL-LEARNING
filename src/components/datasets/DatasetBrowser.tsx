@@ -11,7 +11,7 @@ import {
   Upload,
   X,
 } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { RESEARCH_SLOTS, RESEARCH_SLOT_SUMMARY } from '../../data/datasetRegistry'
 import { downloadArtifact, edgesExportCsv, nodesExportCsv } from '../../core/exportUtils'
 import {
@@ -52,21 +52,11 @@ export function DatasetRow({
   const [detailsOpen, setDetailsOpen] = useState(false)
   // Removing an imported dataset is destructive and has no undo, so it is a
   // two-click action: the first click arms the button, the second confirms.
+  // The armed state stays until Cancel or confirm — no auto-expire, because a
+  // timer can expire between two deliberately slow clicks and silently skip
+  // the removal the user intended.
   const [removeArmed, setRemoveArmed] = useState(false)
-  const removeArmedTimer = useRef<number | null>(null)
-  const disarmRemove = useCallback(() => {
-    if (removeArmedTimer.current !== null) {
-      window.clearTimeout(removeArmedTimer.current)
-      removeArmedTimer.current = null
-    }
-    setRemoveArmed(false)
-  }, [])
-  useEffect(
-    () => () => {
-      if (removeArmedTimer.current !== null) window.clearTimeout(removeArmedTimer.current)
-    },
-    [],
-  )
+  const disarmRemove = useCallback(() => setRemoveArmed(false), [])
 
   return (
     <li
@@ -163,12 +153,7 @@ export function DatasetRow({
                 size="sm"
                 variant="ghost"
                 icon={<Trash2 size={13} />}
-                onClick={() => {
-                  setRemoveArmed(true)
-                  // Re-arm auto-expires so an armed destructive button never
-                  // lingers waiting for an accidental second click.
-                  removeArmedTimer.current = window.setTimeout(disarmRemove, 6000)
-                }}
+                onClick={() => setRemoveArmed(true)}
                 aria-label={`Remove imported dataset ${dataset.name} from this browser`}
                 title="Removes this imported dataset from this browser. You will be asked to confirm."
               >

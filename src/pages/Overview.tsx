@@ -166,7 +166,7 @@ export function Overview({ onNavigate }: { onNavigate: (route: RouteId) => void 
             Comparative food-web disruption and vulnerability analysis. Explore documented feeding links and simulate structural changes.
           </p>
           <p className="mt-2 text-[11.5px] font-medium text-[#0F6B52]">
-            New here? Pick a network → remove a species → read the impact. Start with the buttons on the right.
+            New here? Pick a network → remove a species → read the impact. Start with the green Experiment Studio button.
           </p>
         </div>
 

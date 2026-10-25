@@ -587,6 +587,7 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
                 {datasets.map((entry) => (
                   <option key={entry.id} value={entry.id}>
                     {ECOSYSTEM_LABEL[entry.ecosystem]} · {entry.name}
+                    {entry.id.startsWith('VALIDATION') ? ' — validation fixture (internal test)' : ''}
                   </option>
                 ))}
               </SelectInput>

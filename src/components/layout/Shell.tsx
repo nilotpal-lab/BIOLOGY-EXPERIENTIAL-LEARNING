@@ -366,6 +366,7 @@ export function Shell({
                 }}
                 placeholder="Search loaded networks by name..."
                 aria-label="Search loaded networks by name"
+                maxLength={120}
                 className="w-56 xl:w-72 rounded-full border border-[#DCE7E1] bg-[#F4F8F5] pl-8.5 pr-3 py-1.5 text-xs text-[#122A23] placeholder:text-[#7A8E85] focus:border-[#0F6B52] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0F6B52] transition-colors"
               />
             </div>
@@ -496,6 +497,7 @@ export function Shell({
                 {datasets.map((entry) => (
                   <option key={entry.id} value={entry.id}>
                     {entry.name} ({ECOSYSTEM_LABEL[entry.ecosystem]})
+                    {entry.id.startsWith('VALIDATION') ? ' — validation fixture (internal test)' : ''}
                   </option>
                 ))}
               </SelectInput>

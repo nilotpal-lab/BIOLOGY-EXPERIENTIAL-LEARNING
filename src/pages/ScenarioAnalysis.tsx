@@ -171,6 +171,7 @@ export function ScenarioAnalysis({ onNavigate }: { onNavigate: (route: RouteId) 
                 {datasets.map((entry) => (
                   <option key={entry.id} value={entry.id}>
                     {ECOSYSTEM_LABEL[entry.ecosystem]} · {entry.name}
+                    {entry.id.startsWith('VALIDATION') ? ' — validation fixture (internal test)' : ''}
                   </option>
                 ))}
               </SelectInput>
@@ -332,11 +333,24 @@ export function ScenarioAnalysis({ onNavigate }: { onNavigate: (route: RouteId) 
                     value={speciesSearch}
                     onChange={(e) => setSpeciesSearch(e.target.value)}
                     placeholder="Filter species to select..."
+                    aria-label="Filter species to select"
                     className="pl-8 text-xs h-8.5 rounded-xl border-[#DCE7E1]"
                   />
                 </div>
 
-                <div className="max-h-48 overflow-y-auto space-y-1 rounded-xl border border-[#E5EAE7] p-1.5 bg-[#F8FAF8]">
+                <div className="max-h-[65vh] sm:max-h-48 overflow-y-auto space-y-1 rounded-xl border border-[#E5EAE7] p-1.5 bg-[#F8FAF8]">
+                  {filteredSpecies.length === 0 && (
+                    <p className="px-2 py-3 text-center text-[11px] text-[#71837B]" aria-live="polite">
+                      No species match “{speciesSearch}”. Clear the filter to see all {graph.nodes.length} species.
+                      <button
+                        type="button"
+                        onClick={() => setSpeciesSearch('')}
+                        className="ml-1 font-semibold text-[#0F6B52] underline underline-offset-2"
+                      >
+                        Clear filter
+                      </button>
+                    </p>
+                  )}
                   {filteredSpecies.map((node) => {
                     const isSelected = selectedNodeId === node.id
                     return (
@@ -345,7 +359,7 @@ export function ScenarioAnalysis({ onNavigate }: { onNavigate: (route: RouteId) 
                         type="button"
                         onClick={() => selectNode(node.id)}
                         className={cn(
-                          'w-full flex items-center justify-between p-2 rounded-lg text-xs transition-colors text-left',
+                          'w-full min-h-11 flex items-center justify-between p-2 rounded-lg text-xs transition-colors text-left',
                           isSelected
                             ? 'bg-[#E8F5EE] text-[#0F6B52] font-semibold ring-1 ring-[#0F6B52]'
                             : 'hover:bg-white text-[#0E1622]',
@@ -370,7 +384,8 @@ export function ScenarioAnalysis({ onNavigate }: { onNavigate: (route: RouteId) 
                   Simulation Propagation Rule
                 </label>
                 <p className="text-[10.5px] text-[#71837B] leading-snug -mt-1">
-                  How the removal spreads through the recorded feeding links. The active rule is
+                  How the removal spreads through the recorded feeding links. Cascade = the effect
+                  spreads to consumers that depended on the removed species. The active rule is
                   outlined and ticked.
                 </p>
                 <div className="grid grid-cols-2 gap-2">
