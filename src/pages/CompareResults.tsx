@@ -229,12 +229,12 @@ export function CompareResults() {
           </div>
 
           {/* Freshwater botanical landscape artwork */}
-          <div className="lg:col-span-4 h-32 sm:h-40 lg:h-full relative overflow-hidden flex items-center justify-end">
-            <div className="absolute inset-0 bg-gradient-to-r from-[#FCFBF7] via-[#FCFBF7]/60 to-transparent z-10 pointer-events-none" />
+          <div className="lg:col-span-4 h-36 lg:h-full relative overflow-hidden flex items-center justify-end">
+            <div className="absolute inset-0 bg-gradient-to-r from-[#FCFBF7] via-[#FCFBF7]/50 to-transparent z-1 lg:w-32 pointer-events-none" />
             <img
-              src="/hero-ecosystem.jpg"
+              src="/hero-freshwater-artwork.png"
               alt="Freshwater ecosystem botanical illustration"
-              className="h-full w-full object-cover object-[80%_35%] scale-105"
+              className="h-full w-full object-cover object-[80%_25%] max-h-44"
             />
           </div>
         </div>
@@ -390,6 +390,8 @@ export function CompareResults() {
                       removedNodeIds={[]}
                       selectedNodeId={null}
                       onSelectNode={() => {}}
+                      hideControls={true}
+                      hideLegend={true}
                       className="h-full w-full"
                     />
                   )}
