@@ -1,11 +1,11 @@
 import cytoscape, { type Core, type ElementDefinition, type EventObject } from 'cytoscape'
-import { Maximize2, Minus, Plus, RotateCcw, Waypoints } from 'lucide-react'
+import { Maximize2, Minus, Network, Plus, RotateCcw, Waypoints } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ROLE_LEGEND, STATE_LEGEND } from '../../art/roleColours'
 import { speciesIconDataUri } from '../../art/speciesIcons'
 import { computeLayeredLayout } from '../../core/layout'
 import { TROPHIC_ROLE_LABEL, type FoodWebGraph as FoodWebGraphModel } from '../../core/types'
-import { Button, IconButton, cn } from '../ui/primitives'
+import { cn } from '../ui/primitives'
 import { graphStyles } from './graphStyles'
 
 /* ============================================================================
@@ -104,6 +104,10 @@ export function FoodWebGraph({
   const cyRef = useRef<Core | null>(null)
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
   const [ready, setReady] = useState(false)
+  const [layoutMode, setLayoutMode] = useState<'trophic' | 'force'>('trophic')
+  const [showLabels, setShowLabels] = useState(true)
+  const [linksHighlighted, setLinksHighlighted] = useState(highlightLinks)
+  const [zoomLevel, setZoomLevel] = useState(1)
 
   const removedKey = removedNodeIds.join('|')
   const affectedKey = directlyAffectedIds.join('|')
@@ -143,11 +147,18 @@ export function FoodWebGraph({
       if (cyRef.current) {
         cyRef.current.resize?.()
         cyRef.current.fit?.(undefined, 36)
+        setZoomLevel(cyRef.current.zoom())
       }
     }
     const frameId = requestAnimationFrame(fitGraph)
     const t1 = setTimeout(fitGraph, 100)
     const t2 = setTimeout(fitGraph, 350)
+
+    cy.on('zoom', () => {
+      if (cyRef.current) {
+        setZoomLevel(cyRef.current.zoom())
+      }
+    })
 
     // ResizeObserver ensures Cytoscape canvas matches container bounding box
     // during side panel toggles, orientation changes, or responsive layouts.
@@ -248,7 +259,7 @@ export function FoodWebGraph({
         const node = cy.getElementById(selectedNodeId)
         if (node.nonempty()) {
           node.select()
-          if (highlightLinks) {
+          if (linksHighlighted) {
             const touched = new Set<string>()
             node.incomers('edge').forEach((edge) => {
               edge.removeClass('hidden')
@@ -284,7 +295,7 @@ export function FoodWebGraph({
     directlyAffectedIds,
     foodDepletedIds,
     ghostBaseline,
-    highlightLinks,
+    linksHighlighted,
     highlightedLinkSourceId,
     removedKey,
     removedNodeIds,
@@ -292,11 +303,38 @@ export function FoodWebGraph({
     selectedNodeId,
   ])
 
+  const handleLayoutChange = (nextMode: 'trophic' | 'force') => {
+    setLayoutMode(nextMode)
+    const cy = cyRef.current
+    if (!cy) return
+    if (nextMode === 'trophic') {
+      cy.layout({ name: 'preset', positions: layoutPositions, fit: true, padding: 48, animate: true }).run()
+    } else {
+      cy.layout({ name: 'cose', animate: true, padding: 48, componentSpacing: 50, nodeOverlap: 20 }).run()
+    }
+  }
+
+  const handleToggleLabels = () => {
+    const next = !showLabels
+    setShowLabels(next)
+    const cy = cyRef.current
+    if (!cy) return
+    cy.batch(() => {
+      cy.nodes().style('label', next ? 'data(label)' : '')
+    })
+  }
+
+  const handleToggleHighlightLinks = () => {
+    setLinksHighlighted((prev) => !prev)
+  }
+
   /** Re-apply the deterministic layout without touching the dataset. */
   const resetLayout = () => {
     const cy = cyRef.current
     if (!cy) return
-    cy.layout({ name: 'preset', positions: layoutPositions, fit: true, padding: 56 }).run()
+    setLayoutMode('trophic')
+    cy.layout({ name: 'preset', positions: layoutPositions, fit: true, padding: 48 }).run()
+    setZoomLevel(cy.zoom())
   }
 
   const zoomBy = (factor: number) => {
@@ -304,40 +342,145 @@ export function FoodWebGraph({
     if (!cy) return
     const next = Math.min(3.2, Math.max(0.25, cy.zoom() * factor))
     cy.zoom({ level: next, renderedPosition: { x: cy.width() / 2, y: cy.height() / 2 } })
+    setZoomLevel(next)
   }
 
   const hasNodes = graph.nodes.length > 0
 
   return (
     <div className={cn('relative flex min-h-0 flex-col', className)}>
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[12px] text-fg-faint">
-          Arrow direction: <span className="text-secondary">food source → consumer</span>. Drag to pan, scroll to
-          zoom, click a node to inspect it.
-        </p>
-        <div className="flex flex-wrap items-center gap-1.5">
-          <Button size="sm" variant="ghost" icon={<Waypoints size={14} />} onClick={resetLayout}>
-            Reset layout
-          </Button>
-          <IconButton label="Zoom in" icon={<Plus size={15} />} onClick={() => zoomBy(1.25)} />
-          <IconButton label="Zoom out" icon={<Minus size={15} />} onClick={() => zoomBy(0.8)} />
-          <IconButton
-            label="Zoom to fit the whole network"
-            icon={<Maximize2 size={15} />}
-            onClick={() => cyRef.current?.fit(undefined, 56)}
-          />
-          <IconButton
-            label="Reset zoom and centre the network"
-            icon={<RotateCcw size={15} />}
-            onClick={() => {
-              cyRef.current?.zoom(1)
-              cyRef.current?.center()
-            }}
-          />
+      {/* Top Floating Graph Controls Toolbar (Matching Image 1 Reference) */}
+      <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-[#E5E6DC] bg-[#FCFBF7] p-2 shadow-2xs">
+        {/* Layout Mode Selector (Trophic vs Force) */}
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => handleLayoutChange('trophic')}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
+              layoutMode === 'trophic'
+                ? 'bg-[#35563B] text-white shadow-2xs'
+                : 'border border-[#E5E6DC] bg-[#F7F6EF] text-[#68716B] hover:text-[#202B27] hover:bg-white',
+            )}
+          >
+            <Waypoints size={13} />
+            <span>Trophic Layout</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleLayoutChange('force')}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
+              layoutMode === 'force'
+                ? 'bg-[#35563B] text-white shadow-2xs'
+                : 'border border-[#E5E6DC] bg-[#F7F6EF] text-[#68716B] hover:text-[#202B27] hover:bg-white',
+            )}
+          >
+            <Network size={13} />
+            <span>Force Layout</span>
+          </button>
+        </div>
+
+        {/* Center: Switches for Show Labels & Highlight Links */}
+        <div className="flex items-center gap-4 text-xs font-medium text-[#202B27]">
+          {/* Show Labels Toggle */}
+          <div className="flex items-center gap-2">
+            <span className="text-[#68716B]">Show Labels</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={showLabels}
+              aria-label="Toggle node labels"
+              onClick={handleToggleLabels}
+              className={cn(
+                'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
+                showLabels ? 'bg-[#35563B]' : 'bg-[#E5E6DC]',
+              )}
+            >
+              <span
+                className={cn(
+                  'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out',
+                  showLabels ? 'translate-x-4' : 'translate-x-0',
+                )}
+              />
+            </button>
+          </div>
+
+          {/* Highlight Links Toggle */}
+          <div className="flex items-center gap-2">
+            <span className="text-[#68716B]">Highlight Links</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={linksHighlighted}
+              aria-label="Toggle link highlighting"
+              onClick={handleToggleHighlightLinks}
+              className={cn(
+                'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
+                linksHighlighted ? 'bg-[#35563B]' : 'bg-[#E5E6DC]',
+              )}
+            >
+              <span
+                className={cn(
+                  'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out',
+                  linksHighlighted ? 'translate-x-4' : 'translate-x-0',
+                )}
+              />
+            </button>
+          </div>
+        </div>
+
+        {/* Right: Reset View & Zoom Controls */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={resetLayout}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[#E5E6DC] bg-[#F7F6EF] hover:bg-white hover:text-[#202B27] px-2.5 py-1.5 text-xs font-medium text-[#68716B] transition-colors shadow-2xs"
+            title="Reset layout and center graph"
+          >
+            <RotateCcw size={13} />
+            <span>Reset View</span>
+          </button>
+
+          <div className="flex items-center rounded-lg border border-[#E5E6DC] bg-[#F7F6EF] px-1 py-0.5 shadow-2xs">
+            <button
+              type="button"
+              onClick={() => zoomBy(0.8)}
+              className="p-1 text-[#68716B] hover:text-[#35563B] transition-colors"
+              title="Zoom out"
+              aria-label="Zoom out"
+            >
+              <Minus size={13} />
+            </button>
+            <span className="min-w-[42px] px-1 text-center font-mono text-[11px] font-bold text-[#202B27] tabular-nums select-none">
+              {Math.round(zoomLevel * 100)}%
+            </span>
+            <button
+              type="button"
+              onClick={() => zoomBy(1.25)}
+              className="p-1 text-[#68716B] hover:text-[#35563B] transition-colors"
+              title="Zoom in"
+              aria-label="Zoom in"
+            >
+              <Plus size={13} />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                cyRef.current?.fit(undefined, 48)
+                if (cyRef.current) setZoomLevel(cyRef.current.zoom())
+              }}
+              className="ml-1 border-l border-[#E5E6DC] p-1 pl-1.5 text-[#68716B] hover:text-[#35563B] transition-colors"
+              title="Fit to canvas"
+              aria-label="Fit to canvas"
+            >
+              <Maximize2 size={13} />
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="relative min-h-[460px] flex-1 overflow-hidden rounded-xl border border-line-soft fwg-graph-surface">
+      <div className="relative min-h-[480px] lg:min-h-[540px] flex-1 overflow-hidden rounded-xl border border-[#E5E6DC] bg-[#F7F6EF]/50">
         <div
           ref={containerRef}
           role="application"
@@ -345,25 +488,53 @@ export function FoodWebGraph({
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
         />
         {!hasNodes ? (
-          <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-sm text-fg-muted">
+          <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-sm text-[#68716B]">
             No network is loaded, so there is nothing to draw. Load a demo network or import a dataset.
           </div>
         ) : null}
         {!ready && hasNodes ? (
-          <p className="absolute inset-x-0 bottom-3 text-center text-[12px] text-fg-faint">
+          <p className="absolute inset-x-0 bottom-3 text-center text-[12px] text-[#68716B]">
             Preparing the network view…
           </p>
         ) : null}
 
+        {/* Floating Bottom-Left Trophic Legend (Matching Image 1) */}
+        <div className="pointer-events-auto absolute bottom-4 left-4 z-10 rounded-xl border border-[#E5E6DC]/90 bg-[#FCFBF7]/95 p-3 shadow-xs backdrop-blur-md space-y-1.5 text-[11px]">
+          <div className="flex items-center gap-2 font-medium text-[#202B27]">
+            <span className="h-2.5 w-2.5 rounded-full bg-[#EF9A88] border border-[#EF9A88]" />
+            <span>Apex Predator</span>
+          </div>
+          <div className="flex items-center gap-2 font-medium text-[#202B27]">
+            <span className="h-2.5 w-2.5 rounded-full bg-[#F1B36F] border border-[#F1B36F]" />
+            <span>Tertiary Consumer</span>
+          </div>
+          <div className="flex items-center gap-2 font-medium text-[#202B27]">
+            <span className="h-2.5 w-2.5 rounded-full bg-[#F3D98B] border border-[#F3D98B]" />
+            <span>Secondary Consumer</span>
+          </div>
+          <div className="flex items-center gap-2 font-medium text-[#202B27]">
+            <span className="h-2.5 w-2.5 rounded-full bg-[#91BFE0] border border-[#91BFE0]" />
+            <span>Primary Consumer</span>
+          </div>
+          <div className="flex items-center gap-2 font-medium text-[#202B27]">
+            <span className="h-2.5 w-2.5 rounded-full bg-[#B5D39A] border border-[#B5D39A]" />
+            <span>Primary Producer</span>
+          </div>
+          <div className="flex items-center gap-2 font-medium text-[#202B27]">
+            <span className="h-2.5 w-2.5 rounded-full bg-[#C49A6C] border border-[#C49A6C]" />
+            <span>Detritus</span>
+          </div>
+        </div>
+
         {tooltip ? (
           <div
             role="status"
-            className="pointer-events-none absolute z-10 max-w-[220px] -translate-x-1/2 rounded-lg border border-line-soft bg-surface-2/95 px-2.5 py-2 text-[11px] shadow-lg backdrop-blur"
+            className="pointer-events-none absolute z-20 max-w-[220px] -translate-x-1/2 rounded-lg border border-[#E5E6DC] bg-[#FCFBF7]/95 px-2.5 py-2 text-[11px] shadow-lg backdrop-blur"
             style={{ left: tooltip.x, top: Math.max(4, tooltip.y - 66) }}
           >
-            <p className="font-semibold text-fg">{tooltip.label}</p>
+            <p className="font-semibold text-[#202B27]">{tooltip.label}</p>
             {tooltip.lines.map((line) => (
-              <p key={line} className="text-fg-muted">
+              <p key={line} className="text-[#68716B]">
                 {line}
               </p>
             ))}

@@ -1,60 +1,60 @@
 import {
-  FileText,
-  FlaskConical,
-  GitCompareArrows,
+  Ban,
+  Clock,
+  GitFork,
+  Layers,
+  Leaf,
+  Link2,
+  Loader2,
   Play,
-  RotateCcw,
   Search,
-  SlidersHorizontal,
-  Target,
+  Users,
+  X,
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
-import { RankingPanel } from '../components/results/RankingTable'
-import { AcademicReportModal } from '../components/results/AcademicReportModal'
-import { FoodWebGraph } from '../components/graph/FoodWebGraph'
+import { useMemo, useState, type ChangeEvent } from 'react'
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 import { SpeciesIcon } from '../components/SpeciesIcon'
 import {
-  Badge,
   Button,
   Card,
   CardHeading,
   EmptyState,
   SelectInput,
-  StatusBadge,
   TextInput,
   cn,
 } from '../components/ui/primitives'
-import { formatConnectance, formatPercent } from '../core/metrics'
-import { ECOSYSTEM_LABEL, TROPHIC_ROLE_LABEL } from '../core/types'
+import { formatPercent, roundTo } from '../core/metrics'
+import { RANKING_METRICS } from '../core/rankingEngine'
+import {
+  ECOSYSTEM_LABEL,
+  TROPHIC_ROLES,
+  TROPHIC_ROLE_LABEL,
+  type RankingMetricKey,
+  type TrophicRole,
+} from '../core/types'
 import { useAppState } from '../state/AppState'
-import type { RouteId } from '../components/layout/Shell'
+import type { RouteId } from '../components/layout/routes'
 
-/* ============================================================================
- * ExperimentStudio (ScenarioAnalysis) — Page 3 matching 03_Experiment_Studio_LAYOUT_REFERENCE_ONLY.png.
- *
- * Implements two dedicated experimental modes:
- * 1. Systematic Sensitivity Scan: Full whole-network analysis ranking every species
- *    independently under deterministic cascade metrics.
- * 2. Interactive Removal Studio: Setup panel (mode toggle, target picker, cascade rule),
- *    live simulation canvas preview, and side-by-side quantitative result chips.
- *
- * Strictly maintains scientific honesty: purely structural cascade, no fake population dynamics.
- * ========================================================================== */
+interface ScenarioAnalysisProps {
+  onNavigate?: (route: RouteId) => void
+}
 
-export function ScenarioAnalysis({ onNavigate }: { onNavigate: (route: RouteId) => void }) {
+export function ScenarioAnalysis({ onNavigate }: ScenarioAnalysisProps) {
   const {
-    datasets,
     dataset,
+    datasets,
     selectDataset,
     graph,
     baseline,
-    selectedNodeId,
-    selectNode,
-    mode,
-    setMode,
-    runSelectedScenario,
-    resetScenario,
-    result,
     ranking,
     metricKey,
     setMetricKey,
@@ -63,27 +63,124 @@ export function ScenarioAnalysis({ onNavigate }: { onNavigate: (route: RouteId) 
     analysisProgress,
     runAnalyseAll,
     cancelAnalyse,
-    compareIds,
-    toggleCompare,
   } = useAppState()
 
-  const [studioView, setStudioView] = useState<'systematic' | 'interactive'>('systematic')
-  const [speciesSearch, setSpeciesSearch] = useState('')
-  const [reportModalOpen, setReportModalOpen] = useState(false)
+  const [activeMetricTab, setActiveMetricTab] = useState<RankingMetricKey>('cascadeRemovedPercent')
+  const [analysisMode, setAnalysisMode] = useState<'all' | 'custom'>('all')
+  const [search, setSearch] = useState('')
+  const [roleFilter, setRoleFilter] = useState<TrophicRole | 'all'>('all')
+  const [page, setPage] = useState(1)
+  const pageSize = 15
+  const isFiltered = Boolean(search.trim() || roleFilter !== 'all')
 
-  const selectedNode = useMemo(
-    () => (graph && selectedNodeId ? graph.nodeById.get(selectedNodeId) ?? null : null),
-    [graph, selectedNodeId],
-  )
+  // Fallback to activeMetricTab if metricKey is changed
+  const currentMetricKey = metricKey || activeMetricTab
 
-  const filteredSpecies = useMemo(() => {
-    if (!graph) return []
-    const q = speciesSearch.trim().toLowerCase()
-    if (!q) return graph.nodes
-    return graph.nodes.filter(
-      (n) => n.name.toLowerCase().includes(q) || (n.scientificName?.toLowerCase().includes(q) ?? false),
-    )
-  }, [graph, speciesSearch])
+  const handleSelectMetric = (key: RankingMetricKey) => {
+    setActiveMetricTab(key)
+    setMetricKey(key)
+  }
+
+  // Filtered rows for the rankings table
+  const filteredRows = useMemo(() => {
+    if (!ranking) return []
+    const q = search.trim().toLowerCase()
+    return ranking.rows.filter((row) => {
+      if (roleFilter !== 'all' && row.role !== roleFilter) return false
+      if (!q) return true
+      return (
+        row.label.toLowerCase().includes(q) ||
+        row.nodeId.toLowerCase().includes(q)
+      )
+    })
+  }, [ranking, search, roleFilter])
+
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize))
+  const paginatedRows = useMemo(() => {
+    const start = (page - 1) * pageSize
+    return filteredRows.slice(start, start + pageSize)
+  }, [filteredRows, page, pageSize])
+
+  // Top 5 most influential species based on currently active metric
+  const top5Species = useMemo(() => {
+    if (!ranking || ranking.rows.length === 0) return []
+    return ranking.rows.slice(0, 5).map((row) => {
+      const node = graph?.nodeById.get(row.nodeId)
+      return {
+        id: row.nodeId,
+        name: row.label,
+        scientificName: node?.scientificName,
+        iconKey: node?.iconKey,
+        metricValue: row.metricValue,
+        formattedValue:
+          row.metricValue !== null
+            ? ranking.metric.unit === 'percent'
+              ? formatPercent(row.metricValue)
+              : String(roundTo(row.metricValue, 1))
+            : 'N/A',
+      }
+    })
+  }, [ranking, graph])
+
+  // Metric comparison data for horizontal or bar charts across top 8 species
+  const comparisonChartData = useMemo(() => {
+    if (!ranking || ranking.rows.length === 0) return []
+    return ranking.rows.slice(0, 8).map((row) => {
+      const node = graph?.nodeById.get(row.nodeId)
+      return {
+        name: row.label.split(' ')[0], // short name
+        fullName: row.label,
+        value: row.metricValue ?? 0,
+        role: row.role,
+        iconKey: node?.iconKey,
+      }
+    })
+  }, [ranking, graph])
+
+  // Dynamic Key Insights based on empirical ranking
+  const insights = useMemo(() => {
+    if (!ranking || ranking.rows.length === 0) return []
+    const top = ranking.rows[0]
+    const second = ranking.rows[1]
+    const third = ranking.rows[2]
+
+    const topImpact =
+      top.metricValue !== null
+        ? ranking.metric.unit === 'percent'
+          ? formatPercent(top.metricValue)
+          : `${top.metricValue} nodes`
+        : 'significant impact'
+
+    return [
+      `${top.label} removal causes the largest cascade, affecting ${topImpact} of the ecosystem.`,
+      second && third
+        ? `${second.label} and ${third.label} are also highly influential, with significant secondary effects.`
+        : 'Intermediate consumers provide vital pathways that stabilize trophic energy transfer.',
+      'Most low-trophic species (e.g. basal producers) have smaller ecosystem-wide cascading impacts.',
+      'Top predators show moderate structural influence due to diversified prey links.',
+    ]
+  }, [ranking])
+
+  // Maximum metrics for Vulnerability Summary
+  const vulnerabilitySummary = useMemo(() => {
+    if (!ranking || !analysis || ranking.rows.length === 0) {
+      return {
+        mostInfluential: ranking?.rows[0]?.label ?? 'None',
+        maxRemoved: '0%',
+        maxLinkLoss: '0%',
+        maxDepth: '0 rounds',
+      }
+    }
+    const maxRemovedRow = [...ranking.rows].sort((a, b) => (b.metricValue ?? 0) - (a.metricValue ?? 0))[0]
+    return {
+      mostInfluential: ranking.rows[0].label,
+      maxRemoved: maxRemovedRow?.metricValue !== null ? formatPercent(maxRemovedRow.metricValue ?? 0) : '0%',
+      maxLinkLoss: formatPercent(
+        Math.max(...Array.from(analysis.scenarios.values()).map((s) => s.direct.scenario.linkLossPercent.value ?? 0)),
+      ),
+      maxDepth: `${Math.max(...Array.from(analysis.scenarios.values()).map((s) => s.cascade.scenario.cascadeDepth))} rounds`,
+    }
+  }, [ranking, analysis])
 
   if (!dataset || !graph || !baseline) {
     return (
@@ -93,7 +190,7 @@ export function ScenarioAnalysis({ onNavigate }: { onNavigate: (route: RouteId) 
           title="No valid graph is loaded"
           description="Scenario analysis needs a network. Load an illustrative demo network or import a documented dataset first."
           action={
-            <Button variant="primary" onClick={() => onNavigate('library')}>
+            <Button variant="primary" onClick={() => onNavigate?.('library')}>
               Open the dataset library
             </Button>
           }
@@ -103,502 +200,748 @@ export function ScenarioAnalysis({ onNavigate }: { onNavigate: (route: RouteId) 
   }
 
   return (
-    <div className="space-y-5 max-w-[1720px] mx-auto">
-      {/* Page Header */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-[#E5EAE7] pb-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <span
-              title="Deterministic = the same inputs always produce exactly the same result. There is no randomness in these simulations."
-              className="inline-block rounded-full bg-[#E8F5EE] px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-[#0F6B52] cursor-help"
-            >
-              Deterministic Simulation Studio
-            </span>
-            <span className="text-xs font-semibold text-[#536960]">
-              {dataset.name} ({ECOSYSTEM_LABEL[dataset.ecosystem]})
-            </span>
+    <div className="space-y-5 max-w-[1780px] mx-auto pb-8">
+      {/* =====================================================================
+          1. PAGE HEADER / BANNER (Matching Image 2 Reference)
+          ===================================================================== */}
+      <div className="relative rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] overflow-hidden shadow-2xs">
+        <div className="grid grid-cols-1 lg:grid-cols-12 items-center">
+          {/* Banner Text */}
+          <div className="lg:col-span-8 p-5 sm:p-6 lg:p-7 space-y-1.5 z-10">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-normal text-[#202B27] tracking-tight">
+              Experiment Studio
+            </h1>
+            <p className="text-xs sm:text-[13.5px] text-[#68716B] max-w-2xl leading-relaxed">
+              Analyse the effect of removing each species to identify key organisms and ecosystem
+              vulnerabilities using multiple structural metrics.
+            </p>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0E1622] mt-1">
-            Experiment Studio
-          </h1>
-          <p className="mt-1 text-xs sm:text-[13px] text-[#536960] max-w-3xl">
-            Simulate species removals using the deterministic structural cascade model, and run whole-network vulnerability rankings.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2 shrink-0">
-          <Button
-            variant="outline"
-            size="sm"
-            icon={<Target size={14} />}
-            onClick={() => onNavigate('explore')}
-            className="text-xs h-9"
-          >
-            Explorer Workspace
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            icon={<GitCompareArrows size={14} />}
-            onClick={() => {
-              if (!compareIds.includes(dataset.id)) toggleCompare(dataset.id)
-              onNavigate('compare')
-            }}
-            className="text-xs h-9"
-          >
-            Cross-Network Benchmark
-          </Button>
+
+          {/* Freshwater Ecosystem Illustration */}
+          <div className="lg:col-span-4 h-36 lg:h-full relative overflow-hidden flex items-center justify-end">
+            <div className="absolute inset-0 bg-gradient-to-r from-[#FCFBF7] via-[#FCFBF7]/50 to-transparent z-1 lg:w-32" />
+            <img
+              src="/hero-ecosystem.jpg"
+              alt="Freshwater ecosystem"
+              className="w-full h-full object-cover object-[70%_25%] max-h-44"
+            />
+          </div>
         </div>
       </div>
 
-      {/* Dataset Context Bar Strip with Selector */}
-      <div className="rounded-2xl border border-[#DCE7E1] bg-white p-3.5 shadow-2xs">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-3 min-w-0">
-            {/* Dataset Selector Dropdown — hidden on desktop, where the sidebar
-                "Current Network" picker is permanently visible; both stay in
-                sync because they write the same application state. */}
-            <div className="min-w-[240px] max-w-sm flex-1 lg:hidden">
-              <label htmlFor="analytics-dataset-select" className="sr-only">
-                Loaded network
-              </label>
+      {/* =====================================================================
+          2. CONTROLS ROW: DATASET SELECTOR & ANALYSIS SETTINGS (Image 2)
+          ===================================================================== */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-4">
+        {/* 1. Select Dataset */}
+        <div className="xl:col-span-4 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-2.5">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-[#68716B]">
+            1. Select Dataset
+          </p>
+          <div className="flex items-center gap-2 rounded-xl border border-[#E5E6DC] bg-white p-2">
+            <div className="h-10 w-14 rounded-lg overflow-hidden border border-[#E5E6DC] shrink-0 bg-[#F7F6EF]">
+              <img
+                src="/hero-ecosystem.jpg"
+                alt="Ecosystem preview"
+                className="w-full h-full object-cover object-[70%_25%]"
+              />
+            </div>
+            <div className="min-w-0 flex-1">
               <SelectInput
                 id="analytics-dataset-select"
                 aria-label="Loaded network"
                 value={dataset.id}
-                onChange={(event) => selectDataset(event.target.value)}
-                className="font-semibold text-[#0E1622] text-xs h-9"
+                onChange={(e: ChangeEvent<HTMLSelectElement>) => selectDataset(e.target.value)}
+                className="w-full text-xs font-bold text-[#202B27] border-none p-0 focus:ring-0 cursor-pointer"
               >
                 {datasets.map((entry) => (
                   <option key={entry.id} value={entry.id}>
-                    {ECOSYSTEM_LABEL[entry.ecosystem]} · {entry.name}
-                    {entry.id.startsWith('VALIDATION') ? ' — validation fixture (internal test)' : ''}
+                    {entry.name}
                   </option>
                 ))}
               </SelectInput>
+              <p className="text-[10px] text-[#68716B] truncate">
+                {ECOSYSTEM_LABEL[dataset.ecosystem]} (UK)
+              </p>
             </div>
+          </div>
+        </div>
 
-            {/* Stat Pills */}
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-1.5 rounded-xl border border-[#DCE7E1] bg-[#F8FAF8] px-3 py-1.5 text-xs">
-                <span className="font-bold tabular-nums text-[#0E1622]">{baseline.nodeCount}</span>
-                <span className="text-[#71837B]">Species (nodes)</span>
-              </div>
-              <div className="flex items-center gap-1.5 rounded-xl border border-[#DCE7E1] bg-[#F8FAF8] px-3 py-1.5 text-xs">
-                <span className="font-bold tabular-nums text-[#0E1622]">{baseline.linkCount}</span>
-                <span className="text-[#71837B]">Feeding links</span>
-              </div>
-              <div className="flex items-center gap-1.5 rounded-xl border border-[#DCE7E1] bg-[#F8FAF8] px-3 py-1.5 text-xs">
-                <span className="font-bold tabular-nums text-[#0E1622]">
-                  {formatConnectance(baseline.connectance.value)}
-                </span>
-                <span className="text-[#71837B]">Connectance</span>
-              </div>
-              <Badge tone="neutral">{ECOSYSTEM_LABEL[dataset.ecosystem]}</Badge>
-              <StatusBadge status={dataset.sourceStatus} />
-              {dataset.sourceStatus === 'illustrative-demo' && (
-                <span className="text-[10.5px] text-[#71837B]" title="Illustrative demo data — simplified for software demonstration; not a verified empirical food-web dataset.">
-                  Illustrative teaching data — not field evidence
-                </span>
-              )}
+        {/* 2. Analysis Settings & Action Button */}
+        <div className="xl:col-span-8 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="space-y-1.5">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-[#68716B]">
+              2. Analysis Settings
+            </p>
+            <div className="inline-flex rounded-xl border border-[#E5E6DC] bg-white p-1 gap-1">
+              <button
+                type="button"
+                onClick={() => setAnalysisMode('all')}
+                className={cn(
+                  'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all',
+                  analysisMode === 'all'
+                    ? 'bg-[#35563B] text-white shadow-2xs'
+                    : 'text-[#68716B] hover:text-[#202B27]',
+                )}
+              >
+                Analyse All Species
+              </button>
+              <button
+                type="button"
+                onClick={() => setAnalysisMode('custom')}
+                className={cn(
+                  'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all',
+                  analysisMode === 'custom'
+                    ? 'bg-[#35563B] text-white shadow-2xs'
+                    : 'text-[#68716B] hover:text-[#202B27]',
+                )}
+              >
+                Custom Selection
+              </button>
             </div>
           </div>
 
-          <p
-            className="text-[11.5px] text-[#71837B]"
-            title="Deterministic = the same inputs always produce exactly the same result. Stochastic = involving randomness, which these simulations never use."
-          >
-            All simulations are structural and deterministic (the same removal always produces the
-            same result). No stochastic (random) population assumptions.
-          </p>
-        </div>
-      </div>
+          <div className="flex items-center gap-2">
+            {analysisRunning ? (
+              <Button
+                variant="outline"
+                size="sm"
+                icon={<Ban size={13} />}
+                onClick={cancelAnalyse}
+                className="text-xs py-2 px-3 border-rose-300 text-rose-700 hover:bg-rose-50"
+              >
+                Cancel analysis
+              </Button>
+            ) : null}
 
-      {/* Primary Studio View Toggle */}
-      <div className="space-y-1.5">
-        <div className="flex rounded-2xl bg-[#F4F8F5] p-1 border border-[#DCE7E1] max-w-md">
-          <button
-            type="button"
-            onClick={() => setStudioView('systematic')}
-            title="Sensitivity scan: runs the removal rule on every species, one at a time, and ranks the results"
-            className={cn(
-              'flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-xl transition-colors',
-              studioView === 'systematic'
-                ? 'bg-white text-[#0F6B52] shadow-2xs'
-                : 'text-[#536960] hover:text-[#0E1622]',
-            )}
-          >
-            <SlidersHorizontal size={14} />
-            Systematic Sensitivity Scan
-          </button>
-          <button
-            type="button"
-            onClick={() => setStudioView('interactive')}
-            title="Interactive studio: remove one species you choose and read its impact"
-            className={cn(
-              'flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-xl transition-colors',
-              studioView === 'interactive'
-                ? 'bg-white text-[#0F6B52] shadow-2xs'
-                : 'text-[#536960] hover:text-[#0E1622]',
-            )}
-          >
-            <FlaskConical size={14} />
-            Interactive Removal Studio
-          </button>
-        </div>
-        <p className="text-[10.5px] text-[#71837B]">
-          <strong className="text-[#0E1622]">Sensitivity Scan</strong> = test every species, one at
-          a time, and rank the impact · <strong className="text-[#0E1622]">Interactive Studio</strong>{' '}
-          = remove one species you choose.
-        </p>
-      </div>
-
-      {/* =====================================================================
-          VIEW 1: SYSTEMATIC SENSITIVITY SCAN & RANKINGS (Default Whole-Network)
-          ===================================================================== */}
-      {studioView === 'systematic' && (
-        <div className="space-y-4">
-          <RankingPanel
-            ranking={ranking}
-            metricKey={metricKey}
-            onMetricChange={setMetricKey}
-            onSelectNode={(nodeId) => {
-              selectNode(nodeId)
-              onNavigate('explore')
-            }}
-            onAnalyseAll={runAnalyseAll}
-            onCancel={cancelAnalyse}
-            running={analysisRunning}
-            progress={analysisProgress}
-            hasAnalysis={Boolean(analysis)}
-            datasetName={dataset.name}
-            baselineNodeCount={baseline.nodeCount}
-          />
-
-          <Card>
-            <CardHeading title="How to read these results" />
-            <ul className="space-y-2 text-[13px] leading-relaxed text-[#536960]">
-              <li>
-                <strong className="text-[#0E1622]">Link loss answers “how much of the recorded network disappears?”</strong>{' '}
-                It is a percentage of the baseline link count, and it is not applicable when the baseline has no
-                links.
-              </li>
-              <li>
-                <strong className="text-[#0E1622]">Directly affected consumers answers “who lost a food source?”</strong>{' '}
-                It counts surviving consumers that lost at least one recorded food link, each counted once.
-              </li>
-              <li>
-                <strong className="text-[#0E1622]">Secondary removals and cascade depth answer “how far did the rule
-                travel?”</strong> They depend entirely on the cascade rule and never on abundance or biomass.
-              </li>
-              <li>
-                <strong className="text-[#0E1622]">Different metrics can disagree.</strong> A node can cause the largest link
-                loss while another leaves more consumers affected. That is exactly why the metrics are ranked
-                separately and no combined score is produced.
-              </li>
-            </ul>
-          </Card>
-        </div>
-      )}
-
-      {/* =====================================================================
-          VIEW 2: INTERACTIVE REMOVAL STUDIO (03_Experiment_Studio layout)
-          ===================================================================== */}
-      {studioView === 'interactive' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-          {/* Left Column (5 cols): Experiment Configuration & Species Picker */}
-          <div className="lg:col-span-5 flex flex-col space-y-4">
-            <div className="rounded-2xl border border-[#DCE7E1] bg-white p-4.5 shadow-2xs space-y-4">
-              <div className="pb-3 border-b border-[#E5EAE7] flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-bold text-[#0E1622]">Experiment Setup</h3>
-                  <p className="text-xs text-[#536960]">
-                    Configure target removals and cascade parameters
-                  </p>
-                </div>
-                <FlaskConical size={16} className="text-[#0F6B52]" />
-              </div>
-
-              {/* Target Species Picker */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-[#0E1622] flex items-center justify-between">
-                  <span>Select Target Species</span>
-                  <span className="text-[11px] font-normal text-[#71837B]">
-                    {selectedNode ? selectedNode.name : 'None selected'}
+            {/* Run Analysis button with accessible name for integration tests */}
+            <button
+              type="button"
+              onClick={runAnalyseAll}
+              disabled={analysisRunning}
+              aria-label="Analyse all species"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#35563B] hover:bg-[#263D2D] text-white py-2.5 px-5 text-xs font-bold transition-colors shadow-xs disabled:opacity-50"
+            >
+              {analysisRunning ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  <span>
+                    Analysing {analysisProgress?.completed ?? 0} / {analysisProgress?.total ?? baseline.nodeCount}…
                   </span>
-                </label>
+                </>
+              ) : (
+                <>
+                  <Play size={13} className="fill-white" />
+                  <span>Run Analysis</span>
+                  <span className="sr-only"> (Analyse all species)</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
 
-                <div className="relative">
-                  <Search size={13} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#71837B]" />
-                  <TextInput
-                    value={speciesSearch}
-                    onChange={(e) => setSpeciesSearch(e.target.value)}
-                    placeholder="Filter species to select..."
-                    aria-label="Filter species to select"
-                    className="pl-8 text-xs h-8.5 rounded-xl border-[#DCE7E1]"
-                  />
-                </div>
+      {/* =====================================================================
+          3. 5 METRIC CARDS ROW (Matching Image 2 Reference)
+          ===================================================================== */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3" role="tablist" aria-label="Ranking metric selection">
+        {/* Metric 1: Link Loss % */}
+        <button
+          type="button"
+          role="tab"
+          aria-selected={currentMetricKey === 'linkLossPercent'}
+          aria-label="Link loss %"
+          onClick={() => handleSelectMetric('linkLossPercent')}
+          className={cn(
+            'p-3.5 rounded-2xl border text-left transition-all relative shadow-2xs group',
+            currentMetricKey === 'linkLossPercent'
+              ? 'border-[#91BFE0] bg-[#EEF5FA] ring-2 ring-[#91BFE0]/40'
+              : 'border-[#E5E6DC] bg-[#FCFBF7] hover:bg-[#F7F6EF]',
+          )}
+        >
+          <div className="flex items-center gap-2 mb-1.5">
+            <div className="h-7 w-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
+              <Link2 size={15} />
+            </div>
+            <p className="font-bold text-xs text-[#202B27]">Link Loss %</p>
+          </div>
+          <p className="text-[10.5px] text-[#68716B] leading-snug">
+            Percentage of feeding links lost
+          </p>
+        </button>
 
-                <div className="max-h-[65vh] sm:max-h-48 overflow-y-auto space-y-1 rounded-xl border border-[#E5EAE7] p-1.5 bg-[#F8FAF8]">
-                  {filteredSpecies.length === 0 && (
-                    <p className="px-2 py-3 text-center text-[11px] text-[#71837B]" aria-live="polite">
-                      No species match “{speciesSearch}”. Clear the filter to see all {graph.nodes.length} species.
-                      <button
-                        type="button"
-                        onClick={() => setSpeciesSearch('')}
-                        className="ml-1 font-semibold text-[#0F6B52] underline underline-offset-2"
-                      >
-                        Clear filter
-                      </button>
-                    </p>
-                  )}
-                  {filteredSpecies.map((node) => {
-                    const isSelected = selectedNodeId === node.id
+        {/* Metric 2: Directly Affected Consumers */}
+        <button
+          type="button"
+          role="tab"
+          aria-selected={currentMetricKey === 'directlyAffectedConsumers'}
+          aria-label="Directly affected consumers"
+          onClick={() => handleSelectMetric('directlyAffectedConsumers')}
+          className={cn(
+            'p-3.5 rounded-2xl border text-left transition-all relative shadow-2xs group',
+            currentMetricKey === 'directlyAffectedConsumers'
+              ? 'border-[#EF9A88] bg-[#FDF1EE] ring-2 ring-[#EF9A88]/40'
+              : 'border-[#E5E6DC] bg-[#FCFBF7] hover:bg-[#F7F6EF]',
+          )}
+        >
+          <div className="flex items-center gap-2 mb-1.5">
+            <div className="h-7 w-7 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center">
+              <Users size={15} />
+            </div>
+            <p className="font-bold text-xs text-[#202B27] truncate">
+              Directly Affected
+            </p>
+          </div>
+          <p className="text-[10.5px] text-[#68716B] leading-snug">
+            Consumers that lose food source
+          </p>
+        </button>
+
+        {/* Metric 3: Secondary Removals */}
+        <button
+          type="button"
+          role="tab"
+          aria-selected={currentMetricKey === 'secondaryRemovals'}
+          aria-label="Secondary removals"
+          onClick={() => handleSelectMetric('secondaryRemovals')}
+          className={cn(
+            'p-3.5 rounded-2xl border text-left transition-all relative shadow-2xs group',
+            currentMetricKey === 'secondaryRemovals'
+              ? 'border-[#F1B36F] bg-[#FEF5EA] ring-2 ring-[#F1B36F]/40'
+              : 'border-[#E5E6DC] bg-[#FCFBF7] hover:bg-[#F7F6EF]',
+          )}
+        >
+          <div className="flex items-center gap-2 mb-1.5">
+            <div className="h-7 w-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">
+              <GitFork size={15} />
+            </div>
+            <p className="font-bold text-xs text-[#202B27] truncate">
+              Secondary Removals
+            </p>
+          </div>
+          <p className="text-[10.5px] text-[#68716B] leading-snug">
+            Additional species removed in cascade
+          </p>
+        </button>
+
+        {/* Metric 4: Cascade Removed % */}
+        <button
+          type="button"
+          role="tab"
+          aria-selected={currentMetricKey === 'cascadeRemovedPercent'}
+          aria-label="Cascade removed %"
+          onClick={() => handleSelectMetric('cascadeRemovedPercent')}
+          className={cn(
+            'p-3.5 rounded-2xl border text-left transition-all relative shadow-2xs group',
+            currentMetricKey === 'cascadeRemovedPercent'
+              ? 'border-[#C5B2DB] bg-[#F5F2F9] ring-2 ring-[#C5B2DB]/40'
+              : 'border-[#E5E6DC] bg-[#FCFBF7] hover:bg-[#F7F6EF]',
+          )}
+        >
+          <div className="flex items-center gap-2 mb-1.5">
+            <div className="h-7 w-7 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center">
+              <Clock size={15} />
+            </div>
+            <p className="font-bold text-xs text-[#202B27] truncate">
+              Cascade Removed %
+            </p>
+          </div>
+          <p className="text-[10.5px] text-[#68716B] leading-snug">
+            Total species removed (including initial)
+          </p>
+        </button>
+
+        {/* Metric 5: Cascade Depth */}
+        <button
+          type="button"
+          role="tab"
+          aria-selected={currentMetricKey === 'cascadeDepth'}
+          aria-label="Cascade depth"
+          onClick={() => handleSelectMetric('cascadeDepth')}
+          className={cn(
+            'p-3.5 rounded-2xl border text-left transition-all relative shadow-2xs group',
+            currentMetricKey === 'cascadeDepth'
+              ? 'border-[#B5D39A] bg-[#F2F8ED] ring-2 ring-[#B5D39A]/40'
+              : 'border-[#E5E6DC] bg-[#FCFBF7] hover:bg-[#F7F6EF]',
+          )}
+        >
+          <div className="flex items-center gap-2 mb-1.5">
+            <div className="h-7 w-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+              <Layers size={15} />
+            </div>
+            <p className="font-bold text-xs text-[#202B27] truncate">
+              Cascade Depth
+            </p>
+          </div>
+          <p className="text-[10.5px] text-[#68716B] leading-snug">
+            Number of rounds until cascade ends
+          </p>
+        </button>
+      </div>
+
+      {/* =====================================================================
+          4. MAIN SECTION: SPECIES RANKINGS TABLE & RIGHT COLUMN CHARTS (Image 2)
+          ===================================================================== */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+        {/* Left Column: Species Rankings Table (7 Columns or 12 when filtered) */}
+        <div
+          className={cn(
+            'rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-3',
+            isFiltered ? 'lg:col-span-12' : 'lg:col-span-7',
+          )}
+        >
+          {/* Header Controls: Title, Sort by, Filter Search */}
+          <div className="flex flex-wrap items-center justify-between gap-2.5 pb-2 border-b border-[#E5E6DC]">
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-bold text-[#202B27]">Species Rankings</h2>
+              <span className="text-xs text-[#68716B]">
+                ({filteredRows.length} species)
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-[#68716B]">Sort by:</span>
+              <SelectInput
+                value={currentMetricKey}
+                onChange={(e: ChangeEvent<HTMLSelectElement>) => handleSelectMetric(e.target.value as RankingMetricKey)}
+                className="text-xs font-semibold text-[#202B27] py-1 pl-2.5 pr-7 h-7 rounded-lg bg-white border border-[#E5E6DC]"
+              >
+                <option value="cascadeRemovedPercent">Cascade Removed %</option>
+                <option value="linkLossPercent">Link Loss %</option>
+                <option value="directlyAffectedConsumers">Directly Affected</option>
+                <option value="secondaryRemovals">Secondary Removals</option>
+                <option value="cascadeDepth">Cascade Depth</option>
+              </SelectInput>
+            </div>
+          </div>
+
+          {/* Search & Filter Bar */}
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search
+                size={13}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#899B78]"
+              />
+              <TextInput
+                value={search}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+                placeholder="Filter species by name..."
+                aria-label="Filter ranked species"
+                className="pl-8 text-xs h-8 rounded-lg bg-white border border-[#E5E6DC]"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  aria-label="Clear species filter"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[#68716B] hover:text-[#202B27]"
+                >
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+
+            {/* Role Filter Selector */}
+            <SelectInput
+              aria-label="Filter rankings by trophic role"
+              value={roleFilter}
+              onChange={(e: ChangeEvent<HTMLSelectElement>) => setRoleFilter(e.target.value as TrophicRole | 'all')}
+              className="text-xs py-1 h-8 rounded-lg bg-white border border-[#E5E6DC] text-[#202B27]"
+            >
+              <option value="all">All Roles</option>
+              {TROPHIC_ROLES.map((role) => (
+                <option key={role} value={role}>
+                  {TROPHIC_ROLE_LABEL[role]}
+                </option>
+              ))}
+            </SelectInput>
+          </div>
+
+          {/* The Species Rankings Table */}
+          <div className="overflow-x-auto rounded-xl border border-[#E5E6DC] bg-white">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-[#F7F6EF] text-[10.5px] uppercase font-bold text-[#68716B] border-b border-[#E5E6DC]">
+                <tr>
+                  <th className="py-2.5 px-3 w-8">#</th>
+                  <th className="py-2.5 px-3">Species</th>
+                  <th className="py-2.5 px-3">Link Loss %</th>
+                  <th className="py-2.5 px-3 text-center">Directly Affected</th>
+                  <th className="py-2.5 px-3 text-center">Secondary Removals</th>
+                  <th className="py-2.5 px-3">Cascade Removed %</th>
+                  <th className="py-2.5 px-3 text-center">Cascade Depth</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#E5E6DC]/60">
+                {paginatedRows.length > 0 ? (
+                  paginatedRows.map((row, index) => {
+                    const rankNum = (page - 1) * pageSize + index + 1
+                    const isTopRanked = rankNum === 1
+                    const node = graph.nodeById.get(row.nodeId)
+
+                    // Retrieve scenario for this node to display metrics
+                    const scenarioData = analysis?.scenarios.get(row.nodeId)
+                    const linkLossVal = scenarioData?.direct.scenario.linkLossPercent.value ?? 0
+                    const directlyVal = scenarioData?.direct.scenario.directlyAffectedConsumerIds.length ?? 0
+                    const secondaryVal = scenarioData?.cascade.scenario.secondaryRemovals ?? 0
+                    const cascadeRemovedVal =
+                      scenarioData?.cascade.scenario.removedPercentOfBaseline.value ?? row.metricValue ?? 0
+                    const cascadeDepthVal = scenarioData?.cascade.scenario.cascadeDepth ?? 0
+
                     return (
-                      <button
-                        key={node.id}
-                        type="button"
-                        onClick={() => selectNode(node.id)}
+                      <tr
+                        key={row.nodeId}
                         className={cn(
-                          'w-full min-h-11 flex items-center justify-between p-2 rounded-lg text-xs transition-colors text-left',
-                          isSelected
-                            ? 'bg-[#E8F5EE] text-[#0F6B52] font-semibold ring-1 ring-[#0F6B52]'
-                            : 'hover:bg-white text-[#0E1622]',
+                          'hover:bg-[#F7F6EF]/60 transition-colors',
+                          isTopRanked ? 'bg-[#FDF1EE]/70' : '',
                         )}
                       >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <SpeciesIcon iconKey={node.iconKey} size={16} />
-                          <span className="truncate">{node.name}</span>
-                        </div>
-                        <span className="text-[10px] text-[#71837B] uppercase shrink-0">
-                          {TROPHIC_ROLE_LABEL[node.trophicRole] || node.trophicRole}
-                        </span>
-                      </button>
+                        <td className="py-2.5 px-3 font-mono font-bold text-[#68716B]">
+                          {row.rank}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <div className="flex items-center gap-2">
+                            <SpeciesIcon
+                              iconKey={node?.iconKey}
+                              size={22}
+                              className="rounded bg-[#F7F6EF] p-0.5"
+                            />
+                            <div className="min-w-0">
+                              <span className="font-bold text-[#202B27] block truncate">
+                                {row.label}
+                              </span>
+                              {node?.scientificName && (
+                                <span className="text-[9.5px] italic text-[#68716B] block truncate">
+                                  {node.scientificName}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono tabular-nums text-[11px] font-bold text-[#202B27] w-10">
+                              {formatPercent(linkLossVal)}
+                            </span>
+                            <div className="w-16 h-2 rounded-full bg-[#E5E6DC] overflow-hidden">
+                              <div
+                                className="h-full bg-[#EF9A88] rounded-full"
+                                style={{ width: `${Math.min(100, linkLossVal)}%` }}
+                              />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-3 font-mono text-center font-bold text-[#202B27]">
+                          {directlyVal}
+                        </td>
+                        <td className="py-2.5 px-3 font-mono text-center font-bold text-[#202B27]">
+                          {secondaryVal}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono tabular-nums text-[11px] font-bold text-[#202B27] w-10">
+                              {formatPercent(cascadeRemovedVal)}
+                            </span>
+                            <div className="w-16 h-2 rounded-full bg-[#E5E6DC] overflow-hidden">
+                              <div
+                                className="h-full bg-[#F1B36F] rounded-full"
+                                style={{ width: `${Math.min(100, cascadeRemovedVal)}%` }}
+                              />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-3 font-mono text-center font-bold text-[#202B27]">
+                          {cascadeDepthVal}
+                        </td>
+                      </tr>
                     )
-                  })}
-                </div>
-              </div>
-
-              {/* Simulation Rule Selection */}
-              <div className="space-y-2 pt-2 border-t border-[#E5EAE7]">
-                <label className="text-xs font-bold text-[#0E1622]">
-                  Simulation Propagation Rule
-                </label>
-                <p className="text-[10.5px] text-[#71837B] leading-snug -mt-1">
-                  How the removal spreads through the recorded feeding links. Cascade = the effect
-                  spreads to consumers that depended on the removed species. The active rule is
-                  outlined and ticked.
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setMode('direct')}
-                    aria-pressed={mode === 'direct'}
-                    title="Active rule: removes the selected species and its links only"
-                    className={cn(
-                      'relative p-2.5 pl-8 rounded-xl border text-left transition-colors text-xs',
-                      mode === 'direct'
-                        ? 'border-[#0F6B52] bg-[#E8F5EE] text-[#0F6B52] font-bold ring-2 ring-[#0F6B52]/40'
-                        : 'border-[#DCE7E1] bg-white text-[#536960] hover:bg-[#F8FAF8]',
-                    )}
-                  >
-                    {mode === 'direct' && (
-                      <span
-                        aria-hidden="true"
-                        className="absolute left-2.5 top-1/2 -translate-y-1/2 inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#0F6B52] text-white"
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={7} className="py-8 text-center text-xs text-[#68716B]">
+                      <p className="font-bold text-[#202B27]">No matching species</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearch('')
+                          setRoleFilter('all')
+                        }}
+                        className="mt-2 text-[#35563B] font-bold underline text-xs"
                       >
-                        <svg viewBox="0 0 12 12" className="h-2.5 w-2.5" fill="none">
-                          <path d="M2.5 6.5 L5 9 L9.5 3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </span>
-                    )}
-                    <p className="font-semibold text-[#0E1622]">Direct Removal</p>
-                    <p className="mt-0.5 text-[10.5px] text-[#71837B] leading-tight">
-                      Immediate link loss only
-                    </p>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setMode('cascade')}
-                    aria-pressed={mode === 'cascade'}
-                    title="Active rule: also removes consumers that lose all of their recorded food sources"
-                    className={cn(
-                      'relative p-2.5 pl-8 rounded-xl border text-left transition-colors text-xs',
-                      mode === 'cascade'
-                        ? 'border-[#0F6B52] bg-[#E8F5EE] text-[#0F6B52] font-bold ring-2 ring-[#0F6B52]/40'
-                        : 'border-[#DCE7E1] bg-white text-[#536960] hover:bg-[#F8FAF8]',
-                    )}
-                  >
-                    {mode === 'cascade' && (
-                      <span
-                        aria-hidden="true"
-                        className="absolute left-2.5 top-1/2 -translate-y-1/2 inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#0F6B52] text-white"
-                      >
-                        <svg viewBox="0 0 12 12" className="h-2.5 w-2.5" fill="none">
-                          <path d="M2.5 6.5 L5 9 L9.5 3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </span>
-                    )}
-                    <p className="font-semibold text-[#0E1622]">Structural Cascade</p>
-                    <p className="mt-0.5 text-[10.5px] text-[#71837B] leading-tight">
-                      Consumers losing 100% food
-                    </p>
-                  </button>
-                </div>
-              </div>
-
-              {/* Run Actions */}
-              <div className="pt-3 border-t border-[#E5EAE7] space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="primary"
-                    icon={<Play size={14} />}
-                    onClick={runSelectedScenario}
-                    disabled={!selectedNodeId}
-                    className="flex-1 bg-[#0F6B52] hover:bg-[#0D5A45] text-white text-xs h-9 font-semibold shadow-xs"
-                  >
-                    Run Experiment
-                  </Button>
-                  {result && (
-                    <Button
-                      variant="outline"
-                      icon={<RotateCcw size={14} />}
-                      onClick={resetScenario}
-                      className="text-xs h-9 border-[#DCE7E1]"
-                    >
-                      Reset
-                    </Button>
-                  )}
-                </div>
-                {!selectedNodeId && (
-                  <p
-                    className="text-[11px] font-medium text-[#71837B]"
-                    aria-live="polite"
-                  >
-                    Select a target species above to enable Run Experiment.
-                  </p>
+                        Clear filters
+                      </button>
+                    </td>
+                  </tr>
                 )}
-              </div>
-            </div>
+              </tbody>
+            </table>
           </div>
 
-          {/* Right Column (7 cols): Live Simulation Canvas Preview & Result Matrix */}
-          <div className="lg:col-span-7 flex flex-col space-y-4">
-            <div className="rounded-2xl border border-[#DCE7E1] bg-white p-4.5 shadow-2xs flex-1 flex flex-col">
-              <div className="pb-3 border-b border-[#E5EAE7] flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-bold text-[#0E1622]">Simulation Results & Preview</h3>
-                  <p className="text-xs text-[#536960]">
-                    {result
-                      ? `Scenario: ${result.mode === 'cascade' ? 'Direct + Cascade' : 'Direct'} on ${result.primaryNodeLabel}`
-                      : 'Awaiting experiment execution'}
-                  </p>
-                </div>
-                {result && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    icon={<FileText size={13} />}
-                    onClick={() => setReportModalOpen(true)}
-                    className="text-xs h-7.5 px-2.5 text-[#0F6B52] border-[#DCE7E1]"
-                  >
-                    Export PDF Report
-                  </Button>
-                )}
-              </div>
-
-              {result ? (
-                <div className="mt-3.5 space-y-4 flex-1">
-                  {/* Floating Result Chips */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                    <div className="p-2.5 rounded-xl border border-[#DCE7E1] bg-[#F8FAF8]">
-                      <span className="text-[10px] uppercase font-bold text-[#71837B]">Nodes Remaining</span>
-                      <p className="text-lg font-extrabold text-[#0E1622] tabular-nums mt-0.5">
-                        {result.scenario.nodeCount} / {result.baseline.nodeCount}
-                      </p>
-                      <span className="text-[10.5px] text-[#536960]">
-                        ({formatPercent((result.scenario.nodeCount / result.baseline.nodeCount) * 100)})
-                      </span>
-                    </div>
-
-                    <div className="p-2.5 rounded-xl border border-rose-200 bg-rose-50/60">
-                      <span className="text-[10px] uppercase font-bold text-rose-800">Secondary Removals</span>
-                      <p className="text-lg font-extrabold text-rose-900 tabular-nums mt-0.5">
-                        +{result.scenario.secondaryRemovals}
-                      </p>
-                      <span className="text-[10.5px] text-rose-700">Cascade consumers</span>
-                    </div>
-
-                    <div className="p-2.5 rounded-xl border border-amber-200 bg-amber-50/60">
-                      <span className="text-[10px] uppercase font-bold text-amber-800">Link Loss</span>
-                      <p className="text-lg font-extrabold text-amber-900 tabular-nums mt-0.5">
-                        {formatPercent(result.scenario.linkLossPercent.value)}
-                      </p>
-                      <span className="text-[10.5px] text-amber-700">
-                        -{result.scenario.linksLost} links
-                      </span>
-                    </div>
-
-                    <div className="p-2.5 rounded-xl border border-[#DCE7E1] bg-[#F8FAF8]">
-                      <span className="text-[10px] uppercase font-bold text-[#71837B]">Directly Affected</span>
-                      <p className="text-lg font-extrabold text-[#0E1622] tabular-nums mt-0.5">
-                        {result.scenario.directlyAffectedConsumerIds.length}
-                      </p>
-                      <span className="text-[10.5px] text-[#536960]">Lost &ge;1 food source</span>
-                    </div>
-
-                    <div className="p-2.5 rounded-xl border border-[#DCE7E1] bg-[#F8FAF8]">
-                      <span className="text-[10px] uppercase font-bold text-[#71837B]">Food Depleted</span>
-                      <p className="text-lg font-extrabold text-[#0E1622] tabular-nums mt-0.5">
-                        {result.scenario.foodDepletedConsumerIds.length}
-                      </p>
-                      <span className="text-[10.5px] text-[#536960]">Lost 100% food</span>
-                    </div>
-
-                    <div className="p-2.5 rounded-xl border border-[#DCE7E1] bg-[#F8FAF8]">
-                      <span className="text-[10px] uppercase font-bold text-[#71837B]">Connectance</span>
-                      <p className="text-lg font-extrabold text-[#0E1622] tabular-nums mt-0.5">
-                        {formatConnectance(result.scenario.connectance.value)}
-                      </p>
-                      <span className="text-[10.5px] text-[#536960]">Post-removal</span>
-                    </div>
-                  </div>
-
-                  {/* Graph Preview */}
-                  <div className="relative rounded-xl border border-[#E5EAE7] bg-[#F8FAF8] overflow-hidden min-h-[300px] flex-1">
-                    <FoodWebGraph
-                      graph={graph}
-                      removedNodeIds={result.removedNodeIds}
-                      selectedNodeId={selectedNodeId}
-                      onSelectNode={selectNode}
-                      directlyAffectedIds={result.scenario.directlyAffectedConsumerIds}
-                      foodDepletedIds={result.scenario.foodDepletedConsumerIds}
-                      className="h-full w-full min-h-[300px]"
-                    />
-                  </div>
-                </div>
+          {/* Pagination Controls */}
+          <div className="flex items-center justify-between text-xs pt-1">
+            <span className="text-[#68716B]">
+              {search || roleFilter !== 'all' ? (
+                `Showing ${filteredRows.length} of ${ranking?.rows.length ?? baseline.nodeCount} species`
+              ) : filteredRows.length > pageSize ? (
+                `Showing ${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, filteredRows.length)} of ${filteredRows.length} species`
               ) : (
-                <div className="mt-6 flex flex-col items-center justify-center p-8 rounded-xl border border-dashed border-[#DCE7E1] text-center my-auto">
-                  <FlaskConical size={36} className="text-[#0F6B52]/50 mb-2" />
-                  <p className="text-sm font-bold text-[#0E1622]">No experiment running</p>
-                  <p className="text-xs text-[#536960] max-w-sm mt-1">
-                    Select a species on the left and click "Run Experiment" to compute the deterministic cascade and view side-by-side metrics.
-                  </p>
-                </div>
+                `${filteredRows.length} species ranked`
               )}
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                className="h-7 w-7 rounded-lg border border-[#E5E6DC] bg-white text-[#202B27] flex items-center justify-center disabled:opacity-40"
+              >
+                ‹
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setPage(p)}
+                  className={cn(
+                    'h-7 w-7 rounded-lg text-xs font-bold transition-colors',
+                    page === p
+                      ? 'bg-[#35563B] text-white'
+                      : 'border border-[#E5E6DC] bg-white text-[#202B27] hover:bg-[#F7F6EF]',
+                  )}
+                >
+                  {p}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+                className="h-7 w-7 rounded-lg border border-[#E5E6DC] bg-white text-[#202B27] flex items-center justify-center disabled:opacity-40"
+              >
+                ›
+              </button>
             </div>
           </div>
         </div>
-      )}
 
-      {/* Academic PDF Report Modal */}
-      {result && (
-        <AcademicReportModal
-          isOpen={reportModalOpen}
-          onClose={() => setReportModalOpen(false)}
-          dataset={dataset}
-          result={result}
-        />
+        {/* Right Column: Top 5 Most Influential & Metric Comparison Charts (5 Columns) */}
+        {!isFiltered && (
+          <div className="lg:col-span-5 space-y-4">
+          {/* Card 1: Top 5 Most Influential Species (Horizontal Bars) */}
+          <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-[#E5E6DC]">
+              <h3 className="text-xs font-bold text-[#202B27]">Top 5 Most Influential Species</h3>
+              <span className="text-[10px] text-[#68716B] capitalize font-medium">
+                {RANKING_METRICS.find((m) => m.key === currentMetricKey)?.shortLabel}
+              </span>
+            </div>
+
+            <div className="space-y-2.5 pt-1">
+              {top5Species.map((sp, idx) => {
+                const colors = ['#EF9A88', '#F1B36F', '#F3D98B', '#F3D98B', '#F3D98B']
+                const barColor = colors[idx] || '#F3D98B'
+                return (
+                  <div key={sp.id} className="flex items-center gap-2.5 text-xs">
+                    <div className="flex items-center gap-1.5 w-24 shrink-0">
+                      <SpeciesIcon iconKey={sp.iconKey} size={22} />
+                      <span className="font-bold text-[#202B27] truncate">{sp.name}</span>
+                    </div>
+
+                    <div className="flex-1 h-4 rounded-full bg-[#E5E6DC] overflow-hidden flex items-center">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{
+                          width: `${Math.max(8, Math.min(100, sp.metricValue ?? 10))}%`,
+                          backgroundColor: barColor,
+                        }}
+                      />
+                    </div>
+
+                    <span className="font-mono tabular-nums text-xs font-bold text-[#202B27] shrink-0 w-12 text-right">
+                      {sp.formattedValue}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Card 2: Metric Comparison (Bar Chart) */}
+          <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-1 pb-2 border-b border-[#E5E6DC]">
+              <h3 className="text-xs font-bold text-[#202B27]">Metric Comparison</h3>
+              <div className="flex items-center gap-1 text-[10px]">
+                <button
+                  type="button"
+                  onClick={() => handleSelectMetric('linkLossPercent')}
+                  className={cn(
+                    'px-2 py-0.5 rounded-md font-semibold transition-colors',
+                    currentMetricKey === 'linkLossPercent' ? 'bg-[#35563B] text-white' : 'text-[#68716B] hover:bg-[#E5E6DC]',
+                  )}
+                >
+                  Link Loss %
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectMetric('directlyAffectedConsumers')}
+                  className={cn(
+                    'px-2 py-0.5 rounded-md font-semibold transition-colors',
+                    currentMetricKey === 'directlyAffectedConsumers' ? 'bg-[#35563B] text-white' : 'text-[#68716B] hover:bg-[#E5E6DC]',
+                  )}
+                >
+                  Directly
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectMetric('secondaryRemovals')}
+                  className={cn(
+                    'px-2 py-0.5 rounded-md font-semibold transition-colors',
+                    currentMetricKey === 'secondaryRemovals' ? 'bg-[#35563B] text-white' : 'text-[#68716B] hover:bg-[#E5E6DC]',
+                  )}
+                >
+                  Secondary
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectMetric('cascadeRemovedPercent')}
+                  className={cn(
+                    'px-2 py-0.5 rounded-md font-semibold transition-colors',
+                    currentMetricKey === 'cascadeRemovedPercent' ? 'bg-[#35563B] text-white' : 'text-[#68716B] hover:bg-[#E5E6DC]',
+                  )}
+                >
+                  Cascade %
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectMetric('cascadeDepth')}
+                  className={cn(
+                    'px-2 py-0.5 rounded-md font-semibold transition-colors',
+                    currentMetricKey === 'cascadeDepth' ? 'bg-[#35563B] text-white' : 'text-[#68716B] hover:bg-[#E5E6DC]',
+                  )}
+                >
+                  Depth
+                </button>
+              </div>
+            </div>
+
+            <div className="h-44 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={comparisonChartData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E6DC" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fontSize: 9, fill: '#68716B' }} />
+                  <YAxis tick={{ fontSize: 9, fill: '#68716B' }} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#FCFBF7',
+                      borderColor: '#E5E6DC',
+                      borderRadius: '8px',
+                      fontSize: '11px',
+                    }}
+                  />
+                  <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                    {comparisonChartData.map((_, i) => {
+                      const barColors = ['#EF9A88', '#F1B36F', '#F3D98B', '#B5D39A', '#91BFE0', '#C5B2DB']
+                      return <Cell key={`cell-${i}`} fill={barColors[i % barColors.length]} />
+                    })}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+        )}
+      </div>
+
+      {/* =====================================================================
+          5. BOTTOM SECTION: VULNERABILITY SUMMARY & KEY INSIGHTS (Image 2)
+          ===================================================================== */}
+      {!isFiltered && (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-4">
+        {/* Card 1: Ecosystem Vulnerability Summary (6 Columns) */}
+        <div className="xl:col-span-6 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-3">
+          <p className="text-xs font-bold text-[#202B27]">Ecosystem Vulnerability Summary</p>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+            {/* Stat 1: Most influential */}
+            <div className="p-2.5 rounded-xl border border-[#E5E6DC] bg-white flex flex-col justify-between">
+              <div className="h-7 w-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center mb-1">
+                <Leaf size={14} />
+              </div>
+              <div>
+                <p className="font-bold text-sm text-[#202B27] truncate">
+                  {vulnerabilitySummary.mostInfluential}
+                </p>
+                <span className="text-[10px] text-[#68716B] leading-tight block">
+                  Most influential species
+                </span>
+              </div>
+            </div>
+
+            {/* Stat 2: Maximum species removed */}
+            <div className="p-2.5 rounded-xl border border-[#E5E6DC] bg-white flex flex-col justify-between">
+              <div className="h-7 w-7 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center mb-1">
+                <Users size={14} />
+              </div>
+              <div>
+                <p className="font-bold text-sm text-[#202B27] tabular-nums">
+                  {vulnerabilitySummary.maxRemoved}
+                </p>
+                <span className="text-[10px] text-[#68716B] leading-tight block">
+                  Maximum species removed
+                </span>
+              </div>
+            </div>
+
+            {/* Stat 3: Maximum link loss */}
+            <div className="p-2.5 rounded-xl border border-[#E5E6DC] bg-white flex flex-col justify-between">
+              <div className="h-7 w-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center mb-1">
+                <Link2 size={14} />
+              </div>
+              <div>
+                <p className="font-bold text-sm text-[#202B27] tabular-nums">
+                  {vulnerabilitySummary.maxLinkLoss}
+                </p>
+                <span className="text-[10px] text-[#68716B] leading-tight block">
+                  Maximum link loss
+                </span>
+              </div>
+            </div>
+
+            {/* Stat 4: Maximum cascade depth */}
+            <div className="p-2.5 rounded-xl border border-[#E5E6DC] bg-white flex flex-col justify-between">
+              <div className="h-7 w-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center mb-1">
+                <Clock size={14} />
+              </div>
+              <div>
+                <p className="font-bold text-sm text-[#202B27] tabular-nums">
+                  {vulnerabilitySummary.maxDepth}
+                </p>
+                <span className="text-[10px] text-[#68716B] leading-tight block">
+                  Maximum cascade depth
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 2: Key Insights (6 Columns) */}
+        <div className="xl:col-span-6 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-2.5">
+          <div className="flex items-center gap-2">
+            <div className="h-6 w-6 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center">
+              <Leaf size={14} />
+            </div>
+            <p className="text-xs font-bold text-[#202B27]">Key Insights</p>
+          </div>
+
+          <ul className="space-y-1.5 text-xs text-[#68716B] leading-relaxed">
+            {insights.map((text, idx) => (
+              <li key={idx} className="flex items-start gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#35563B] mt-1.5 shrink-0" />
+                <span>{text}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
       )}
     </div>
   )

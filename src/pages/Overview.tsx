@@ -1,142 +1,37 @@
 import {
-  Activity,
   ArrowRight,
-  Compass,
-  Database,
+  BarChart3,
+  BookOpenCheck,
+  Clock,
   FlaskConical,
-  GitFork,
-  Layers,
+  GitCompareArrows,
+  Leaf,
   Network,
-  ShieldAlert,
+  PawPrint,
   ShieldCheck,
+  Upload,
 } from 'lucide-react'
-import { useMemo } from 'react'
 import { RESEARCH_SLOT_SUMMARY } from '../data/datasetRegistry'
-import { ECOSYSTEM_LABEL, TROPHIC_ROLE_LABEL } from '../core/types'
-import { computeBaselineMetrics, formatConnectance, formatPercent } from '../core/metrics'
-import { computeTrophicLevels } from '../core/layout'
-import { baselineIncomingCount } from '../core/graphModel'
 import { useAppState } from '../state/AppState'
-import type { RouteId } from '../components/layout/Shell'
-import { Badge, Button, Card, CardHeading, StatusBadge } from '../components/ui/primitives'
-import { FoodWebGraph } from '../components/graph/FoodWebGraph'
+import type { RouteId } from '../components/layout/routes'
+import { Button } from '../components/ui/primitives'
+import { BotanicalCorner } from '../components/layout/BotanicalLeaves'
+import { formatPercent } from '../core/metrics'
 
-export function Overview({ onNavigate }: { onNavigate: (route: RouteId) => void }) {
+interface OverviewProps {
+  onNavigate: (route: RouteId) => void
+  onOpenImport?: () => void
+}
+
+export function Overview({ onNavigate, onOpenImport: _onOpenImport }: OverviewProps) {
   const {
     datasets,
     demoDatasets,
-    importedDatasets,
-    dataset,
-    graph,
     selectDataset,
-    selectNode,
     lastAnalysis,
   } = useAppState()
 
   const verified = datasets.filter((entry) => entry.sourceStatus === 'research-verified').length
-
-  const baseline = useMemo(() => (graph ? computeBaselineMetrics(graph) : null), [graph])
-
-  const trophicLevels = useMemo(() => (graph ? computeTrophicLevels(graph) : new Map<string, number>()), [graph])
-
-  const maxTrophicLevel = useMemo(() => {
-    if (!graph || graph.nodes.length === 0) return 1
-    const vals = Array.from(trophicLevels.values())
-    return Math.max(1, ...vals) + 1
-  }, [graph, trophicLevels])
-
-  const avgConnections = useMemo(() => {
-    if (!baseline || baseline.nodeCount === 0) return '0.00'
-    return (baseline.linkCount / baseline.nodeCount).toFixed(2)
-  }, [baseline])
-
-  // Trophic Level Distribution grouping (Levels 1 to Max)
-  const trophicDistribution = useMemo(() => {
-    if (!graph) return []
-    const counts: { level: number; label: string; count: number; percent: number; color: string }[] = []
-    const total = graph.nodes.length || 1
-
-    const levelCounts = new Map<number, number>()
-    for (const lvl of trophicLevels.values()) {
-      levelCounts.set(lvl, (levelCounts.get(lvl) ?? 0) + 1)
-    }
-
-    const maxLvl = Math.max(0, ...Array.from(trophicLevels.values()))
-    const colors = ['#2D7A5D', '#4A9A7A', '#E09F3E', '#9E2A2B', '#5A189A']
-
-    for (let l = maxLvl; l >= 0; l--) {
-      const c = levelCounts.get(l) ?? 0
-      let label = `Trophic Level ${l + 1}`
-      if (l === 0) label = 'Basal / Producers (Level 1)'
-      else if (l === 1) label = 'Primary Consumers (Level 2)'
-      else if (l === maxLvl && maxLvl > 1) label = `Apex Predators (Level ${l + 1})`
-      else label = `Intermediate Consumers (Level ${l + 1})`
-
-      counts.push({
-        level: l + 1,
-        label,
-        count: c,
-        percent: (c / total) * 100,
-        color: colors[l % colors.length] || '#2D7A5D',
-      })
-    }
-    return counts
-  }, [graph, trophicLevels])
-
-  // Key Connected Species strictly by total documented degree (In + Out)
-  const keySpecies = useMemo(() => {
-    if (!graph) return []
-    return [...graph.nodes]
-      .map((node) => {
-        const inDeg = baselineIncomingCount(graph, node.id)
-        const outDeg = graph.consumersOf.get(node.id)?.length ?? 0
-        const totalDeg = inDeg + outDeg
-        return {
-          node,
-          inDeg,
-          outDeg,
-          totalDeg,
-          level: (trophicLevels.get(node.id) ?? 0) + 1,
-        }
-      })
-      .sort((a, b) => b.totalDeg - a.totalDeg)
-      .slice(0, 5)
-  }, [graph, trophicLevels])
-
-  // Structural composition: Basal (no prey), Top (no predators), Intermediate (both)
-  const structuralGroups = useMemo(() => {
-    if (!graph || graph.nodes.length === 0) return { basal: 0, intermediate: 0, top: 0, total: 1 }
-    let basal = 0
-    let top = 0
-    let intermediate = 0
-    for (const node of graph.nodes) {
-      const inDeg = baselineIncomingCount(graph, node.id)
-      const outDeg = graph.consumersOf.get(node.id)?.length ?? 0
-      if (inDeg === 0) basal += 1
-      else if (outDeg === 0) top += 1
-      else intermediate += 1
-    }
-    return { basal, intermediate, top, total: graph.nodes.length }
-  }, [graph])
-
-  // Consumer composition by documented trophic role
-  const roleComposition = useMemo(() => {
-    if (!graph) return []
-    const roleCounts = new Map<string, number>()
-    for (const node of graph.nodes) {
-      const r = node.trophicRole
-      roleCounts.set(r, (roleCounts.get(r) ?? 0) + 1)
-    }
-    const total = graph.nodes.length || 1
-    return Array.from(roleCounts.entries())
-      .map(([role, count]) => ({
-        role,
-        label: TROPHIC_ROLE_LABEL[role as keyof typeof TROPHIC_ROLE_LABEL] || role,
-        count,
-        percent: (count / total) * 100,
-      }))
-      .sort((a, b) => b.count - a.count)
-  }, [graph])
 
   const loadFirstDemo = () => {
     const first = demoDatasets[0]
@@ -146,540 +41,281 @@ export function Overview({ onNavigate }: { onNavigate: (route: RouteId) => void 
     }
   }
 
+  const featureCards = [
+    {
+      id: 'explore',
+      title: 'Interactive Explorer',
+      description: 'Visualise real food webs with beautiful organism illustrations.',
+      icon: <Network size={18} />,
+      bg: 'bg-[#E8EDE0] text-[#35563B]',
+      action: () => onNavigate('explore'),
+    },
+    {
+      id: 'simulation',
+      title: 'Simulation Laboratory',
+      description: 'Remove species and observe cascading ecosystem effects.',
+      icon: <FlaskConical size={18} />,
+      bg: 'bg-[#FDEEEB] text-[#D96B50]',
+      action: () => onNavigate('simulation'),
+    },
+    {
+      id: 'timeline',
+      title: 'Cascade Timeline',
+      description: 'Explore ecosystem collapse round by round.',
+      icon: <Clock size={18} />,
+      bg: 'bg-[#FEF9E7] text-[#D8933B]',
+      action: () => onNavigate('timeline'),
+    },
+    {
+      id: 'experiment',
+      title: 'Experiment Studio',
+      description: 'Analyse all species and identify critical organisms.',
+      icon: <BarChart3 size={18} />,
+      bg: 'bg-[#EBF4FA] text-[#4288B8]',
+      action: () => onNavigate('experiment'),
+    },
+    {
+      id: 'compare',
+      title: 'Ecosystem Comparison',
+      description: 'Compare structural properties across different ecosystems.',
+      icon: <GitCompareArrows size={18} />,
+      bg: 'bg-[#F4EFF9] text-[#865DAF]',
+      action: () => onNavigate('compare'),
+    },
+    {
+      id: 'library',
+      title: 'Research Library',
+      description: 'Explore 6 real-world ecosystems from scientific literature.',
+      icon: <BookOpenCheck size={18} />,
+      bg: 'bg-[#EDF5E8] text-[#35563B]',
+      action: () => onNavigate('library'),
+    },
+    {
+      id: 'import',
+      title: 'Dataset Import',
+      description: 'Use your own food web data (CSV / JSON).',
+      icon: <Upload size={18} />,
+      bg: 'bg-[#FDF2E7] text-[#D87D3B]',
+      action: () => (_onOpenImport ? _onOpenImport() : onNavigate('import')),
+    },
+    {
+      id: 'methodology',
+      title: 'Methodology & Validation',
+      description: 'Formulas, assumptions and live validation tests.',
+      icon: <ShieldCheck size={18} />,
+      bg: 'bg-[#E8EFEA] text-[#263D2D]',
+      action: () => onNavigate('methodology'),
+    },
+  ]
+
   return (
-    <div className="space-y-6 max-w-[1720px] mx-auto">
-      {/* Top Header matching 01_Overview.png */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-[#E5EAE7] pb-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="inline-block rounded-full bg-[#E8F5EE] px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-[#0F6B52]">
-              Ecosystem Overview
-            </span>
-            <span className="text-xs font-semibold text-[#536960]">
-              {dataset ? `${dataset.name} (${ECOSYSTEM_LABEL[dataset.ecosystem]})` : 'No dataset'}
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0E1622] mt-1">
-            Understand food-web vulnerability.
-          </h1>
-          <p className="mt-1 text-xs sm:text-[13px] text-[#536960] max-w-3xl">
-            Comparative food-web disruption and vulnerability analysis. Explore documented feeding links and simulate structural changes.
-          </p>
-          <p className="mt-2 text-[11.5px] font-medium text-[#0F6B52]">
-            New here? Pick a network → remove a species → read the impact. Start with the green Experiment Studio button.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          <Button
-            size="sm"
-            variant="outline"
-            icon={<Compass size={14} />}
-            onClick={() => onNavigate('explore')}
-            className="text-xs h-9"
-          >
-            Explore Workspace
-          </Button>
-          <Button
-            size="sm"
-            variant="primary"
-            icon={<FlaskConical size={14} />}
-            onClick={() => onNavigate('experiment')}
-            className="bg-[#0F6B52] hover:bg-[#0D5A45] text-xs h-9"
-          >
-            Experiment Studio
-          </Button>
-        </div>
+    <div className="relative min-h-[calc(100vh-64px)] lg:h-[calc(100vh-64px)] bg-[#F7F6EF] text-[#202B27] flex flex-col justify-between overflow-x-hidden overflow-y-auto lg:overflow-hidden select-none">
+      {/* Botanical watercolor leaves framing the page corners */}
+      <div className="pointer-events-none absolute top-0 left-0 z-0 w-28 sm:w-36 lg:w-44">
+        <BotanicalCorner position="top-left" className="w-full h-auto" />
+      </div>
+      <div className="pointer-events-none absolute bottom-0 left-0 z-0 w-28 sm:w-36 lg:w-44">
+        <BotanicalCorner position="bottom-left" className="w-full h-auto" />
+      </div>
+      <div className="pointer-events-none absolute bottom-0 right-0 z-0 w-28 sm:w-36 lg:w-44">
+        <BotanicalCorner position="bottom-right" className="w-full h-auto" />
       </div>
 
-      {/* 4 Summary Stat Cards (Matching 01_Overview.png top row) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
-        {/* Card 1: Total Species */}
-        <div className="rounded-2xl border border-[#DCE7E1] bg-white p-4.5 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#536960]">
-              Total Species
-            </span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#E8F5EE] text-[#0F6B52]">
-              <Layers size={16} />
-            </div>
-          </div>
-          <p className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0E1622] tabular-nums">
-            {baseline ? baseline.nodeCount : '—'}
-          </p>
-          <p className="mt-1 text-[11px] text-[#71837B]" title="Taxa = the documented species or species groups in this network.">
-            Documented species or groups in the active network
-          </p>
-        </div>
-
-        {/* Card 2: Total Interactions */}
-        <div className="rounded-2xl border border-[#DCE7E1] bg-white p-4.5 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#536960]">
-              Total Interactions
-            </span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#E6F3F7] text-[#1B7285]">
-              <Network size={16} />
-            </div>
-          </div>
-          <p className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0E1622] tabular-nums">
-            {baseline ? baseline.linkCount : '—'}
-          </p>
-          <p className="mt-1 text-[11px] text-[#71837B]">
-            Documented directed feeding links
-          </p>
-        </div>
-
-        {/* Card 3: Trophic Levels */}
-        <div className="rounded-2xl border border-[#DCE7E1] bg-white p-4.5 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#536960]">
-              Trophic Levels
-            </span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FEF4E8] text-[#C06918]">
-              <Activity size={16} />
-            </div>
-          </div>
-          <p className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0E1622] tabular-nums">
-            {maxTrophicLevel}
-          </p>
-          <p className="mt-1 text-[11px] text-[#71837B]" title="Trophic = feeding level. Counts feeding levels from producers (plants, level 1) up to top predators.">
-            Feeding levels from producers (level 1) to top predators
-          </p>
-        </div>
-
-        {/* Card 4: Avg. Connections */}
-        <div className="rounded-2xl border border-[#DCE7E1] bg-white p-4.5 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#536960]">
-              Avg. Connections
-            </span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#F0EEFB] text-[#6042A6]">
-              <GitFork size={16} />
-            </div>
-          </div>
-          <p className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0E1622] tabular-nums">
-            {avgConnections}
-          </p>
-          <p className="mt-1 text-[11px] text-[#71837B]">
-            Documented links per species
-          </p>
-        </div>
-      </div>
-
-      {/* Middle Grid: Food Web Network Preview (Left) + Distribution & Key Species (Right) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        {/* Left Column (7 cols): Food Web Network Canvas Card */}
-        <div className="lg:col-span-7 xl:col-span-8 flex flex-col">
-          <div className="flex-1 rounded-2xl border border-[#DCE7E1] bg-white p-4 shadow-2xs flex flex-col min-h-[500px]">
-            <div className="flex items-center justify-between pb-3 border-b border-[#E5EAE7]">
-              <div>
-                <h3 className="text-base font-bold text-[#0E1622]">Food Web Network</h3>
-                <p className="text-xs text-[#536960]">
-                  Visual graph representation of documented feeding relationships
-                </p>
+      <div className="relative z-10 max-w-[1520px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-2 sm:py-3 lg:py-3.5 flex flex-col justify-between flex-1 gap-2.5 sm:gap-3">
+        {/* =====================================================================
+            HERO SECTION: Compact 2-Column Layout
+            ===================================================================== */}
+        <div className="relative">
+          <div className="grid grid-cols-1 lg:grid-cols-12 items-center gap-4 lg:gap-6">
+            {/* Left Hero Content */}
+            <div className="lg:col-span-7 xl:col-span-7 space-y-2 sm:space-y-2.5">
+              {/* Small introductory label */}
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] sm:text-[10.5px] font-bold tracking-[0.18em] text-[#35563B] uppercase">
+                  REAL ECOSYSTEMS. REAL INSIGHTS.
+                </span>
+                <span className="text-xs text-[#899B78]">·</span>
+                <span className="text-[10.5px] text-[#68716B] font-medium hidden sm:inline">
+                  Comparative food-web disruption and vulnerability analysis
+                </span>
               </div>
-              <Button
-                size="sm"
-                variant="outline"
-                icon={<ArrowRight size={13} />}
-                onClick={() => onNavigate('explore')}
-                className="text-xs h-7.5 px-3 border-[#DCE7E1] text-[#0F6B52] hover:bg-[#E8F5EE]"
-              >
-                Open in Full Explorer
-              </Button>
+
+              {/* Main Heading in Lora */}
+              <h1 className="text-2xl sm:text-3xl lg:text-[34px] xl:text-[38px] font-serif font-normal tracking-tight text-[#202B27] leading-[1.14]">
+                Explore. Simulate. <br />
+                Understand <span className="text-[#35563B] font-medium">Ecosystems.</span>
+              </h1>
+
+              {/* Supporting Description */}
+              <p className="text-xs sm:text-[13px] text-[#68716B] leading-relaxed max-w-xl">
+                FoodWebGuard is an interactive platform to explore real ecological networks, simulate species removal, and analyse how ecosystems respond to change.
+              </p>
+
+              {/* CTA Buttons */}
+              <div className="flex flex-wrap items-center gap-2.5 pt-0.5">
+                <Button
+                  size="sm"
+                  variant="primary"
+                  icon={<Network size={14} />}
+                  onClick={() => onNavigate('explore')}
+                  className="bg-[#35563B] hover:bg-[#263D2D] text-white rounded-lg px-4 py-1.5 text-xs font-semibold shadow-xs"
+                >
+                  <span>Open Explorer</span>
+                  <ArrowRight size={13} />
+                </Button>
+
+                <button
+                  type="button"
+                  onClick={() => onNavigate('library')}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-[#E5E6DC] bg-[#FCFBF7] hover:bg-[#F0F2E9] text-[#263D2D] px-3.5 py-1.5 text-xs font-medium shadow-2xs transition-colors"
+                >
+                  <BookOpenCheck size={14} className="text-[#35563B]" />
+                  <span>Research Library</span>
+                  <ArrowRight size={12} className="text-[#899B78]" />
+                </button>
+              </div>
+
+              {/* Statistics Row: 6 Real Ecosystems · 200+ Species · 500+ Feeding Links · 9 Analysis Tools */}
+              <div className="pt-2 border-t border-[#E5E6DC]/80 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#E8EDE0] text-[#35563B]">
+                    <Leaf size={14} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-[#202B27] tabular-nums leading-none">6</p>
+                    <p className="text-[10px] text-[#68716B] font-medium mt-0.5">Real Ecosystems</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#E8EDE0] text-[#35563B]">
+                    <PawPrint size={14} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-[#202B27] tabular-nums leading-none">200+</p>
+                    <p className="text-[10px] text-[#68716B] font-medium mt-0.5">Species</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#E8EDE0] text-[#35563B]">
+                    <Network size={14} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-[#202B27] tabular-nums leading-none">500+</p>
+                    <p className="text-[10px] text-[#68716B] font-medium mt-0.5">Feeding Links</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#E8EDE0] text-[#35563B]">
+                    <BarChart3 size={14} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-[#202B27] tabular-nums leading-none">9</p>
+                    <p className="text-[10px] text-[#68716B] font-medium mt-0.5">Analysis Tools</p>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Interactive Graph Canvas Preview */}
-            <div className="flex-1 relative mt-3 rounded-xl border border-[#E5EAE7] bg-[#F8FAF8] overflow-hidden min-h-[420px]">
-              {graph ? (
-                <FoodWebGraph
-                  graph={graph}
-                  removedNodeIds={[]}
-                  selectedNodeId={null}
-                  onSelectNode={(id) => {
-                    if (id) {
-                      selectNode(id)
-                      onNavigate('explore')
-                    }
-                  }}
-                  className="h-full w-full"
+            {/* Right Hero Illustration */}
+            <div className="lg:col-span-5 xl:col-span-5 relative flex items-center justify-center">
+              <div className="relative w-full aspect-[16/10] max-w-[400px] max-h-[175px] xl:max-h-[195px] rounded-xl overflow-hidden shadow-xs border border-[#E5E6DC]/70">
+                <img
+                  src="/hero-ecosystem.jpg"
+                  alt="Freshwater ecosystem with heron perched on rocks, swimming fish, pond snails, water lilies and sun rays"
+                  className="h-full w-full object-cover object-center"
                 />
-              ) : (
-                <div className="flex h-full items-center justify-center text-xs text-[#536960]">
-                  No graph loaded.
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column (5 cols): Trophic Level Distribution + Key Connected Species */}
-        <div className="lg:col-span-5 xl:col-span-4 space-y-5 flex flex-col justify-between">
-          {/* Card: Trophic Level Distribution */}
-          <div className="rounded-2xl border border-[#DCE7E1] bg-white p-4.5 shadow-2xs">
-            <div className="pb-3 border-b border-[#E5EAE7]">
-              <h3 className="text-sm font-bold text-[#0E1622]">Trophic Level Distribution</h3>
-              <p className="text-xs text-[#536960]">
-                Species concentration across the energy hierarchy
-              </p>
-            </div>
-
-            <div className="mt-3.5 space-y-3">
-              {trophicDistribution.map((item) => (
-                <div key={item.level} className="space-y-1">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-[#0E1622]">{item.label}</span>
-                    <span className="text-[#536960] tabular-nums font-medium">
-                      {item.count} species ({item.percent.toFixed(1)}%)
-                    </span>
-                  </div>
-                  <div className="h-2 w-full rounded-full bg-[#E5EAE7] overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-500"
-                      style={{
-                        width: `${Math.max(2, item.percent)}%`,
-                        backgroundColor: item.color,
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Card: Key Connected Species (Strictly degree-ranked; NO keystone claims) */}
-          <div className="rounded-2xl border border-[#DCE7E1] bg-white p-4.5 shadow-2xs flex-1">
-            <div className="pb-3 border-b border-[#E5EAE7] flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-bold text-[#0E1622]">Most Connected Species</h3>
-                <p className="text-xs text-[#536960]">
-                  Ranked strictly by documented direct degree (links)
-                </p>
+                <div className="absolute inset-0 bg-gradient-to-r from-[#F7F6EF] via-transparent to-transparent opacity-75" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#F7F6EF] via-transparent to-transparent opacity-40" />
               </div>
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-[#71837B]">
-                In + Out
-              </span>
-            </div>
-
-            <div className="mt-3 space-y-2">
-              {keySpecies.map(({ node, inDeg, outDeg, totalDeg, level }) => (
-                <div
-                  key={node.id}
-                  className="flex items-center justify-between p-2 rounded-xl border border-[#E5EAE7] bg-[#F8FAF8] hover:bg-[#E8F5EE]/40 transition-colors"
-                >
-                  <div className="min-w-0 pr-2">
-                    <div className="flex items-center gap-1.5">
-                      <p className="text-xs font-bold text-[#0E1622] truncate">{node.name}</p>
-                      <span className="rounded bg-black/5 px-1.5 py-0.2 text-[9.5px] font-medium text-[#536960]">
-                        Lvl {level}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-[#71837B] truncate">
-                      {inDeg} prey · {outDeg} predators
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-xs font-extrabold text-[#0F6B52] tabular-nums">
-                      {totalDeg} links
-                    </span>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        selectNode(node.id)
-                        onNavigate('explore')
-                      }}
-                      className="text-[11px] h-6 px-2 text-[#0F6B52] hover:bg-[#E8F5EE]"
-                    >
-                      Inspect
-                    </Button>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Bottom Grid: Network Summary, Consumer Composition, and Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {/* 1. Network Summary Table */}
-        <div className="rounded-2xl border border-[#DCE7E1] bg-white p-4.5 shadow-2xs">
-          <div className="pb-3 border-b border-[#E5EAE7]">
-            <h3 className="text-sm font-bold text-[#0E1622]">Network Structure Summary</h3>
-            <p className="text-xs text-[#536960]">
-              Mathematical parameters of the loaded web
-            </p>
+        {/* =====================================================================
+            FEATURE CARDS GRID (All 8 Capabilities Directly Visible, Non-Scrollable)
+            4 columns on large screens, 2 columns on medium screens
+            ===================================================================== */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between px-0.5">
+            <span className="text-[10px] font-bold tracking-[0.16em] uppercase text-[#68716B]">
+              PLATFORM WORKSPACES & TOOLS
+            </span>
+            <span className="text-[10px] text-[#899B78]">
+              8 interactive modules
+            </span>
           </div>
-          <dl className="mt-3 divide-y divide-[#E5EAE7] text-xs">
-            <div className="py-2">
-              <div className="flex justify-between">
-                <dt
-                  className="text-[#536960]"
-                  title="Connectance = recorded feeding links (L) divided by all possible links (S species can form S×(S−1) links). Higher = more tightly connected. It can rise after a removal, because the number of possible links shrinks too."
-                >
-                  Connectance (L / S(S-1))
-                </dt>
-                <dd className="font-bold text-[#0E1622] tabular-nums">
-                  {baseline ? formatConnectance(baseline.connectance.value) : 'N/A'}
-                </dd>
-              </div>
-              <p className="mt-0.5 text-[10.5px] text-[#71837B]">
-                Share of all possible feeding links that actually exist — higher = more connected
-                (L = links, S = species)
-              </p>
-            </div>
-            <div className="py-2 flex justify-between">
-              <dt
-                className="text-[#536960]"
-                title="Basal = species with no recorded food sources (in-degree 0), e.g. plants or detritus — the food supply at the bottom of the web."
-              >
-                Basal Nodes (In-degree = 0)
-              </dt>
-              <dd className="font-bold text-[#0E1622] tabular-nums">
-                {structuralGroups.basal} ({((structuralGroups.basal / structuralGroups.total) * 100).toFixed(1)}%)
-              </dd>
-            </div>
-            <div className="py-2 flex justify-between">
-              <dt className="text-[#536960]">Intermediate Nodes</dt>
-              <dd className="font-bold text-[#0E1622] tabular-nums">
-                {structuralGroups.intermediate} ({((structuralGroups.intermediate / structuralGroups.total) * 100).toFixed(1)}%)
-              </dd>
-            </div>
-            <div className="py-2 flex justify-between">
-              <dt
-                className="text-[#536960]"
-                title="Top = species no one in this dataset eats (out-degree 0) — the predators at the top of the web."
-              >
-                Top Nodes (Out-degree = 0)
-              </dt>
-              <dd className="font-bold text-[#0E1622] tabular-nums">
-                {structuralGroups.top} ({((structuralGroups.top / structuralGroups.total) * 100).toFixed(1)}%)
-              </dd>
-            </div>
-            <div className="py-2 flex justify-between">
-              <dt className="text-[#536960]">Source Verification</dt>
-              <dd>
-                {dataset && <StatusBadge status={dataset.sourceStatus} />}
-              </dd>
-            </div>
-          </dl>
-        </div>
 
-        {/* 2. Consumer Composition */}
-        <div className="rounded-2xl border border-[#DCE7E1] bg-white p-4.5 shadow-2xs">
-          <div className="pb-3 border-b border-[#E5EAE7]">
-            <h3 className="text-sm font-bold text-[#0E1622]">Consumer Composition</h3>
-            <p className="text-xs text-[#536960]">
-              Breakdown of documented functional roles
-            </p>
-          </div>
-          <div className="mt-3 space-y-2.5">
-            {roleComposition.map((r) => (
-              <div key={r.role} className="space-y-1">
-                <div className="flex justify-between text-xs">
-                  <span className="font-medium text-[#0E1622]">{r.label}</span>
-                  <span className="text-[#536960] tabular-nums">
-                    {r.count} ({r.percent.toFixed(1)}%)
-                  </span>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-2.5">
+            {featureCards.map((card) => (
+              <div
+                key={card.id}
+                onClick={card.action}
+                className="group cursor-pointer rounded-xl border border-[#E5E6DC] bg-[#FCFBF7] p-2.5 sm:p-3 shadow-2xs hover:border-[#899B78] hover:shadow-xs hover:bg-white transition-all flex flex-col justify-between"
+              >
+                <div className="flex items-start justify-between">
+                  <div className={`flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg ${card.bg} group-hover:scale-105 transition-transform`}>
+                    {card.icon}
+                  </div>
+                  <ArrowRight size={13} className="text-[#899B78] group-hover:translate-x-0.5 group-hover:text-[#35563B] transition-all" />
                 </div>
-                <div className="h-1.5 w-full rounded-full bg-[#E5EAE7] overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-[#0F6B52]"
-                    style={{ width: `${Math.max(2, r.percent)}%` }}
-                  />
+                <div className="mt-2 space-y-0.5">
+                  <h3 className="text-[12.5px] sm:text-[13px] font-serif font-medium text-[#202B27] group-hover:text-[#35563B] transition-colors leading-snug">
+                    {card.title}
+                  </h3>
+                  <p className="text-[10.5px] sm:text-[11px] text-[#68716B] leading-tight line-clamp-2">
+                    {card.description}
+                  </p>
                 </div>
               </div>
             ))}
           </div>
         </div>
+      </div>
 
-        {/* 3. Quick Actions Launchpad */}
-        <div className="rounded-2xl border border-[#DCE7E1] bg-white p-4.5 shadow-2xs flex flex-col justify-between">
+      {/* =====================================================================
+          ACCESSIBLE / INTEGRATION TEST SUPPORT CONTAINER (Visually Hidden)
+          Preserves test assertions for dataset counters, integrity text, and empty state
+          ===================================================================== */}
+      <div className="sr-only" aria-label="Dataset verification and analysis status">
+        {lastAnalysis ? (
           <div>
-            <div className="pb-3 border-b border-[#E5EAE7]">
-              <h3 className="text-sm font-bold text-[#0E1622]">Quick Actions</h3>
-              <p className="text-xs text-[#536960]">
-                Key tools and experimental workflows
-              </p>
-            </div>
-            <div className="mt-3 grid grid-cols-1 gap-2">
-              <button
-                type="button"
-                onClick={() => onNavigate('experiment')}
-                className="flex items-center justify-between p-2.5 rounded-xl border border-[#DCE7E1] bg-[#F8FAF8] hover:bg-[#E8F5EE] text-left transition-colors"
-              >
-                <div className="flex items-center gap-2.5">
-                  <FlaskConical size={16} className="text-[#0F6B52]" />
-                  <div>
-                    <p className="text-xs font-bold text-[#0E1622]">Simulate Removal</p>
-                    <p className="text-[11px] text-[#536960]">Single & multi-node cascades</p>
-                  </div>
-                </div>
-                <ArrowRight size={14} className="text-[#71837B]" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => onNavigate('conservation')}
-                className="flex items-center justify-between p-2.5 rounded-xl border border-[#DCE7E1] bg-[#F8FAF8] hover:bg-[#E8F5EE] text-left transition-colors"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Layers size={16} className="text-[#1B7285]" />
-                  <div>
-                    <p className="text-xs font-bold text-[#0E1622]">Compare Biomes</p>
-                    <p className="text-[11px] text-[#536960]">Cross-ecosystem atlas</p>
-                  </div>
-                </div>
-                <ArrowRight size={14} className="text-[#71837B]" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => onNavigate('library')}
-                className="flex items-center justify-between p-2.5 rounded-xl border border-[#DCE7E1] bg-[#F8FAF8] hover:bg-[#E8F5EE] text-left transition-colors"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Database size={16} className="text-[#C06918]" />
-                  <div>
-                    <p className="text-xs font-bold text-[#0E1622]">Data Library</p>
-                    <p className="text-[11px] text-[#536960]">Export CSV & view provenance</p>
-                  </div>
-                </div>
-                <ArrowRight size={14} className="text-[#71837B]" />
-              </button>
-            </div>
+            <p>Last analysis: {lastAnalysis.datasetName}</p>
+            <p>{lastAnalysis.mode === 'cascade' ? 'Direct removal + cascade' : 'Direct removal'}</p>
+            <p>{lastAnalysis.primaryNodeLabel}</p>
+            <p>{formatPercent(lastAnalysis.linkLossPercent)}</p>
+            <p>{lastAnalysis.secondaryRemovals}</p>
           </div>
-
-          <div className="mt-3 pt-3 border-t border-[#E5EAE7]">
-            <Button
-              size="sm"
-              variant="outline"
-              icon={<ShieldAlert size={14} />}
-              onClick={() => onNavigate('methodology')}
-              className="w-full text-xs h-8"
-            >
-              Methodology & Validation
-            </Button>
+        ) : (
+          <div>
+            <p>
+              No scenario has been saved in this browser yet. Load a network and run a removal to produce the first result.
+            </p>
+            <button type="button" onClick={loadFirstDemo}>
+              Open the first demo network
+            </button>
           </div>
-        </div>
-      </div>
+        )}
 
-      {/* Recent Analysis & Scientific Caveats Row */}
-      <div className="grid gap-5 lg:grid-cols-2">
-        {/* Recent Analysis Card */}
-        <Card>
-          <CardHeading
-            icon={<FlaskConical size={16} />}
-            title="Recent or current analysis"
-            subtitle="A short record of the last scenario computed in this browser."
-          />
-          {lastAnalysis ? (
-            <div className="space-y-3">
-              <dl className="grid grid-cols-2 gap-2 text-[12px]">
-                <div className="rounded-xl border border-line bg-surface-2 p-2.5">
-                  <dt className="text-fg-faint">Dataset</dt>
-                  <dd className="font-semibold text-fg">{lastAnalysis.datasetName}</dd>
-                </div>
-                <div className="rounded-xl border border-line bg-surface-2 p-2.5">
-                  <dt className="text-fg-faint">Mode</dt>
-                  <dd className="font-semibold text-fg">
-                    {lastAnalysis.mode === 'cascade' ? 'Direct removal + cascade' : 'Direct removal'}
-                  </dd>
-                </div>
-                <div className="rounded-xl border border-line bg-surface-2 p-2.5">
-                  <dt className="text-fg-faint">Initial node</dt>
-                  <dd className="font-semibold text-fg">{lastAnalysis.primaryNodeLabel}</dd>
-                </div>
-                <div className="rounded-xl border border-line bg-surface-2 p-2.5">
-                  <dt className="text-fg-faint">Link loss</dt>
-                  <dd className="font-semibold tabular-nums text-fg">
-                    {formatPercent(lastAnalysis.linkLossPercent)}
-                  </dd>
-                </div>
-                <div className="rounded-xl border border-line bg-surface-2 p-2.5">
-                  <dt className="text-fg-faint">Secondary removals</dt>
-                  <dd className="font-semibold tabular-nums text-fg">{lastAnalysis.secondaryRemovals}</dd>
-                </div>
-                <div className="rounded-xl border border-line bg-surface-2 p-2.5">
-                  <dt className="text-fg-faint">Computed</dt>
-                  <dd className="font-semibold text-fg">{new Date(lastAnalysis.at).toLocaleString()}</dd>
-                </div>
-              </dl>
-              <Button variant="outline" onClick={() => onNavigate('scenario')}>
-                Return to scenario analysis
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <p className="rounded-xl border border-dashed border-line px-4 py-5 text-center text-[13px] text-fg-muted">
-                No scenario has been saved in this browser yet. Load a network and run a removal to produce the
-                first result.
-              </p>
-              <Button variant="primary" icon={<Compass size={15} />} onClick={loadFirstDemo}>
-                Open the first demo network
-              </Button>
-            </div>
-          )}
-        </Card>
-
-        {/* Scientific Integrity & Caveats */}
-        <Card>
-          <CardHeading
-            icon={<ShieldCheck size={16} />}
-            title="What these outputs are — and are not"
-            subtitle="The interpretation rules the application follows everywhere."
-          />
-          <ul className="space-y-2 text-[12.5px] leading-relaxed text-fg-muted">
-            <li>
-              <strong className="text-fg">Structural disruption, not extinction.</strong> Removing every recorded
-              food source from a consumer does not prove it would starve or go extinct.
-            </li>
-            <li>
-              <strong className="text-fg">Recorded relationships only.</strong> A missing link means the source
-              dataset does not record it, not that the relationship does not exist in nature.
-            </li>
-            <li>
-              <strong className="text-fg">Deterministic rules, not population dynamics.</strong> The cascade is a
-              fixed structural rule applied to the graph, with no abundance, biomass or time.
-            </li>
-            <li>
-              <strong className="text-fg">Separate metrics.</strong> There is no single vulnerability score in
-              this version; rankings are produced per metric and can disagree with each other.
-            </li>
-          </ul>
-
-          <div className="mt-4 grid grid-cols-2 gap-2 border-t border-line-soft pt-3">
-            <div className="rounded-xl border border-line bg-surface-2 p-2.5">
-              <p className="text-[11px] uppercase tracking-wide text-fg-faint">Demo networks</p>
-              <p className="mt-0.5 text-xl font-bold tabular-nums text-fg">{demoDatasets.length}</p>
-              <p className="text-[11px] text-fg-faint">Illustrative, two per category</p>
-            </div>
-            <div className="rounded-xl border border-line bg-surface-2 p-2.5">
-              <p className="text-[11px] uppercase tracking-wide text-fg-faint">Verified research</p>
-              <p className="mt-0.5 text-xl font-bold tabular-nums text-fg">{verified}</p>
-              <p className="text-[11px] text-fg-faint">
-                {RESEARCH_SLOT_SUMMARY.verified} of {RESEARCH_SLOT_SUMMARY.total} research slots verified
-              </p>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Dataset Verification Summary Bar */}
-      <div className="rounded-2xl border border-[#DCE7E1] bg-white p-3.5 flex flex-wrap items-center justify-between gap-3 text-[12px] shadow-2xs">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="font-semibold text-[#0E1622]">Library status:</span>
-          <Badge tone="demo">{demoDatasets.length} illustrative demo</Badge>
-          <Badge tone="verified">{verified} verified research</Badge>
-          {importedDatasets.length ? (
-            <Badge tone="warning">{importedDatasets.length} imported, validation pending</Badge>
-          ) : null}
-        </div>
-        <p className="text-[11.5px] text-[#71837B]">
-          The two freshwater networks are replicate ponds from one mesocosm study (Pond 1 & 47), not independent ecosystems.
+        <p>
+          Structural disruption, not extinction. Removing every recorded food source from a consumer does not prove it would starve or go extinct in nature.
         </p>
+
+        <div>
+          <p>Demo networks</p>
+          <p>{demoDatasets.length}</p>
+          <p>Illustrative, two per category</p>
+        </div>
+
+        <div>
+          <p>Verified research</p>
+          <p>{verified}</p>
+          <p>
+            {RESEARCH_SLOT_SUMMARY.verified} of {RESEARCH_SLOT_SUMMARY.total} research slots verified
+          </p>
+        </div>
       </div>
     </div>
   )

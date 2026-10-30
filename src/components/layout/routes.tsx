@@ -1,11 +1,14 @@
 import {
   BookOpenCheck,
+  Clock,
   Compass,
   FlaskConical,
   GitCompareArrows,
   Globe2,
+  Layers,
   LayoutDashboard,
   ShieldAlert,
+  Upload,
 } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 
@@ -22,12 +25,16 @@ import { useEffect, useState, type ReactNode } from 'react'
 
 export type RouteId =
   | 'overview'
+  | 'features'
   | 'explore'
+  | 'simulation'
+  | 'timeline'
   | 'experiment'
   | 'scenario'
   | 'compare'
   | 'conservation'
   | 'library'
+  | 'import'
   | 'methodology'
 
 export interface RouteItem {
@@ -43,21 +50,48 @@ export interface RouteItem {
 export const ROUTES: RouteItem[] = [
   {
     id: 'overview',
-    label: 'Overview',
+    label: 'Home',
     legacyName: 'Overview',
     heading: 'Ecosystem Overview',
     icon: <LayoutDashboard size={16} />,
-    description: 'Key information, visual summaries and insights for the selected network',
+    description: 'Explore real food webs, simulate disturbances and understand ecosystems',
     tag: 'Start',
   },
   {
+    id: 'features',
+    label: 'Features',
+    legacyName: 'Features',
+    heading: 'Features & Capabilities',
+    icon: <Layers size={16} />,
+    description: 'Interactive visualization, simulations, cascade timelines and analytics',
+    tag: 'Tools',
+  },
+  {
     id: 'explore',
-    label: 'Explorer',
+    label: 'Explore',
     legacyName: 'Explore food web',
     heading: 'Food Web Explorer',
     icon: <Compass size={16} />,
     description: 'Visualise and explore species interactions in ecological networks',
     tag: 'Graph',
+  },
+  {
+    id: 'simulation',
+    label: 'Simulation',
+    legacyName: 'Simulation Laboratory',
+    heading: 'Simulation Laboratory',
+    icon: <FlaskConical size={16} />,
+    description: 'Remove species and observe cascading ecosystem response',
+    tag: 'Simulate',
+  },
+  {
+    id: 'timeline',
+    label: 'Cascade Timeline',
+    legacyName: 'Cascade Timeline',
+    heading: 'Cascade Timeline',
+    icon: <Clock size={16} />,
+    description: 'Explore step-by-step cascading effects of species removals',
+    tag: 'Timeline',
   },
   {
     id: 'experiment',
@@ -96,6 +130,15 @@ export const ROUTES: RouteItem[] = [
     tag: 'Library',
   },
   {
+    id: 'import',
+    label: 'Dataset Import',
+    legacyName: 'Dataset import',
+    heading: 'Dataset Import',
+    icon: <Upload size={16} />,
+    description: 'Use your own food web data (CSV / JSON) to build and analyse custom ecosystems',
+    tag: 'Import',
+  },
+  {
     id: 'methodology',
     label: 'Methodology',
     legacyName: 'Methodology & validation',
@@ -107,10 +150,19 @@ export const ROUTES: RouteItem[] = [
 ]
 
 const ROUTE_ALIASES: Record<string, RouteId> = {
+  home: 'overview',
   overview: 'overview',
+  features: 'features',
+  feature: 'features',
   explore: 'explore',
   explorer: 'explore',
   workspace: 'explore',
+  simulation: 'simulation',
+  simulate: 'simulation',
+  lab: 'simulation',
+  timeline: 'timeline',
+  'cascade-timeline': 'timeline',
+  cascades: 'timeline',
   experiment: 'experiment',
   studio: 'experiment',
   scenario: 'experiment',
@@ -123,7 +175,11 @@ const ROUTE_ALIASES: Record<string, RouteId> = {
   library: 'library',
   datasets: 'library',
   data: 'library',
+  import: 'import',
+  'dataset-import': 'import',
+  upload: 'import',
   methodology: 'methodology',
+  about: 'methodology',
   verify: 'methodology',
 }
 

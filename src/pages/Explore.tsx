@@ -575,11 +575,11 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
                 sync because they write the same application state. */}
             <div className="min-w-[240px] max-w-sm flex-1 lg:hidden">
               <label htmlFor="dataset-select" className="sr-only">
-                Loaded network
+                Mobile network selector
               </label>
               <SelectInput
                 id="dataset-select"
-                aria-label="Loaded network"
+                aria-label="Mobile network selector"
                 value={dataset.id}
                 onChange={(event) => selectDataset(event.target.value)}
                 className="font-semibold text-fg"

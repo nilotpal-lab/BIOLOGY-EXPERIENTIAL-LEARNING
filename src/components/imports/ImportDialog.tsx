@@ -1,28 +1,33 @@
-import { AlertTriangle, CheckCircle2, FileJson, FileSpreadsheet, Info, Upload, X } from 'lucide-react'
+import {
+  AlertTriangle,
+  Check,
+  CheckCircle2,
+  Copy,
+  Download,
+  FileJson,
+  FileSpreadsheet,
+  Info,
+  Sparkles,
+  Table,
+  Upload,
+  X,
+} from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   countIssues,
-  EDGE_CSV_COLUMNS,
   importNetwork,
   LARGE_FILE_THRESHOLDS,
-  NODE_CSV_COLUMNS,
-  REQUIRED_EDGE_COLUMNS,
-  REQUIRED_NODE_COLUMNS,
-  SUPPORTED_EXTENSIONS,
 } from '../../core/dataValidation'
 import { validateGraphIntegrity } from '../../core/graphModel'
 import {
   ECOSYSTEM_CATEGORIES,
   ECOSYSTEM_LABEL,
-  TROPHIC_ROLES,
   type EcosystemCategory,
   type ImportPreview,
   type ValidationIssue,
 } from '../../core/types'
 import {
   Badge,
-  Button,
-  Callout,
   Field,
   SelectInput,
   TextArea,
@@ -31,40 +36,102 @@ import {
 } from '../ui/primitives'
 
 /* ============================================================================
- * ImportDialog — the import flow (Prompt §6.2).
+ * ImportDialog — The Scientific Dataset Import Flow & Example Format Guide
  *
- * Parse locally → validate → preview nodes, links, warnings and metadata →
- * let the user repair supported issues or cancel → import only after validation.
- * A failed import NEVER replaces the currently loaded dataset, because the
- * preview only carries a dataset when it is not blocked.
+ * Implements the verified import pipeline with a crystal-clear Example Format
+ * guide showing:
+ * 1. Feeding Links table (source = food, target = consumer)
+ * 2. Species Nodes table with valid trophic roles
+ * 3. One-click sample templates download & copyable snippets
+ * 4. In-browser local validation and repair before replacing active dataset
  * ========================================================================== */
 
 type Format = 'csv' | 'json'
 
+export const SAMPLE_NODES_CSV = `id,name,trophic_role,scientific_name
+grey_heron,Grey Heron,apex-predator,Ardea cinerea
+pike,Northern Pike,tertiary-consumer,Esox lucius
+perch,European Perch,secondary-consumer,Perca fluviatilis
+carp,Common Carp,secondary-consumer,Cyprinus carpio
+snail,Freshwater Snail,primary-consumer,Lymnaea stagnalis
+zooplankton,Zooplankton,primary-consumer,Daphnia pulex
+macrophytes,Macrophytes,producer,Potamogeton crispus
+phytoplankton,Phytoplankton,producer,Scenedesmus obliquus`
+
+export const SAMPLE_EDGES_CSV = `source,target,relationship
+macrophytes,snail,herbivory
+phytoplankton,zooplankton,grazing
+snail,carp,predation
+zooplankton,carp,predation
+zooplankton,perch,predation
+carp,pike,predation
+perch,pike,predation
+pike,grey_heron,predation`
+
+export const SAMPLE_JSON = `{
+  "name": "Freshwater Pond Ecosystem",
+  "ecosystem": "freshwater",
+  "provenance": {
+    "citation": "Freshwater Survey (2024). Ecological Monographs.",
+    "origin": "Freshwater Biological Association",
+    "license": "CC-BY-4.0",
+    "node_unit": "species"
+  },
+  "nodes": [
+    { "id": "macrophytes", "name": "Macrophytes", "trophic_role": "producer", "scientific_name": "Potamogeton crispus" },
+    { "id": "snail", "name": "Freshwater Snail", "trophic_role": "primary-consumer", "scientific_name": "Lymnaea stagnalis" },
+    { "id": "carp", "name": "Common Carp", "trophic_role": "secondary-consumer", "scientific_name": "Cyprinus carpio" },
+    { "id": "pike", "name": "Northern Pike", "trophic_role": "tertiary-consumer", "scientific_name": "Esox lucius" },
+    { "id": "grey_heron", "name": "Grey Heron", "trophic_role": "apex-predator", "scientific_name": "Ardea cinerea" }
+  ],
+  "edges": [
+    { "source": "macrophytes", "target": "snail", "relationship": "herbivory" },
+    { "source": "snail", "target": "carp", "relationship": "predation" },
+    { "source": "carp", "target": "pike", "relationship": "predation" },
+    { "source": "pike", "target": "grey_heron", "relationship": "predation" }
+  ]
+}`
+
+function downloadBlob(filename: string, content: string, mimeType = 'text/csv') {
+  const blob = new Blob([content], { type: mimeType })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
 const SEVERITY_ICON = {
-  error: <AlertTriangle size={13} className="text-danger" aria-hidden="true" />,
-  warning: <AlertTriangle size={13} className="text-highlight" aria-hidden="true" />,
-  info: <Info size={13} className="text-fg-faint" aria-hidden="true" />,
+  error: <AlertTriangle size={13} className="text-[#C84B31]" aria-hidden="true" />,
+  warning: <AlertTriangle size={13} className="text-[#F1B36F]" aria-hidden="true" />,
+  info: <Info size={13} className="text-[#899B78]" aria-hidden="true" />,
 } as const
 
 function IssueList({ issues }: { issues: ValidationIssue[] }) {
   if (!issues.length) {
     return (
-      <p className="flex items-center gap-1.5 text-[12px] text-secondary">
-        <CheckCircle2 size={13} aria-hidden="true" /> No problems found in the uploaded files.
+      <p className="flex items-center gap-1.5 text-xs text-[#35563B]">
+        <CheckCircle2 size={14} aria-hidden="true" /> No problems found in the uploaded data.
       </p>
     )
   }
   return (
     <ul className="space-y-1.5">
       {issues.map((issue, index) => (
-        <li key={`${issue.code}-${index}`} className="flex gap-2 text-[12px] leading-relaxed">
+        <li key={`${issue.code}-${index}`} className="flex gap-2 text-xs leading-relaxed">
           <span className="mt-0.5">{SEVERITY_ICON[issue.severity]}</span>
-          <span className="text-fg-muted">
-            <span className="mr-1 font-mono text-[10px] uppercase text-fg-faint">{issue.code}</span>
+          <span className="text-[#68716B]">
+            <span className="mr-1.5 font-mono text-[10px] font-bold uppercase text-[#263D2D] bg-[#E8EDE0] px-1.5 py-0.5 rounded">
+              {issue.code}
+            </span>
             {issue.message}
             {issue.fixable && issue.severity === 'error' ? (
-              <span className="ml-1 text-fg-faint">This can be excluded explicitly, or fixed in the file.</span>
+              <span className="ml-1 text-[#899B78] font-medium">
+                (This can be auto-repaired by checking "Repair supported issues" below).
+              </span>
             ) : null}
           </span>
         </li>
@@ -83,6 +150,9 @@ export function ImportDialog({
   onImport: (preview: ImportPreview) => void
 }) {
   const [format, setFormat] = useState<Format>('csv')
+  const [exampleTab, setExampleTab] = useState<'links' | 'nodes' | 'json'>('links')
+  const [copiedKey, setCopiedKey] = useState<string | null>(null)
+
   const [nodesText, setNodesText] = useState('')
   const [edgesText, setEdgesText] = useState('')
   const [jsonText, setJsonText] = useState('')
@@ -120,6 +190,25 @@ export function ImportDialog({
     setRepair(false)
   }, [])
 
+  const copyToClipboard = (text: string, key: string) => {
+    void navigator.clipboard.writeText(text)
+    setCopiedKey(key)
+    setTimeout(() => setCopiedKey(null), 2000)
+  }
+
+  const loadExampleIntoForm = () => {
+    setFormat('csv')
+    setNodesText(SAMPLE_NODES_CSV)
+    setEdgesText(SAMPLE_EDGES_CSV)
+    setDatasetName('Freshwater Pond Survey (Example)')
+    setEcosystem('freshwater')
+    setCitation('Freshwater Ecological Survey (2024). Ecological Monographs.')
+    setOrigin('Freshwater Biological Association')
+    setLicense('CC-BY-4.0')
+    setNodeUnit('individual species')
+    setPreview(null)
+  }
+
   const readFiles = async (files: FileList | null) => {
     if (!files?.length) return
     const next: string[] = []
@@ -142,7 +231,6 @@ export function ImportDialog({
     if (csvEntries[0]) {
       setFileName(csvEntries[0][0])
       setFormat('csv')
-      // The larger table is assumed to be the node list and the other the links.
       const [first, second] = csvEntries
       const looksLikeNodes = (text: string) => /(^|\n)\s*id\s*,/i.test(text)
       if (looksLikeNodes(first[1])) {
@@ -160,9 +248,6 @@ export function ImportDialog({
   }
 
   const runValidation = (nextRepair = repair) => {
-    // Only the active format's inputs are passed. Stale text from the other
-    // tab must never leak into validation — otherwise, for example, an empty
-    // JSON paste on the JSON tab would be reported with the CSV error wording.
     const isCsv = format === 'csv'
     const result = importNetwork({
       format,
@@ -184,8 +269,6 @@ export function ImportDialog({
       },
     })
 
-    // A structural second opinion on the accepted network, so the preview shows
-    // the same integrity checks the graph model will rely on.
     let next: ImportPreview
     if (result.dataset) {
       const extra = validateGraphIntegrity(result.dataset).filter(
@@ -198,8 +281,6 @@ export function ImportDialog({
       next = result
     }
 
-    // Metadata is never silently trusted: a Source URL or DOI that does not
-    // look like one is surfaced as a warning instead of being stored quietly.
     const url = sourceUrl.trim()
     if (url && !/^(https?:\/\/|doi:|10\.\d{4,9}\/)/i.test(url)) {
       next = {
@@ -210,7 +291,7 @@ export function ImportDialog({
             severity: 'warning',
             code: 'METADATA_URL_UNUSUAL',
             message:
-              'The Source URL or DOI does not start with "https://", "http://", "doi:" or a DOI prefix like "10.1234/". It is stored exactly as typed — check it is a working link or DOI.',
+              'The Source URL or DOI does not start with "https://", "http://", "doi:" or a DOI prefix like "10.1234/". Check that it is a working address.',
           },
         ],
       }
@@ -231,7 +312,7 @@ export function ImportDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[#122A23]/40 backdrop-blur-xs p-3 sm:p-6"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[#122A23]/50 backdrop-blur-xs p-3 sm:p-6"
       role="presentation"
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose()
@@ -241,115 +322,347 @@ export function ImportDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="import-dialog-title"
-        className="fwg-card w-full max-w-3xl p-4 sm:p-5"
+        className="relative w-full max-w-4xl rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-5 sm:p-7 shadow-xl space-y-6 my-auto"
       >
-        <div className="mb-3 flex items-start justify-between gap-3">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4 border-b border-[#E5E6DC] pb-4">
           <div>
-            <h2 id="import-dialog-title" className="text-base font-semibold text-fg">
-              Import a food-web dataset
+            <div className="flex items-center gap-2 mb-1">
+              <span className="rounded-full bg-[#E8EDE0] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#35563B]">
+                Data Intake Studio
+              </span>
+            </div>
+            <h2 id="import-dialog-title" className="font-serif text-2xl font-bold text-[#202B27]">
+              Import Food Web Dataset
             </h2>
-            <p className="mt-1 text-[12px] leading-relaxed text-fg-muted">
-              Files are parsed and validated entirely in this browser. Nothing is uploaded to any service, and
-              the currently loaded dataset is only replaced after a successful validation.
+            <p className="mt-1 text-xs sm:text-sm text-[#68716B]">
+              Files are parsed and validated strictly in this browser. Nothing is uploaded to any remote server.
             </p>
           </div>
-          <Button variant="ghost" onClick={onClose} aria-label="Close import dialog">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close import dialog"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F0F2E9] text-[#68716B] hover:bg-[#E5E6DC] hover:text-[#202B27] transition-colors cursor-pointer"
+          >
             <X size={16} />
-          </Button>
+          </button>
         </div>
 
-        <div className="mb-3 flex flex-wrap gap-1.5">
-          <Button
-            variant={format === 'csv' ? 'primary' : 'outline'}
-            icon={<FileSpreadsheet size={14} />}
-            onClick={() => {
-              setFormat('csv')
-              setPreview(null)
-            }}
-          >
-            CSV node file + CSV link file
-          </Button>
-          <Button
-            variant={format === 'json' ? 'primary' : 'outline'}
-            icon={<FileJson size={14} />}
-            onClick={() => {
-              setFormat('json')
-              setPreview(null)
-            }}
-          >
-            JSON network file
-          </Button>
-        </div>
+        {/* =====================================================================
+            1. Clear Example Format Section (Prominently Highlighted)
+            ===================================================================== */}
+        <div className="rounded-2xl border border-[#E5E6DC] bg-[#F7F6EF] p-5 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <div className="flex items-center gap-2">
+                <Table size={16} className="text-[#35563B]" />
+                <h3 className="font-serif text-base font-bold text-[#202B27]">
+                  Example Data Format Guide
+                </h3>
+              </div>
+              <p className="text-xs text-[#68716B]">
+                Your food web data should follow this clean schema for feeding interactions and species nodes.
+              </p>
+            </div>
 
-        <Callout tone="info" className="mb-3" title="Link direction is mandatory">
-          In every file, <strong>source is the food organism and target is the consumer</strong>. For example{' '}
-          <code className="font-mono text-[11px]">algae,zooplankton</code> means zooplankton consumes algae. Links
-          are never reversed during import or display.
-        </Callout>
-
-        <div className="mb-3 grid gap-2 sm:grid-cols-2">
-          <div className="rounded-xl border border-line-soft bg-surface-2 p-2.5">
-            <p className="text-[11px] font-medium text-fg-muted">Node file columns</p>
-            <p className="mt-0.5 font-mono text-[10px] leading-relaxed text-fg-faint">
-              {NODE_CSV_COLUMNS.join(', ')}
-            </p>
-            <p className="mt-1 text-[11px] text-fg-faint">
-              Required: {REQUIRED_NODE_COLUMNS.join(', ')}. All other columns are optional.
-            </p>
-            <p className="mt-1 text-[11px] text-fg-faint">
-              <span className="font-mono">trophic_role</span> accepts:{' '}
-              {TROPHIC_ROLES.join(', ')}. Unknown values are normalised to{' '}
-              <span className="font-mono">other</span> and reported as a warning.
-            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={loadExampleIntoForm}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#E8EDE0] px-3 py-1.5 text-xs font-semibold text-[#35563B] hover:bg-[#35563B] hover:text-white transition-colors cursor-pointer"
+              >
+                <Sparkles size={13} />
+                Load Example into Form
+              </button>
+            </div>
           </div>
-          <div className="rounded-xl border border-line-soft bg-surface-2 p-2.5">
-            <p className="text-[11px] font-medium text-fg-muted">Link file columns</p>
-            <p className="mt-0.5 font-mono text-[10px] leading-relaxed text-fg-faint">
-              {EDGE_CSV_COLUMNS.join(', ')}
-            </p>
-            <p className="mt-1 text-[11px] text-fg-faint">
-              Required: {REQUIRED_EDGE_COLUMNS.join(', ')}. Nodes must exist for both endpoints.
-            </p>
+
+          {/* Example Format Tabs */}
+          <div className="flex items-center gap-2 border-b border-[#E5E6DC] pb-2">
+            <button
+              type="button"
+              onClick={() => setExampleTab('links')}
+              className={cn(
+                'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer',
+                exampleTab === 'links'
+                  ? 'bg-[#35563B] text-white shadow-xs'
+                  : 'bg-[#FCFBF7] text-[#68716B] border border-[#E5E6DC] hover:bg-[#F0F2E9]',
+              )}
+            >
+              1. Feeding Links (Link CSV)
+            </button>
+            <button
+              type="button"
+              onClick={() => setExampleTab('nodes')}
+              className={cn(
+                'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer',
+                exampleTab === 'nodes'
+                  ? 'bg-[#35563B] text-white shadow-xs'
+                  : 'bg-[#FCFBF7] text-[#68716B] border border-[#E5E6DC] hover:bg-[#F0F2E9]',
+              )}
+            >
+              2. Species Nodes (Node CSV)
+            </button>
+            <button
+              type="button"
+              onClick={() => setExampleTab('json')}
+              className={cn(
+                'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer',
+                exampleTab === 'json'
+                  ? 'bg-[#35563B] text-white shadow-xs'
+                  : 'bg-[#FCFBF7] text-[#68716B] border border-[#E5E6DC] hover:bg-[#F0F2E9]',
+              )}
+            >
+              3. Single JSON Network
+            </button>
           </div>
+
+          {/* Example Tab 1: Feeding Links CSV */}
+          {exampleTab === 'links' && (
+            <div className="space-y-3">
+              <div className="rounded-xl border border-[#35563B]/20 bg-[#E8EDE0]/50 p-3 text-xs text-[#263D2D]">
+                <strong className="font-semibold text-[#35563B]">Link Direction Rule:</strong> In FoodWebGuard,{' '}
+                <code className="font-mono font-bold text-[#35563B]">source</code> is always the food/prey organism, and{' '}
+                <code className="font-mono font-bold text-[#35563B]">target</code> is always the consumer/predator organism (energy flows from source to target).
+              </div>
+
+              {/* Visual Table */}
+              <div className="overflow-x-auto rounded-xl border border-[#E5E6DC] bg-[#FCFBF7]">
+                <table className="w-full border-collapse text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-[#E5E6DC] bg-[#F0F2E9] text-[10px] font-bold uppercase tracking-wider text-[#68716B]">
+                      <th className="py-2 pl-3 pr-2">Food / Prey (<code className="font-mono text-[#35563B]">source</code>)</th>
+                      <th className="py-2 pr-3">Consumer / Predator (<code className="font-mono text-[#35563B]">target</code>)</th>
+                      <th className="py-2 pr-3">Interaction (<code className="font-mono">relationship</code>)</th>
+                      <th className="py-2 pr-3">Ecological Interpretation</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#E5E6DC]/60 font-mono text-[11px]">
+                    <tr>
+                      <td className="py-2 pl-3 pr-2 text-[#35563B] font-semibold">macrophytes</td>
+                      <td className="py-2 pr-3 text-[#263D2D] font-semibold">snail</td>
+                      <td className="py-2 pr-3 text-[#68716B]">herbivory</td>
+                      <td className="py-2 pr-3 font-sans text-xs text-[#68716B]">Freshwater Snail eats Macrophytes</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 pl-3 pr-2 text-[#35563B] font-semibold">snail</td>
+                      <td className="py-2 pr-3 text-[#263D2D] font-semibold">carp</td>
+                      <td className="py-2 pr-3 text-[#68716B]">predation</td>
+                      <td className="py-2 pr-3 font-sans text-xs text-[#68716B]">Common Carp eats Freshwater Snail</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 pl-3 pr-2 text-[#35563B] font-semibold">carp</td>
+                      <td className="py-2 pr-3 text-[#263D2D] font-semibold">pike</td>
+                      <td className="py-2 pr-3 text-[#68716B]">predation</td>
+                      <td className="py-2 pr-3 font-sans text-xs text-[#68716B]">Northern Pike preys on Common Carp</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 pl-3 pr-2 text-[#35563B] font-semibold">pike</td>
+                      <td className="py-2 pr-3 text-[#263D2D] font-semibold">grey_heron</td>
+                      <td className="py-2 pr-3 text-[#68716B]">predation</td>
+                      <td className="py-2 pr-3 font-sans text-xs text-[#68716B]">Grey Heron preys on Northern Pike</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 pl-3 pr-2 text-[#35563B] font-semibold">zooplankton</td>
+                      <td className="py-2 pr-3 text-[#263D2D] font-semibold">perch</td>
+                      <td className="py-2 pr-3 text-[#68716B]">predation</td>
+                      <td className="py-2 pr-3 font-sans text-xs text-[#68716B]">European Perch feeds on Zooplankton</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                <span className="text-[11px] text-[#68716B]">
+                  Required headers: <code className="font-mono text-[#263D2D]">source,target</code> (synonyms: <code className="font-mono">food,consumer</code> or <code className="font-mono">prey,predator</code>).
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(SAMPLE_EDGES_CSV, 'edges')}
+                    className="inline-flex items-center gap-1 rounded-lg border border-[#E5E6DC] bg-[#FCFBF7] px-2.5 py-1 text-xs font-medium text-[#202B27] hover:bg-[#F0F2E9] cursor-pointer"
+                  >
+                    {copiedKey === 'edges' ? <Check size={12} className="text-[#35563B]" /> : <Copy size={12} />}
+                    {copiedKey === 'edges' ? 'Copied' : 'Copy CSV Text'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => downloadBlob('sample_feeding_links.csv', SAMPLE_EDGES_CSV)}
+                    className="inline-flex items-center gap-1 rounded-lg bg-[#35563B] px-2.5 py-1 text-xs font-medium text-white hover:bg-[#263D2D] cursor-pointer shadow-xs"
+                  >
+                    <Download size={12} />
+                    Download Link CSV Template
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Example Tab 2: Species Nodes CSV */}
+          {exampleTab === 'nodes' && (
+            <div className="space-y-3">
+              <div className="rounded-xl border border-[#35563B]/20 bg-[#E8EDE0]/50 p-3 text-xs text-[#263D2D]">
+                <strong className="font-semibold text-[#35563B]">Accepted Trophic Roles:</strong>{' '}
+                <span className="inline-flex items-center gap-1.5 flex-wrap font-mono text-[11px] mt-1">
+                  <span className="rounded bg-[#B5D39A]/40 px-1.5 py-0.5 text-[#263D2D]">producer</span>
+                  <span className="rounded bg-[#91BFE0]/40 px-1.5 py-0.5 text-[#1E4C73]">primary-consumer</span>
+                  <span className="rounded bg-[#F3D98B]/40 px-1.5 py-0.5 text-[#735A12]">secondary-consumer</span>
+                  <span className="rounded bg-[#F1B36F]/40 px-1.5 py-0.5 text-[#7D4507]">tertiary-consumer</span>
+                  <span className="rounded bg-[#EF9A88]/40 px-1.5 py-0.5 text-[#732717]">apex-predator</span>
+                  <span className="rounded bg-[#E5E6DC] px-1.5 py-0.5 text-[#4A544E]">basal-group</span>
+                </span>
+              </div>
+
+              {/* Visual Table */}
+              <div className="overflow-x-auto rounded-xl border border-[#E5E6DC] bg-[#FCFBF7]">
+                <table className="w-full border-collapse text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-[#E5E6DC] bg-[#F0F2E9] text-[10px] font-bold uppercase tracking-wider text-[#68716B]">
+                      <th className="py-2 pl-3 pr-2">Node ID (<code className="font-mono text-[#35563B]">id</code>)</th>
+                      <th className="py-2 pr-3">Common Name (<code className="font-mono text-[#35563B]">name</code>)</th>
+                      <th className="py-2 pr-3">Trophic Role (<code className="font-mono">trophic_role</code>)</th>
+                      <th className="py-2 pr-3">Scientific Name (<code className="font-mono">scientific_name</code>)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#E5E6DC]/60 text-xs">
+                    <tr>
+                      <td className="py-2 pl-3 pr-2 font-mono text-[11px] text-[#35563B] font-semibold">grey_heron</td>
+                      <td className="py-2 pr-3 font-semibold text-[#202B27]">Grey Heron</td>
+                      <td className="py-2 pr-3"><span className="rounded bg-[#EF9A88]/30 px-1.5 py-0.5 font-mono text-[10px] text-[#732717]">apex-predator</span></td>
+                      <td className="py-2 pr-3 italic text-[#68716B]">Ardea cinerea</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 pl-3 pr-2 font-mono text-[11px] text-[#35563B] font-semibold">pike</td>
+                      <td className="py-2 pr-3 font-semibold text-[#202B27]">Northern Pike</td>
+                      <td className="py-2 pr-3"><span className="rounded bg-[#F1B36F]/30 px-1.5 py-0.5 font-mono text-[10px] text-[#734507]">tertiary-consumer</span></td>
+                      <td className="py-2 pr-3 italic text-[#68716B]">Esox lucius</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 pl-3 pr-2 font-mono text-[11px] text-[#35563B] font-semibold">carp</td>
+                      <td className="py-2 pr-3 font-semibold text-[#202B27]">Common Carp</td>
+                      <td className="py-2 pr-3"><span className="rounded bg-[#F3D98B]/30 px-1.5 py-0.5 font-mono text-[10px] text-[#735A12]">secondary-consumer</span></td>
+                      <td className="py-2 pr-3 italic text-[#68716B]">Cyprinus carpio</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 pl-3 pr-2 font-mono text-[11px] text-[#35563B] font-semibold">snail</td>
+                      <td className="py-2 pr-3 font-semibold text-[#202B27]">Freshwater Snail</td>
+                      <td className="py-2 pr-3"><span className="rounded bg-[#91BFE0]/30 px-1.5 py-0.5 font-mono text-[10px] text-[#1E4C73]">primary-consumer</span></td>
+                      <td className="py-2 pr-3 italic text-[#68716B]">Lymnaea stagnalis</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 pl-3 pr-2 font-mono text-[11px] text-[#35563B] font-semibold">macrophytes</td>
+                      <td className="py-2 pr-3 font-semibold text-[#202B27]">Macrophytes</td>
+                      <td className="py-2 pr-3"><span className="rounded bg-[#B5D39A]/30 px-1.5 py-0.5 font-mono text-[10px] text-[#263D2D]">producer</span></td>
+                      <td className="py-2 pr-3 italic text-[#68716B]">Potamogeton crispus</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                <span className="text-[11px] text-[#68716B]">
+                  Required headers: <code className="font-mono text-[#263D2D]">id,name</code>. Optional: <code className="font-mono">trophic_role,scientific_name,description</code>.
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(SAMPLE_NODES_CSV, 'nodes')}
+                    className="inline-flex items-center gap-1 rounded-lg border border-[#E5E6DC] bg-[#FCFBF7] px-2.5 py-1 text-xs font-medium text-[#202B27] hover:bg-[#F0F2E9] cursor-pointer"
+                  >
+                    {copiedKey === 'nodes' ? <Check size={12} className="text-[#35563B]" /> : <Copy size={12} />}
+                    {copiedKey === 'nodes' ? 'Copied' : 'Copy CSV Text'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => downloadBlob('sample_species_nodes.csv', SAMPLE_NODES_CSV)}
+                    className="inline-flex items-center gap-1 rounded-lg bg-[#35563B] px-2.5 py-1 text-xs font-medium text-white hover:bg-[#263D2D] cursor-pointer shadow-xs"
+                  >
+                    <Download size={12} />
+                    Download Node CSV Template
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Example Tab 3: Single JSON Network */}
+          {exampleTab === 'json' && (
+            <div className="space-y-3">
+              <pre className="overflow-x-auto rounded-xl border border-[#E5E6DC] bg-[#FCFBF7] p-3.5 font-mono text-[11px] leading-relaxed text-[#263D2D]">
+                {SAMPLE_JSON}
+              </pre>
+
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                <span className="text-[11px] text-[#68716B]">
+                  Must include root <code className="font-mono text-[#263D2D]">nodes</code> and <code className="font-mono text-[#263D2D]">edges</code> arrays.
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(SAMPLE_JSON, 'json')}
+                    className="inline-flex items-center gap-1 rounded-lg border border-[#E5E6DC] bg-[#FCFBF7] px-2.5 py-1 text-xs font-medium text-[#202B27] hover:bg-[#F0F2E9] cursor-pointer"
+                  >
+                    {copiedKey === 'json' ? <Check size={12} className="text-[#35563B]" /> : <Copy size={12} />}
+                    {copiedKey === 'json' ? 'Copied' : 'Copy JSON'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => downloadBlob('sample_foodweb.json', SAMPLE_JSON, 'application/json')}
+                    className="inline-flex items-center gap-1 rounded-lg bg-[#35563B] px-2.5 py-1 text-xs font-medium text-white hover:bg-[#263D2D] cursor-pointer shadow-xs"
+                  >
+                    <Download size={12} />
+                    Download JSON Template
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
-        {format === 'json' ? (
-          <details className="mb-3 rounded-xl border border-line-soft bg-surface-2 p-2.5">
-            <summary className="cursor-pointer text-[12px] font-medium text-fg-muted">
-              Documented JSON schema
-            </summary>
-            <pre className="mt-2 overflow-x-auto rounded-lg bg-ink-soft p-2.5 font-mono text-[10.5px] leading-relaxed text-fg-muted">
-{`{
-  "name": "Woodland network",
-  "ecosystem": "terrestrial",
-  "provenance": {
-    "citation": "Author (year). Title. Journal.",
-    "origin": "Publisher or repository",
-    "source_url": "https://…",
-    "license": "CC-BY-4.0",
-    "node_unit": "species" | "trophic groups"
-  },
-  "nodes": [
-    { "id": "oak", "name": "Oak", "node_type": "species",
-      "trophic_role": "producer", "icon_key": "oak",
-      "description": "…", "scientific_name": null }
-  ],
-  "edges": [ { "source": "oak", "target": "aphid", "relationship": "herbivory" } ]
-}`}
-            </pre>
-            <p className="mt-1.5 text-[11px] text-fg-faint">
-              The root must be an object with a <code className="font-mono">nodes</code> array and an{' '}
-              <code className="font-mono">edges</code> (or <code className="font-mono">links</code>) array. Field
-              names may be snake_case or camelCase.
-            </p>
-          </details>
-        ) : null}
+        {/* =====================================================================
+            2. Format Selection & File Upload Dropzone
+            ===================================================================== */}
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setFormat('csv')
+                setPreview(null)
+              }}
+              className={cn(
+                'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-colors cursor-pointer',
+                format === 'csv'
+                  ? 'bg-[#35563B] text-white shadow-xs'
+                  : 'bg-[#FCFBF7] text-[#68716B] border border-[#E5E6DC] hover:bg-[#F0F2E9]',
+              )}
+            >
+              <FileSpreadsheet size={15} />
+              CSV Files (Node CSV + Link CSV)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setFormat('json')
+                setPreview(null)
+              }}
+              className={cn(
+                'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-colors cursor-pointer',
+                format === 'json'
+                  ? 'bg-[#35563B] text-white shadow-xs'
+                  : 'bg-[#FCFBF7] text-[#68716B] border border-[#E5E6DC] hover:bg-[#F0F2E9]',
+              )}
+            >
+              <FileJson size={15} />
+              JSON Single-File Network
+            </button>
+          </div>
 
-        <div className="mb-3 grid gap-3">
-          <Field
-            label="Files (CSV node + CSV link, or a single JSON file)"
-            hint={`Supported extensions: ${SUPPORTED_EXTENSIONS.join(', ')}. Very large files (over ${LARGE_FILE_THRESHOLDS.nodes} nodes or ${LARGE_FILE_THRESHOLDS.edges} links) are accepted but flagged, because a full-species analysis will be slow.`}
-          >
+          {/* Visual Dropzone matching Features reference card */}
+          <div className="relative rounded-2xl border-2 border-dashed border-[#899B78]/40 bg-[#F7F6EF] p-6 text-center hover:border-[#35563B] hover:bg-[#E8EDE0]/30 transition-all cursor-pointer group">
             <input
               ref={firstFieldRef}
               type="file"
@@ -359,23 +672,47 @@ export function ImportDialog({
                 setPreview(null)
                 void readFiles(event.target.files)
               }}
-              className="fwg-field w-full px-3 py-2 text-[12px] text-fg-muted"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+              title="Click or drag files here to upload"
             />
-          </Field>
+            <div className="flex flex-col items-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#E8EDE0] text-[#35563B] group-hover:scale-110 transition-transform shadow-xs">
+                <Upload size={22} />
+              </div>
+              <h4 className="mt-3 font-serif text-base font-bold text-[#202B27]">
+                {fileName ? fileName : 'Upload Dataset Files'}
+              </h4>
+              <p className="mt-1 text-xs text-[#68716B]">
+                {fileName
+                  ? 'File selected. You can select another file or proceed with metadata and validation.'
+                  : 'Drag and drop your CSV files or JSON file here, or click to browse'}
+              </p>
+              <span className="mt-2 rounded-full bg-[#FCFBF7] border border-[#E5E6DC] px-3 py-1 text-[11px] font-mono text-[#899B78]">
+                Supports: .csv, .json (up to {LARGE_FILE_THRESHOLDS.nodes} species nodes)
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* =====================================================================
+            3. Metadata & Dataset Attribution
+            ===================================================================== */}
+        <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-5 shadow-xs space-y-3">
+          <h3 className="font-serif text-sm font-bold text-[#202B27]">
+            Dataset Metadata &amp; Provenance
+          </h3>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Dataset name">
+            <Field label="Dataset Name">
               <TextInput
                 value={datasetName}
                 maxLength={80}
-                placeholder="e.g. North pond, 2019 survey"
+                placeholder="e.g. Freshwater Pond (Survey 2024)"
                 onChange={(event) => setDatasetName(event.target.value)}
               />
             </Field>
-            <Field
-              label="Ecosystem category"
-              hint="The import is filed under this ecosystem in the Data Library. Freshwater is pre-selected — change it if your network is terrestrial or marine."
-            >
+
+            <Field label="Ecosystem Category" hint="Assigned in the Data Library and comparative benchmarks.">
               <SelectInput
                 value={ecosystem}
                 onChange={(event) => setEcosystem(event.target.value as EcosystemCategory)}
@@ -387,112 +724,139 @@ export function ImportDialog({
                 ))}
               </SelectInput>
             </Field>
-            <Field label="Source citation" hint="Without a citation the dataset is stored as “Research source pending” and is never marked verified.">
+
+            <Field label="Source Citation" hint="Without a citation, marked 'Research source pending'.">
               <TextInput
                 value={citation}
                 maxLength={400}
-                placeholder="Author (year). Title. Journal."
+                placeholder="Author (year). Publication Title. Journal."
                 onChange={(event) => setCitation(event.target.value)}
               />
             </Field>
-            <Field label="Origin / repository">
+
+            <Field label="Origin / Archive Repository">
               <TextInput
                 value={origin}
                 maxLength={200}
-                placeholder="Publisher, repository or archive"
+                placeholder="e.g. GlobalWeb, EcoBase, Dryad or Zenodo"
                 onChange={(event) => setOrigin(event.target.value)}
               />
             </Field>
+
             <Field label="Source URL or DOI">
               <TextInput
                 value={sourceUrl}
                 maxLength={400}
-                placeholder="https://… or 10.xxxx/…"
+                placeholder="https://doi.org/... or https://..."
                 onChange={(event) => setSourceUrl(event.target.value)}
               />
             </Field>
-            <Field label="Licence or reuse conditions">
+
+            <Field label="Licence / Reuse Terms">
               <TextInput
                 value={license}
                 maxLength={200}
-                placeholder="e.g. CC-BY-4.0, or “Not provided”"
+                placeholder="e.g. CC-BY-4.0, CC0, or Academic Open Access"
                 onChange={(event) => setLicense(event.target.value)}
               />
             </Field>
-            <Field label="Node unit" hint="State whether nodes are individual species or aggregated trophic groups.">
-              <TextInput
-                value={nodeUnit}
-                maxLength={120}
-                placeholder="e.g. individual species"
-                onChange={(event) => setNodeUnit(event.target.value)}
-              />
-            </Field>
           </div>
+        </div>
 
-          {format === 'csv' ? (
-            <details className="rounded-xl border border-line-soft bg-surface-2 p-2.5">
-              <summary className="cursor-pointer text-[12px] font-medium text-fg-muted">
-                Or paste the file contents instead of uploading
-              </summary>
-              <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                <Field label="Node CSV">
-                  <TextArea
-                    rows={5}
-                    value={nodesText}
-                    onChange={(event) => setNodesText(event.target.value)}
-                    placeholder={'id,name,trophic_role\n…'}
-                    className="font-mono text-[11px]"
-                  />
-                </Field>
-                <Field label="Link CSV (source = food, target = consumer)">
-                  <TextArea
-                    rows={5}
-                    value={edgesText}
-                    onChange={(event) => setEdgesText(event.target.value)}
-                    placeholder={'source,target\n…'}
-                    className="font-mono text-[11px]"
-                  />
-                </Field>
-              </div>
-            </details>
-          ) : (
+        {/* =====================================================================
+            4. Direct Paste Area (Required by unit test ui.test.tsx)
+            ===================================================================== */}
+        {format === 'csv' ? (
+          <details className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-xs">
+            <summary className="cursor-pointer text-xs font-semibold text-[#202B27]">
+              Or paste the file contents instead of uploading
+            </summary>
+            <div className="mt-3 pt-3 border-t border-[#E5E6DC] grid gap-3 sm:grid-cols-2">
+              <Field label="Node CSV">
+                <TextArea
+                  rows={6}
+                  value={nodesText}
+                  onChange={(event) => setNodesText(event.target.value)}
+                  placeholder={'id,name,trophic_role\nalgae,Algae,producer\nzooplankton,Zooplankton,primary-consumer'}
+                  className="font-mono text-xs"
+                />
+              </Field>
+              <Field label="Link CSV (source = food, target = consumer)">
+                <TextArea
+                  rows={6}
+                  value={edgesText}
+                  onChange={(event) => setEdgesText(event.target.value)}
+                  placeholder={'source,target\nalgae,zooplankton'}
+                  className="font-mono text-xs"
+                />
+              </Field>
+            </div>
+          </details>
+        ) : (
+          <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-xs">
             <Field label="JSON network file contents">
               <TextArea
-                rows={6}
+                rows={8}
                 value={jsonText}
                 onChange={(event) => setJsonText(event.target.value)}
                 placeholder='{ "nodes": [...], "edges": [...] }'
-                className="font-mono text-[11px]"
+                className="font-mono text-xs"
               />
             </Field>
-          )}
-        </div>
+          </div>
+        )}
 
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <Button variant="secondary" icon={<Upload size={14} />} onClick={() => runValidation()}>
-            Validate and preview
-          </Button>
-          <Button variant="ghost" onClick={reset}>
-            Clear
-          </Button>
-          <label className="flex items-center gap-1.5 text-[12px] text-fg-muted">
+        {/* =====================================================================
+            5. Validation Action Bar & Repair Toggle
+            ===================================================================== */}
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#E5E6DC] bg-[#F7F6EF] p-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => runValidation()}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#35563B] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#263D2D] transition-colors cursor-pointer"
+            >
+              <Upload size={14} />
+              Validate and preview
+            </button>
+
+            <button
+              type="button"
+              onClick={reset}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-[#E5E6DC] bg-[#FCFBF7] px-3.5 py-2 text-xs font-medium text-[#68716B] hover:bg-[#F0F2E9] hover:text-[#202B27] transition-colors cursor-pointer"
+            >
+              Clear
+            </button>
+          </div>
+
+          <label className="flex items-center gap-2 text-xs text-[#202B27] cursor-pointer">
             <input
               type="checkbox"
               checked={repair}
               onChange={(event) => toggleRepair(event.target.checked)}
               disabled={!preview}
-              className="accent-[#0F6B52]"
+              className="h-4 w-4 rounded accent-[#35563B] cursor-pointer"
             />
-            Repair supported issues (exclude links with undefined endpoints, keep the first duplicate node)
+            <span className="font-medium">
+              Repair supported issues (exclude links with undefined endpoints, keep the first duplicate node)
+            </span>
           </label>
         </div>
 
+        {/* =====================================================================
+            6. Validation Report & Data-Cleaning Preview
+            ===================================================================== */}
         {preview ? (
-          <div className="mb-3 space-y-3">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <Badge tone={blocking ? 'danger' : 'secondary'}>
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span
+                className={cn(
+                  'rounded-full px-3 py-1 text-xs font-bold font-mono',
+                  blocking ? 'bg-[#FDF0ED] text-[#C84B31]' : 'bg-[#E8EDE0] text-[#35563B]',
+                )}
+              >
                 {blocking ? 'Import blocked' : 'Ready to import'}
-              </Badge>
+              </span>
               {counts ? (
                 <>
                   <Badge tone="danger">{counts.errors} errors</Badge>
@@ -502,15 +866,26 @@ export function ImportDialog({
               ) : null}
             </div>
 
-            <div className={cn('rounded-xl border p-3', blocking ? 'border-danger/40 bg-danger/[0.06]' : 'border-line-soft bg-surface-2')}>
-              <p className="mb-2 text-[12px] font-medium text-fg">Validation report</p>
+            {/* Issues List */}
+            <div
+              className={cn(
+                'rounded-2xl border p-4 shadow-xs',
+                blocking ? 'border-[#C84B31]/30 bg-[#FDF0ED]/50' : 'border-[#E5E6DC] bg-[#FCFBF7]',
+              )}
+            >
+              <p className="mb-2 text-xs font-bold uppercase tracking-wider text-[#202B27]">
+                Validation Report
+              </p>
               <IssueList issues={preview.issues} />
             </div>
 
+            {/* Cleaning Report */}
             {preview.report ? (
-              <div className="rounded-xl border border-line-soft bg-surface-2 p-3">
-                <p className="mb-2 text-[12px] font-medium text-fg">Data-cleaning report</p>
-                <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-[12px] sm:grid-cols-3">
+              <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-xs">
+                <p className="mb-2 text-xs font-bold uppercase tracking-wider text-[#202B27]">
+                  Data-Cleaning Report
+                </p>
+                <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs sm:grid-cols-4">
                   {[
                     ['Input nodes', preview.report.inputNodeCount],
                     ['Input link records', preview.report.inputEdgeCount],
@@ -520,77 +895,71 @@ export function ImportDialog({
                     ['Self-links excluded', preview.report.selfLinksExcluded],
                     ['Invalid links excluded', preview.report.invalidEdgesExcluded],
                   ].map(([label, value]) => (
-                    <div key={String(label)} className="flex justify-between gap-2">
-                      <dt className="text-fg-faint">{label}</dt>
-                      <dd className="tabular-nums text-fg">{value}</dd>
+                    <div key={String(label)} className="flex justify-between gap-2 border-b border-[#E5E6DC]/50 pb-1">
+                      <dt className="text-[#68716B]">{label}</dt>
+                      <dd className="font-mono font-bold text-[#202B27]">{value}</dd>
                     </div>
                   ))}
                 </dl>
-                {preview.report.inferredMetadata.length ? (
-                  <div className="mt-2">
-                    <p className="text-[11px] font-medium text-fg-muted">Documented decisions</p>
-                    <ul className="mt-1 list-disc space-y-0.5 pl-4 text-[11px] text-fg-faint">
-                      {preview.report.inferredMetadata.map((note) => (
-                        <li key={note}>{note}</li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
               </div>
             ) : null}
 
+            {/* Parsed Nodes & Edges Preview */}
             {preview.dataset ? (
-              <div className="rounded-xl border border-line-soft bg-surface-2 p-3">
-                <p className="mb-2 text-[12px] font-medium text-fg">
-                  Preview — {preview.dataset.nodes.length} nodes, {preview.dataset.edges.length} links, status{' '}
-                  {preview.dataset.sourceStatus === 'research-pending'
-                    ? 'Research source pending'
-                    : 'Research source provided, validation pending'}
-                </p>
-                <div className="max-h-48 overflow-auto">
-                  <table className="w-full border-collapse text-[11px]">
+              <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-[#202B27]">
+                    Preview — {preview.dataset.nodes.length} nodes, {preview.dataset.edges.length} links (Status:{' '}
+                    {preview.dataset.sourceStatus === 'research-pending'
+                      ? 'Research source pending'
+                      : 'Research source provided, validation pending'}
+                    )
+                  </p>
+                </div>
+
+                <div className="max-h-48 overflow-auto rounded-xl border border-[#E5E6DC]">
+                  <table className="w-full border-collapse text-left text-xs">
                     <thead>
-                      <tr className="border-b border-line-soft text-left text-fg-faint">
-                        <th className="py-1 pr-2">Node id</th>
-                        <th className="py-1 pr-2">Name</th>
-                        <th className="py-1 pr-2">Role</th>
-                        <th className="py-1 pr-2">Evidence</th>
+                      <tr className="border-b border-[#E5E6DC] bg-[#F7F6EF] text-[10px] font-bold uppercase tracking-wider text-[#68716B]">
+                        <th className="py-2 pl-3 pr-2">Node ID</th>
+                        <th className="py-2 pr-2">Common Name</th>
+                        <th className="py-2 pr-2">Trophic Role</th>
+                        <th className="py-2 pr-2">Evidence Status</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      {preview.dataset.nodes.slice(0, 12).map((node) => (
-                        <tr key={node.id} className="border-b border-line-soft/50">
-                          <td className="py-1 pr-2 font-mono text-[10px]">{node.id}</td>
-                          <td className="py-1 pr-2">{node.name}</td>
-                          <td className="py-1 pr-2 text-fg-muted">{node.trophicRole}</td>
-                          <td className="py-1 pr-2 text-fg-muted">{node.roleEvidence}</td>
+                    <tbody className="divide-y divide-[#E5E6DC]/60 font-mono text-[11px]">
+                      {preview.dataset.nodes.slice(0, 10).map((node) => (
+                        <tr key={node.id}>
+                          <td className="py-1.5 pl-3 pr-2 text-[#35563B] font-semibold">{node.id}</td>
+                          <td className="py-1.5 pr-2 font-sans text-xs text-[#202B27]">{node.name}</td>
+                          <td className="py-1.5 pr-2 text-[#68716B]">{node.trophicRole}</td>
+                          <td className="py-1.5 pr-2 text-[#899B78]">{node.roleEvidence}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
-                  {preview.dataset.nodes.length > 12 ? (
-                    <p className="mt-1 text-[11px] text-fg-faint">
-                      Showing the first 12 of {preview.dataset.nodes.length} nodes. The full dataset is used after
-                      import.
-                    </p>
-                  ) : null}
                 </div>
-                <p className="mt-2 text-[11px] text-fg-faint">
+                <p className="text-[11px] text-[#68716B]">
                   Link preview: {preview.dataset.edges.slice(0, 6).map((edge) => `${edge.source} → ${edge.target}`).join(', ')}
-                  {preview.dataset.edges.length > 6 ? ` … (${preview.dataset.edges.length} total)` : ''}
+                  {preview.dataset.edges.length > 6 ? ` … (${preview.dataset.edges.length} links in total)` : ''}
                 </p>
               </div>
             ) : null}
           </div>
         ) : null}
 
-        <div className="flex flex-wrap justify-end gap-2">
-          <Button variant="ghost" onClick={onClose}>
+        {/* Dialog Actions Footer */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#E5E6DC] pt-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl border border-[#E5E6DC] bg-[#FCFBF7] px-4 py-2 text-xs font-medium text-[#68716B] hover:bg-[#F0F2E9] hover:text-[#202B27] transition-colors cursor-pointer"
+          >
             Cancel
-          </Button>
-          <Button
-            variant="primary"
-            icon={<Upload size={14} />}
+          </button>
+
+          <button
+            type="button"
             disabled={!preview?.dataset}
             onClick={() => {
               if (preview?.dataset) {
@@ -598,16 +967,12 @@ export function ImportDialog({
                 reset()
               }
             }}
+            className="inline-flex items-center gap-2 rounded-xl bg-[#35563B] px-5 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-[#263D2D] disabled:opacity-50 transition-colors cursor-pointer"
           >
+            <Upload size={14} />
             Import dataset
-          </Button>
+          </button>
         </div>
-        {blocking ? (
-          <p className="mt-2 text-right text-[11px] text-danger">
-            Fix the blocking errors, or choose to exclude the offending records, before importing. The currently
-            loaded dataset is untouched.
-          </p>
-        ) : null}
       </div>
     </div>
   )

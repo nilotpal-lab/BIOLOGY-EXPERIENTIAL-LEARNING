@@ -1,5 +1,5 @@
 import type cytoscape from 'cytoscape'
-import { ROLE_COLOURS } from '../../art/roleColours'
+import { ROLE_COLOURS, ROLE_BG_COLOURS } from '../../art/roleColours'
 
 /**
  * The one place the graph styles are defined.
@@ -57,10 +57,13 @@ export function graphStyles(): cytoscape.StylesheetStyle[] {
         'transition-duration': 140,
       },
     },
-    // Role colours first, so every state rule below overrides them.
+    // Role colours and background tints, matching reference visual style
     ...Object.entries(ROLE_COLOURS).map(([role, colour]) => ({
       selector: `node.role-${role}`,
-      style: { 'border-color': colour },
+      style: {
+        'border-color': colour,
+        'background-color': ROLE_BG_COLOURS[role as keyof typeof ROLE_BG_COLOURS] ?? '#FFFFFF',
+      },
     })),
     {
       selector: 'node.dimmed',

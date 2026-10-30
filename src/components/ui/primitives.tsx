@@ -23,13 +23,13 @@ type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger'
 
 const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
   primary:
-    'bg-primary text-white hover:bg-primary-hover active:bg-[#074735] disabled:bg-primary/40 font-semibold shadow-xs',
+    'bg-[#35563B] text-white hover:bg-[#263D2D] active:bg-[#1E3023] disabled:bg-[#35563B]/40 font-semibold shadow-xs',
   secondary:
-    'bg-secondary text-white hover:bg-[#1A7779] active:bg-[#146061] disabled:bg-secondary/40 font-semibold shadow-xs',
+    'bg-[#F0F2E9] text-[#263D2D] border border-[#E5E6DC] hover:bg-[#E8EDE0] active:bg-[#DFE5D5] disabled:opacity-50 font-semibold shadow-xs',
   outline:
-    'border border-line bg-surface text-fg hover:border-primary hover:text-primary active:bg-surface-2 disabled:opacity-50 shadow-xs',
-  ghost: 'text-fg-muted hover:bg-surface-2 hover:text-fg disabled:opacity-40',
-  danger: 'bg-danger text-white hover:bg-[#962F37] active:bg-[#7D262D] disabled:bg-danger/40 font-semibold shadow-xs',
+    'border border-[#E5E6DC] bg-[#FCFBF7] text-[#202B27] hover:border-[#35563B] hover:text-[#35563B] active:bg-[#F0F2E9] disabled:opacity-50 shadow-xs',
+  ghost: 'text-[#68716B] hover:bg-[#F0F2E9] hover:text-[#202B27] disabled:opacity-40',
+  danger: 'bg-[#EF9A88] text-[#202B27] hover:bg-[#E88672] active:bg-[#D9735F] disabled:opacity-40 font-semibold shadow-xs',
 }
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

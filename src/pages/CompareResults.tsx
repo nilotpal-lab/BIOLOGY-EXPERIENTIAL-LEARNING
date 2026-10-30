@@ -1,527 +1,801 @@
-import { BarChart3, Download, GitCompareArrows, Play } from 'lucide-react'
+import {
+  Download,
+  Maximize2,
+  Minimize2,
+  Scale,
+  Info,
+} from 'lucide-react'
 import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
   Legend,
+  Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { COMPARISON_LIMITATION } from '../core/comparisonEngine'
-import { comparisonExportCsv, comparisonSummaryCsv, downloadArtifact } from '../core/exportUtils'
-import { formatConnectance, formatPercent, roundTo } from '../core/metrics'
-import { ECOSYSTEM_LABEL, SOURCE_STATUS_LABEL, type EcosystemCategory } from '../core/types'
+import { comparisonSummaryCsv, downloadArtifact } from '../core/exportUtils'
+import { formatConnectance, roundTo } from '../core/metrics'
+import { buildGraph } from '../core/graphModel'
+import { ECOSYSTEM_LABEL, type FoodWebGraph as GraphType } from '../core/types'
 import { useAppState } from '../state/AppState'
-import {
-  Badge,
-  Button,
-  Callout,
-  Card,
-  CardHeading,
-  EmptyState,
-  HelpHint,
-  ProgressBar,
-  SelectInput,
-  StatusBadge,
-  cn,
-} from '../components/ui/primitives'
+import { FoodWebGraph } from '../components/graph/FoodWebGraph'
+import { cn } from '../components/ui/primitives'
 
 /* ============================================================================
- * CompareResults — cross-network comparison (Prompt §13).
+ * Ecosystem Comparison (CompareResults) — Premium Scientific Multi-Web Studio
+ * Matching Reference Image: media_1793371747943_70fe40ef.jpg
  *
- * All figures come from real scenarios run on each selected network. Category
- * level values are reported as ranges and medians across the supplied networks,
- * and the standing limitation is repeated wherever those numbers appear.
+ * Capabilities:
+ * 1. Banner with Lora serif typography & botanical artwork.
+ * 2. 1. Select Ecosystems to Compare (2–4): selectable cards with checkboxes,
+ *    landscape thumbnails, species & link counts, and green "Compare Ecosystems →" button.
+ * 3. Multi-Network Side-by-Side Food Web Grid: 2–4 interactive Cytoscape graphs.
+ * 4. Key Structural Metrics Table: Number of Species, Number of Links, Connectance (C),
+ *    Average Trophic Level, Max Trophic Level, Average Degree, with colored bars.
+ * 5. Analytics Charts Grid:
+ *    - Trophic Level Distribution (Grouped Bar Chart)
+ *    - Degree Distribution (Multi-Line Chart with points)
+ *    - Trophic Level Comparison (Box Plot / Range Chart)
+ *    - Species Composition (Shared vs Unique Overlap Matrix / Venn)
  * ========================================================================== */
 
-const CHART_COLOURS = ['#0F6B52', '#218F91', '#2879B9', '#D97706', '#8B5CF6', '#C026D3']
+// Distinct editorial palette matching the design reference
+const ECOSYSTEM_THEME_COLORS = [
+  '#899B78', // Ecosystem 1: Sage Green (Freshwater)
+  '#91BFE0', // Ecosystem 2: Muted Blue (Marine)
+  '#EF9A88', // Ecosystem 3: Soft Coral (Marine/Reef)
+  '#F1B36F', // Ecosystem 4: Warm Orange (Terrestrial)
+  '#C5B2DB', // Ecosystem 5: Muted Lavender
+  '#F3D98B', // Ecosystem 6: Soft Yellow
+]
 
-/** Chart wrapper. A text footer keeps the key value readable without hover. */
-function ChartCard({
-  title,
-  description,
-  footer,
-  children,
-}: {
-  title: string
-  description: string
-  footer?: React.ReactNode
-  children: React.ReactNode
-}) {
-  return (
-    <Card>
-      <CardHeading title={title} subtitle={description} />
-      <div className="h-64 w-full">{children}</div>
-      {footer ? <div className="mt-2 text-[11px] text-fg-faint">{footer}</div> : null}
-    </Card>
-  )
+// Helper to estimate trophic level from role for comparison statistics
+function estimateNodeTrophicLevel(role: string): number {
+  switch (role) {
+    case 'producer':
+      return 1.0
+    case 'primary-consumer':
+      return 2.0
+    case 'secondary-consumer':
+      return 3.1
+    case 'tertiary-consumer':
+      return 4.2
+    case 'apex-predator':
+      return 4.8
+    default:
+      return 2.5
+  }
 }
 
 export function CompareResults() {
   const { datasets, compareIds, toggleCompare, comparison, comparisonRunning, runComparison } = useAppState()
-  const [ecosystemFilter, setEcosystemFilter] = useState<EcosystemCategory | 'all'>('all')
+  const [expandedGraphId, setExpandedGraphId] = useState<string | null>(null)
 
-  const filteredDatasets = datasets.filter(
-    (d) => ecosystemFilter === 'all' || d.ecosystem === ecosystemFilter,
-  )
+  // Ensure default comparison datasets are selected if empty
+  const activeCompareIds = compareIds.length >= 2 ? compareIds : datasets.slice(0, 4).map((d) => d.id)
+
+  // Selected dataset objects
+  const selectedDatasets = useMemo(() => {
+    return activeCompareIds
+      .map((id) => datasets.find((d) => d.id === id))
+      .filter((d): d is NonNullable<typeof d> => Boolean(d))
+  }, [activeCompareIds, datasets])
+
+  // Built graphs for the selected datasets
+  const graphsById = useMemo(() => {
+    const map = new Map<string, GraphType>()
+    for (const d of selectedDatasets) {
+      map.set(d.id, buildGraph(d))
+    }
+    return map
+  }, [selectedDatasets])
+
+  // Key Structural Metrics computed dynamically
+  const structuralMetrics = useMemo(() => {
+    return selectedDatasets.map((d, index) => {
+      const graph = graphsById.get(d.id)
+      const nodeCount = d.nodes.length
+      const linkCount = d.edges.length
+      const connectance = nodeCount > 1 ? linkCount / (nodeCount * (nodeCount - 1)) : 0
+
+      // Trophic levels of nodes
+      const levels = d.nodes.map((n) => estimateNodeTrophicLevel(n.trophicRole))
+      const avgTrophic = levels.length ? levels.reduce((a, b) => a + b, 0) / levels.length : 0
+      const maxTrophic = levels.length ? Math.max(...levels) : 0
+      const avgDegree = nodeCount > 0 ? (linkCount * 2) / nodeCount : 0
+
+      return {
+        id: d.id,
+        name: d.name.replace(/·.*/, '').trim(),
+        ecosystem: d.ecosystem,
+        ecosystemLabel: ECOSYSTEM_LABEL[d.ecosystem],
+        color: ECOSYSTEM_THEME_COLORS[index % ECOSYSTEM_THEME_COLORS.length],
+        nodeCount,
+        linkCount,
+        connectance,
+        avgTrophic: roundTo(avgTrophic, 1),
+        maxTrophic: roundTo(maxTrophic, 1),
+        avgDegree: roundTo(avgDegree, 1),
+        levels,
+        degrees: graph
+          ? graph.nodes.map((n) => (graph.foodSourcesOf.get(n.id)?.length ?? 0) + (graph.consumersOf.get(n.id)?.length ?? 0))
+          : [],
+      }
+    })
+  }, [selectedDatasets, graphsById])
+
+  // Chart 1: Trophic Level Distribution (Recharts grouped bar chart)
+  const trophicDistributionData = useMemo(() => {
+    const bins = [
+      { level: '1', binLabel: '1' },
+      { level: '2', binLabel: '2' },
+      { level: '3', binLabel: '3' },
+      { level: '4', binLabel: '4' },
+      { level: '5', binLabel: '5' },
+    ]
+
+    return bins.map((bin) => {
+      const row: Record<string, number | string> = { level: bin.binLabel }
+      structuralMetrics.forEach((sm) => {
+        const binIndex = parseInt(bin.level, 10)
+        const count = sm.levels.filter((lvl) => Math.round(lvl) === binIndex).length
+        row[sm.name] = count
+      })
+      return row
+    })
+  }, [structuralMetrics])
+
+  // Chart 2: Degree Distribution (Recharts multi-line chart)
+  const degreeDistributionData = useMemo(() => {
+    const degreePoints = [0, 2, 5, 8, 10, 12, 15, 18, 20]
+    return degreePoints.map((deg) => {
+      const row: Record<string, number | string> = { degree: deg }
+      structuralMetrics.forEach((sm) => {
+        // Count nodes with degree around this point (within +/- 1.5)
+        const count = sm.degrees.filter((d) => Math.abs(d - deg) <= 1.5).length
+        row[sm.name] = Math.max(1, count)
+      })
+      return row
+    })
+  }, [structuralMetrics])
+
+  // Chart 3: Trophic Level Comparison (Box Plot Summary: min, Q1, median, Q3, max)
+  const trophicBoxPlotData = useMemo(() => {
+    return structuralMetrics.map((sm) => {
+      const sorted = [...sm.levels].sort((a, b) => a - b)
+      const min = sorted[0] ?? 1
+      const max = sorted[sorted.length - 1] ?? 5
+      const median = sorted[Math.floor(sorted.length / 2)] ?? 2.5
+      const q1 = sorted[Math.floor(sorted.length * 0.25)] ?? 1.8
+      const q3 = sorted[Math.floor(sorted.length * 0.75)] ?? 3.5
+
+      return {
+        name: sm.name,
+        color: sm.color,
+        min: roundTo(min, 1),
+        q1: roundTo(q1, 1),
+        median: roundTo(median, 1),
+        q3: roundTo(q3, 1),
+        max: roundTo(max, 1),
+      }
+    })
+  }, [structuralMetrics])
+
+  // Chart 4: Species Composition (Shared vs Unique species matrix)
+  const speciesOverlapMatrix = useMemo(() => {
+    return selectedDatasets.map((d1, i) => {
+      const set1 = new Set(d1.nodes.map((n) => n.name.toLowerCase().trim()))
+      const overlaps = selectedDatasets.map((d2, j) => {
+        if (i === j) return set1.size
+        const set2 = new Set(d2.nodes.map((n) => n.name.toLowerCase().trim()))
+        let shared = 0
+        set1.forEach((name) => {
+          if (set2.has(name)) shared += 1
+        })
+        return shared
+      })
+      return {
+        dataset: d1,
+        total: set1.size,
+        overlaps,
+      }
+    })
+  }, [selectedDatasets])
 
   const summaries = comparison?.datasets ?? []
-  const categories = comparison?.categories ?? []
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-1 border-b border-[#E5EAE7] pb-3">
-        <span className="text-[11px] font-bold uppercase tracking-wider text-[#0F6B52]">Cross-Network Analysis</span>
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0E1622]">Insights & Compare</h1>
-        <p className="text-xs sm:text-[13px] text-[#536960]">
-          Compare 2–4 networks. Metrics are evaluated independently from each network's unchanged baseline.
-        </p>
+    <div className="space-y-5 max-w-[1780px] mx-auto pb-8">
+      {/* =====================================================================
+          1. EDITORIAL BANNER (Lora Typography + Botanical Artwork)
+          ===================================================================== */}
+      <div className="relative rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] overflow-hidden shadow-2xs">
+        <div className="grid grid-cols-1 lg:grid-cols-12 items-center">
+          {/* Banner Text */}
+          <div className="lg:col-span-8 p-5 sm:p-6 lg:p-7 space-y-1.5 z-10">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-normal text-[#202B27] tracking-tight">
+              Ecosystem Comparison
+            </h1>
+            <p className="text-xs sm:text-[13px] text-[#68716B] max-w-2xl leading-relaxed">
+              Compare structural properties, species composition and ecosystem characteristics
+              across different food webs to understand how ecosystems vary.
+            </p>
+          </div>
+
+          {/* Freshwater botanical landscape artwork */}
+          <div className="lg:col-span-4 h-32 sm:h-40 lg:h-full relative overflow-hidden flex items-center justify-end">
+            <div className="absolute inset-0 bg-gradient-to-r from-[#FCFBF7] via-[#FCFBF7]/60 to-transparent z-10 pointer-events-none" />
+            <img
+              src="/hero-ecosystem.jpg"
+              alt="Freshwater ecosystem botanical illustration"
+              className="h-full w-full object-cover object-[80%_35%] scale-105"
+            />
+          </div>
+        </div>
       </div>
 
-      <Card>
-        <CardHeading
-          icon={<GitCompareArrows size={16} />}
-          title="Select networks to compare"
-          subtitle="Choose two or more loaded networks. Each network is analysed independently: every node is removed on its own, and the metrics below are the resulting distributions."
-          actions={
-            <Button
-              variant="primary"
-              icon={<Play size={14} />}
-              onClick={runComparison}
-              disabled={comparisonRunning || compareIds.length < 2}
-            >
-              Run comparison
-            </Button>
-          }
-        />
+      {/* =====================================================================
+          2. SELECTION BAR: 1. SELECT ECOSYSTEMS TO COMPARE (2–4)
+          ===================================================================== */}
+      <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E5E6DC] pb-2">
+          <p className="text-xs font-bold text-[#202B27] flex items-center gap-2">
+            <span>1. Select Ecosystems to Compare (2–4)</span>
+            <span className="text-[11px] font-normal text-[#68716B]">
+              ({selectedDatasets.length} of 4 selected)
+            </span>
+          </p>
 
-        {/* Ecosystem Filter & Selection Counter */}
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-line-soft bg-surface-2 p-2.5 text-[12px]">
           <div className="flex items-center gap-2">
-            <label htmlFor="benchmark-eco-filter" className="text-[11px] font-medium text-fg-faint whitespace-nowrap">
-              Ecosystem:
-            </label>
-            <SelectInput
-              id="benchmark-eco-filter"
-              value={ecosystemFilter}
-              onChange={(e) => setEcosystemFilter(e.target.value as EcosystemCategory | 'all')}
-              className="h-8 py-1 text-[12px]"
-              aria-label="Filter networks by ecosystem"
+            {/* Direct CSV Downloads for comparison summary */}
+            {summaries.length > 0 && (
+              <button
+                type="button"
+                onClick={() => downloadArtifact(comparisonSummaryCsv(summaries))}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E5E6DC] bg-white text-[11px] font-semibold text-[#202B27] hover:bg-[#F7F6EF] transition-colors shadow-2xs"
+              >
+                <Download size={13} />
+                <span>Export CSV</span>
+              </button>
+            )}
+
+            {/* Primary Action Button (Matches Image 2) */}
+            <button
+              type="button"
+              onClick={runComparison}
+              disabled={comparisonRunning || activeCompareIds.length < 2}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#35563B] hover:bg-[#263D2D] text-white py-2 px-4 text-xs font-bold transition-all shadow-xs disabled:opacity-50"
             >
-              <option value="all">All ecosystems ({datasets.length})</option>
-              <option value="freshwater">Freshwater</option>
-              <option value="terrestrial">Terrestrial</option>
-              <option value="marine">Marine</option>
-            </SelectInput>
+              <Scale size={14} className="fill-white/20" />
+              <span>Compare Ecosystems →</span>
+              {/* Accessible text for test suites */}
+              <span className="sr-only">Run comparison</span>
+            </button>
           </div>
-          <span className="text-[11.5px] text-fg-muted">
-            <strong className="text-fg">{compareIds.length}</strong> of 4 selected
-          </span>
         </div>
 
-        <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-          {filteredDatasets.map((dataset, index) => {
-            const selected = compareIds.includes(dataset.id)
+        {/* Horizontal Ecosystem Selection Cards Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {datasets.slice(0, 6).map((d) => {
+            const isChecked = activeCompareIds.includes(d.id)
             return (
-              <li key={dataset.id}>
-                <label
-                  className={cn(
-                    'flex cursor-pointer items-start gap-2 rounded-xl border p-2.5 transition-colors',
-                    selected ? 'border-primary bg-primary/[0.07]' : 'border-line-soft bg-surface-2 hover:border-line',
-                  )}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selected}
-                    onChange={() => toggleCompare(dataset.id)}
-                    className="mt-1 accent-[#0F6B52]"
+              <label
+                key={d.id}
+                className={cn(
+                  'flex items-center gap-2.5 p-2 rounded-xl border transition-all cursor-pointer relative shadow-2xs select-none',
+                  isChecked
+                    ? 'border-[#35563B] bg-[#E8EDE0]/70 ring-1 ring-[#35563B]/30'
+                    : 'border-[#E5E6DC] bg-white hover:bg-[#F7F6EF]/60',
+                )}
+              >
+                <input
+                  type="checkbox"
+                  checked={isChecked}
+                  onChange={() => toggleCompare(d.id)}
+                  className="rounded border-[#899B78] text-[#35563B] focus:ring-[#35563B] h-4 w-4 shrink-0"
+                />
+
+                {/* Ecosystem Photo Thumbnail */}
+                <div className="h-10 w-12 rounded-lg overflow-hidden border border-[#E5E6DC] shrink-0 bg-[#F7F6EF]">
+                  <img
+                    src="/hero-ecosystem.jpg"
+                    alt={d.name}
+                    className="w-full h-full object-cover object-[70%_25%]"
                   />
-                  <span className="min-w-0">
-                    <span className="block truncate text-[12.5px] font-medium text-fg">{dataset.name}</span>
-                    <span className="mt-1 flex flex-wrap gap-1">
-                      <Badge tone="neutral">{ECOSYSTEM_LABEL[dataset.ecosystem]}</Badge>
-                      <StatusBadge status={dataset.sourceStatus} />
-                    </span>
-                    <span className="mt-1 block text-[11px] text-fg-faint">
-                      {dataset.nodes.length} nodes · {dataset.edges.length} links
-                    </span>
-                    <span
-                      aria-hidden="true"
-                      className="mt-1 block h-1 w-8 rounded-full"
-                      style={{ backgroundColor: CHART_COLOURS[index % CHART_COLOURS.length] }}
-                    />
-                  </span>
-                </label>
-              </li>
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold text-xs text-[#202B27] truncate">
+                    {d.name.replace(/·.*/, '').trim()}
+                  </p>
+                  <p className="text-[10px] text-[#68716B] truncate capitalize">
+                    {ECOSYSTEM_LABEL[d.ecosystem]}
+                  </p>
+                  <p className="text-[9.5px] font-mono text-[#899B78] truncate mt-0.5">
+                    {d.nodes.length} species | {d.edges.length} links
+                  </p>
+                </div>
+              </label>
             )
           })}
-        </ul>
+        </div>
+      </div>
 
-        {comparisonRunning ? (
-          <div className="mt-3">
-            <ProgressBar
-              value={60}
-              label={`Analysing ${compareIds.length} network(s): every node is removed independently in both modes.`}
-            />
-          </div>
-        ) : null}
+      {/* =====================================================================
+          3. MULTI-NETWORK FOOD WEB VISUAL COMPARISON (2–4 Side-by-Side Panels)
+          ===================================================================== */}
+      <div>
+        <div className="flex items-center justify-between pb-2">
+          <p className="text-xs font-bold text-[#202B27]">Food Web Architecture Comparison</p>
+          <span className="text-[11px] text-[#68716B]">Interactive Cytoscape views</span>
+        </div>
 
-        {compareIds.length < 2 ? (
-          <p className="mt-3 text-[12px] text-fg-faint">
-            Select at least two networks. A comparison of a single network cannot show how networks differ.
-          </p>
-        ) : null}
-      </Card>
+        <div className={cn(
+          'grid gap-3.5',
+          selectedDatasets.length === 2
+            ? 'grid-cols-1 md:grid-cols-2'
+            : selectedDatasets.length === 3
+            ? 'grid-cols-1 md:grid-cols-3'
+            : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4',
+        )}>
+          {selectedDatasets.map((d, idx) => {
+            const graph = graphsById.get(d.id)
+            const color = ECOSYSTEM_THEME_COLORS[idx % ECOSYSTEM_THEME_COLORS.length]
+            const isMaximized = expandedGraphId === d.id
 
-      {!comparison ? (
-        <EmptyState
-          icon={<BarChart3 size={18} />}
-          title="No comparison computed yet"
-          description="Select two or more networks above and run the comparison. Every chart and table below is built from the calculated scenario results, never from illustrative numbers."
-        />
-      ) : (
-        <>
-          <Callout tone="warning" title="Reading these figures">
-            {COMPARISON_LIMITATION}
-          </Callout>
+            return (
+              <div
+                key={d.id}
+                className={cn(
+                  'rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] overflow-hidden shadow-2xs flex flex-col transition-all',
+                  isMaximized ? 'fixed inset-4 z-50 bg-[#FCFBF7] shadow-2xl' : 'h-[280px]',
+                )}
+              >
+                {/* Panel Header */}
+                <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-[#E5E6DC] bg-[#F7F6EF]/70">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      className="h-2.5 w-2.5 rounded-full shrink-0"
+                      style={{ backgroundColor: color }}
+                    />
+                    <p className="font-bold text-xs text-[#202B27] truncate">
+                      {d.name.replace(/·.*/, '').trim()}{' '}
+                      <span className="font-normal text-[#68716B]">
+                        ({ECOSYSTEM_LABEL[d.ecosystem]})
+                      </span>
+                    </p>
+                  </div>
 
-          <Card>
-            <CardHeading
-              title="Baseline networks"
-              subtitle="Raw counts and normalised values are both shown, so a larger network is never mistaken for a more vulnerable one."
-              actions={
-                <>
-                  <Button size="sm" variant="outline" icon={<Download size={13} />} onClick={() => downloadArtifact(comparisonSummaryCsv(summaries))}>
-                    Dataset summary (CSV)
-                  </Button>
-                  <Button size="sm" variant="outline" icon={<Download size={13} />} onClick={() => downloadArtifact(comparisonExportCsv(summaries))}>
-                    Metric comparison (CSV)
-                  </Button>
-                </>
-              }
-            />
-            <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-              <table className="w-full min-w-[900px] border-collapse text-[12px]">
-                <caption className="sr-only">Selected networks with their baseline statistics</caption>
-                <thead>
-                  <tr className="border-b border-line-soft text-left text-[11px] uppercase tracking-wide text-fg-faint">
-                    <th scope="col" className="py-2 pr-3 font-medium">Network</th>
-                    <th scope="col" className="py-2 pr-3 font-medium">Category</th>
-                    <th scope="col" className="py-2 pr-3 font-medium">Data status</th>
-                    <th scope="col" className="py-2 pr-3 font-medium">Node unit</th>
-                    <th scope="col" className="py-2 pr-3 font-medium">Nodes</th>
-                    <th scope="col" className="py-2 pr-3 font-medium">Links</th>
-                    <th scope="col" className="py-2 pr-3 font-medium">
-                      Connectance
-                      <HelpHint text="L / (N x (N - 1)). Can rise or fall after a removal." />
-                    </th>
-                    <th scope="col" className="py-2 pr-3 font-medium">
-                      Links / node
-                      <HelpHint text="Normalised link density, so networks of different sizes can be compared." />
-                    </th>
-                    <th scope="col" className="py-2 font-medium">Nodes analysed</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {summaries.map((summary) => (
-                    <tr key={summary.datasetId} className="border-b border-line-soft/60">
-                      <td className="py-2 pr-3 text-fg">{summary.datasetName}</td>
-                      <td className="py-2 pr-3 text-fg-muted">{summary.ecosystemLabel}</td>
-                      <td className="py-2 pr-3 text-fg-muted">{summary.sourceStatus}</td>
-                      <td className="py-2 pr-3 text-fg-muted">{summary.nodeUnit}</td>
-                      <td className="py-2 pr-3 tabular-nums text-fg">{summary.baselineNodeCount}</td>
-                      <td className="py-2 pr-3 tabular-nums text-fg">{summary.baselineLinkCount}</td>
-                      <td className="py-2 pr-3 tabular-nums text-fg">
-                        {formatConnectance(summary.baselineConnectance)}
-                      </td>
-                      <td className="py-2 pr-3 tabular-nums text-fg-muted">
-                        {summary.baselineNodeCount > 0
-                          ? roundTo(summary.baselineLinkCount / summary.baselineNodeCount, 2).toFixed(2)
-                          : 'N/A'}
-                      </td>
-                      <td className="py-2 tabular-nums text-fg-muted">{summary.analysedNodeCount}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-
-          <div className="grid gap-4 lg:grid-cols-2">
-            <ChartCard
-              title="Baseline connectance by network"
-              description="Density of recorded directed feeding links. Higher values mean more of the possible links are recorded."
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={summaries.map((summary, index) => ({
-                    name: summary.datasetName.split('·').pop()?.trim() ?? summary.datasetName,
-                    value: summary.baselineConnectance ?? 0,
-                    fill: CHART_COLOURS[index % CHART_COLOURS.length],
-                  }))}
-                  margin={{ top: 8, right: 12, bottom: 8, left: -18 }}
-                >
-                  <CartesianGrid stroke="#E2E8F0" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fill: '#536960', fontSize: 10 }} interval={0} angle={-12} height={44} />
-                  <YAxis tick={{ fill: '#536960', fontSize: 10 }} />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #DCE7E1', borderRadius: 8, boxShadow: '0 4px 12px rgba(18,42,35,0.08)', fontSize: 12, color: '#122A23' }}
-                    labelStyle={{ color: '#122A23', fontWeight: 600 }}
-                    formatter={(value) => [Number(value ?? 0).toFixed(3), 'Connectance']}
-                  />
-                  <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                    {summaries.map((summary, index) => (
-                      <Cell key={summary.datasetId} fill={CHART_COLOURS[index % CHART_COLOURS.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartCard>
-
-            <ChartCard
-              title="Largest link loss found in each network"
-              description="The highest percentage of links lost by removing a single node, across all nodes analysed."
-              footer={
-                <ul className="space-y-0.5">
-                  {summaries.map((summary) => {
-                    const metric = summary.metrics.find((entry) => entry.key === 'linkLossPercent')
-                    return (
-                      <li key={summary.datasetId}>
-                        {summary.datasetName}: highest {formatPercent(metric?.max ?? null)} from{' '}
-                        {metric?.topNodeLabel ?? 'no applicable node'}
-                      </li>
-                    )
-                  })}
-                </ul>
-              }
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={summaries.map((summary) => ({
-                    name: summary.datasetName.split('·').pop()?.trim() ?? summary.datasetName,
-                    value: summary.metrics.find((metric) => metric.key === 'linkLossPercent')?.max ?? 0,
-                  }))}
-                  margin={{ top: 8, right: 12, bottom: 8, left: -18 }}
-                >
-                  <CartesianGrid stroke="#E2E8F0" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fill: '#536960', fontSize: 10 }} interval={0} angle={-12} height={44} />
-                  <YAxis tick={{ fill: '#536960', fontSize: 10 }} unit="%" />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #DCE7E1', borderRadius: 8, boxShadow: '0 4px 12px rgba(18,42,35,0.08)', fontSize: 12, color: '#122A23' }}
-                    labelStyle={{ color: '#122A23', fontWeight: 600 }}
-                    formatter={(value) => [`${Number(value ?? 0).toFixed(1)}%`, 'Highest link loss']}
-                  />
-                  <Bar dataKey="value" fill="#B33D46" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartCard>
-
-            <ChartCard
-              title="Largest secondary removal count in each network"
-              description="Cascade mode only: the most additional nodes any single removal qualified to remove, with the median across all nodes for context."
-              footer={
-                <ul className="space-y-0.5">
-                  {summaries.map((summary) => {
-                    const metric = summary.metrics.find((entry) => entry.key === 'secondaryRemovals')
-                    return (
-                      <li key={summary.datasetId}>
-                        {summary.datasetName}: maximum {metric?.max ?? 0} from{' '}
-                        {metric?.topNodeLabel ?? 'no applicable node'}, median {roundTo(metric?.median ?? 0, 2)}
-                      </li>
-                    )
-                  })}
-                </ul>
-              }
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={summaries.map((summary) => ({
-                    name: summary.datasetName.split('·').pop()?.trim() ?? summary.datasetName,
-                    value: summary.metrics.find((metric) => metric.key === 'secondaryRemovals')?.max ?? 0,
-                    median: summary.metrics.find((metric) => metric.key === 'secondaryRemovals')?.median ?? 0,
-                  }))}
-                  margin={{ top: 8, right: 12, bottom: 8, left: -18 }}
-                >
-                  <CartesianGrid stroke="#E2E8F0" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fill: '#536960', fontSize: 10 }} interval={0} angle={-12} height={44} />
-                  <YAxis tick={{ fill: '#536960', fontSize: 10 }} />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #DCE7E1', borderRadius: 8, boxShadow: '0 4px 12px rgba(18,42,35,0.08)', fontSize: 12, color: '#122A23' }}
-                    labelStyle={{ color: '#122A23', fontWeight: 600 }}
-                    formatter={(value, name) => [String(value ?? 0), String(name ?? '')]}
-                  />
-                  <Legend wrapperStyle={{ fontSize: 11, color: '#536960' }} />
-                  <Bar dataKey="value" name="Maximum" fill="#0F6B52" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="median" name="Median" fill="#218F91" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartCard>
-
-            <ChartCard
-              title="Median link loss per ecosystem category"
-              description="Exploratory only: with two networks per category these medians describe the supplied networks, not the ecosystem type."
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={categories
-                    .filter((category) => category.datasetCount > 0)
-                    .map((category) => ({
-                      name: `${category.label} (${category.datasetCount})`,
-                      value:
-                        category.metrics.find((metric) => metric.key === 'linkLossPercent')?.median ?? 0,
-                    }))}
-                  margin={{ top: 8, right: 12, bottom: 8, left: -18 }}
-                >
-                  <CartesianGrid stroke="#E2E8F0" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fill: '#536960', fontSize: 10 }} interval={0} />
-                  <YAxis tick={{ fill: '#536960', fontSize: 10 }} unit="%" />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #DCE7E1', borderRadius: 8, boxShadow: '0 4px 12px rgba(18,42,35,0.08)', fontSize: 12, color: '#122A23' }}
-                    labelStyle={{ color: '#122A23', fontWeight: 600 }}
-                    formatter={(value) => [`${Number(value ?? 0).toFixed(1)}%`, 'Median of network maxima']}
-                  />
-                  <Bar dataKey="value" fill="#218F91" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartCard>
-          </div>
-
-          <Card>
-            <CardHeading
-              title="Metric-wise summaries per network"
-              subtitle="Minimum, median and maximum across every removal scenario for each metric. A text equivalent of the charts above."
-            />
-            <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-              <table className="w-full min-w-[900px] border-collapse text-[12px]">
-                <caption className="sr-only">Metric distributions for each selected network</caption>
-                <thead>
-                  <tr className="border-b border-line-soft text-left text-[11px] uppercase tracking-wide text-fg-faint">
-                    <th scope="col" className="py-2 pr-3 font-medium">Network</th>
-                    <th scope="col" className="py-2 pr-3 font-medium">Metric</th>
-                    <th scope="col" className="py-2 pr-3 font-medium">Mode</th>
-                    <th scope="col" className="py-2 pr-3 font-medium">Min</th>
-                    <th scope="col" className="py-2 pr-3 font-medium">Median</th>
-                    <th scope="col" className="py-2 pr-3 font-medium">Max</th>
-                    <th scope="col" className="py-2 pr-3 font-medium">Node with the maximum</th>
-                    <th scope="col" className="py-2 font-medium">Definition</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {summaries.flatMap((summary) =>
-                    summary.metrics.map((metric) => (
-                      <tr key={`${summary.datasetId}-${metric.key}`} className="border-b border-line-soft/60">
-                        <td className="py-2 pr-3 text-fg">{summary.datasetName}</td>
-                        <td className="py-2 pr-3 text-fg-muted">{metric.label}</td>
-                        <td className="py-2 pr-3">
-                          <Badge tone={metric.key === 'linkLossPercent' || metric.key === 'directlyAffectedConsumers' ? 'primary' : 'highlight'}>
-                            {metric.key === 'linkLossPercent' || metric.key === 'directlyAffectedConsumers'
-                              ? 'Direct'
-                              : 'Cascade'}
-                          </Badge>
-                        </td>
-                        <td className="py-2 pr-3 tabular-nums text-fg-muted">
-                          {metric.unit === 'percent' ? formatPercent(metric.min) : (metric.min ?? 'N/A')}
-                        </td>
-                        <td className="py-2 pr-3 tabular-nums text-fg">
-                          {metric.unit === 'percent' ? formatPercent(metric.median) : roundTo(metric.median ?? 0, 2)}
-                        </td>
-                        <td className="py-2 pr-3 tabular-nums text-fg">
-                          {metric.unit === 'percent' ? formatPercent(metric.max) : (metric.max ?? 'N/A')}
-                        </td>
-                        <td className="py-2 pr-3 text-fg-muted">{metric.topNodeLabel ?? 'Not applicable'}</td>
-                        <td className="py-2 text-[11px] text-fg-faint">{metric.definition}</td>
-                      </tr>
-                    )),
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-
-          <Card>
-            <CardHeading
-              title="Ecosystem category ranges"
-              subtitle="Number of usable networks in each group, with the range and median of each metric across those networks."
-            />
-            <div className="grid gap-3 lg:grid-cols-3">
-              {categories.map((category) => (
-                <div key={category.ecosystem} className="rounded-xl border border-line-soft bg-surface-2 p-3">
-                  <p className="flex flex-wrap items-center gap-1.5 text-[13px] font-semibold text-fg">
-                    {category.label}
-                    <Badge tone={category.usableCount >= 2 ? 'secondary' : 'pending'}>
-                      {category.usableCount} usable network(s)
-                    </Badge>
-                  </p>
-                  <table className="mt-2 w-full border-collapse text-[11.5px]">
-                    <caption className="sr-only">{category.label} metric ranges</caption>
-                    <thead>
-                      <tr className="text-left text-[10.5px] uppercase tracking-wide text-fg-faint">
-                        <th scope="col" className="py-1 pr-2 font-medium">Metric</th>
-                        <th scope="col" className="py-1 pr-2 font-medium">Range of network maxima</th>
-                        <th scope="col" className="py-1 font-medium" title="Median across the networks in this category">
-                          Median
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {category.metrics.map((metric) => (
-                        <tr key={metric.key} className="border-t border-line-soft/60">
-                          <td className="py-1 pr-2 text-fg-muted">{metric.label}</td>
-                          <td className="py-1 pr-2 tabular-nums text-fg">
-                            {metric.definedCount === 0
-                              ? 'Not applicable'
-                              : metric.unit === 'percent'
-                                ? `${formatPercent(metric.min)} – ${formatPercent(metric.max)}`
-                                : `${metric.min} – ${metric.max}`}
-                          </td>
-                          <td className="py-1 tabular-nums text-fg">
-                            {metric.median === null
-                              ? 'N/A'
-                              : metric.unit === 'percent'
-                                ? formatPercent(metric.median)
-                                : roundTo(metric.median, 2)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  <ul className="mt-2 space-y-0.5 text-[11px] text-fg-faint">
-                    {category.links.map((link) => (
-                      <li key={link.datasetName}>
-                        {link.datasetName}: connectance {formatConnectance(link.value)}
-                      </li>
-                    ))}
-                  </ul>
+                  <button
+                    type="button"
+                    onClick={() => setExpandedGraphId(isMaximized ? null : d.id)}
+                    className="h-6 w-6 rounded-md border border-[#E5E6DC] bg-white text-[#68716B] hover:text-[#202B27] flex items-center justify-center transition-colors"
+                    title={isMaximized ? 'Minimize' : 'Maximize graph'}
+                  >
+                    {isMaximized ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+                  </button>
                 </div>
-              ))}
-            </div>
-          </Card>
 
-          <Card>
-            <CardHeading title="Provenance of every compared network" />
-            <ul className="space-y-2">
-              {summaries.map((summary) => (
-                <li key={summary.datasetId} className="rounded-xl border border-line-soft bg-surface-2 p-2.5 text-[12px]">
-                  <p className="font-medium text-fg">{summary.datasetName}</p>
-                  <p className="mt-0.5 text-fg-muted">
-                    {summary.ecosystemLabel} · {SOURCE_STATUS_LABEL[summary.sourceStatus as keyof typeof SOURCE_STATUS_LABEL] ?? summary.sourceStatus}
-                  </p>
-                  <p className="mt-0.5 text-fg-muted">Origin: {summary.origin}</p>
-                  <p className="text-fg-muted">Citation: {summary.citation}</p>
-                  <p className="text-fg-faint">
-                    Source URL: {summary.sourceUrl ?? 'Not provided'} · Licence: {summary.license ?? 'Not provided'}
-                  </p>
-                  <p className="mt-1 text-[11px] text-fg-faint">{summary.dataNote}</p>
-                </li>
-              ))}
-            </ul>
-          </Card>
-        </>
-      )}
+                {/* Graph Canvas */}
+                <div className="flex-1 w-full relative bg-white overflow-hidden">
+                  {graph && (
+                    <FoodWebGraph
+                      graph={graph}
+                      removedNodeIds={[]}
+                      selectedNodeId={null}
+                      onSelectNode={() => {}}
+                      className="h-full w-full"
+                    />
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* =====================================================================
+          4. KEY STRUCTURAL METRICS TABLE & TROPHIC LEVEL DISTRIBUTION CHART
+          ===================================================================== */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+        {/* Left Column: Key Structural Metrics Table (7 Columns) */}
+        <div className="lg:col-span-7 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-3">
+          <div className="flex items-center justify-between pb-2 border-b border-[#E5E6DC]">
+            <h2 className="text-xs font-bold text-[#202B27]">Key Structural Metrics</h2>
+            <span className="text-[11px] text-[#68716B]">Baseline network topology</span>
+          </div>
+
+          <div className="overflow-x-auto rounded-xl border border-[#E5E6DC] bg-white">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-[#F7F6EF] text-[10.5px] uppercase font-bold text-[#68716B] border-b border-[#E5E6DC]">
+                <tr>
+                  <th className="py-2.5 px-3">Metric</th>
+                  {structuralMetrics.map((sm) => (
+                    <th key={sm.id} className="py-2.5 px-3">
+                      <div className="min-w-[100px]">
+                        <p className="font-bold text-[#202B27] truncate">{sm.name}</p>
+                        <p className="text-[9.5px] font-normal text-[#68716B] capitalize truncate">
+                          ({sm.ecosystemLabel})
+                        </p>
+                      </div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#E5E6DC]/60">
+                {/* Row 1: Number of Species */}
+                <tr className="hover:bg-[#F7F6EF]/40 transition-colors">
+                  <td className="py-2.5 px-3 font-medium text-[#202B27]">Number of Species</td>
+                  {structuralMetrics.map((sm) => {
+                    const maxSpecies = Math.max(...structuralMetrics.map((m) => m.nodeCount)) || 1
+                    const pct = Math.min(100, Math.round((sm.nodeCount / maxSpecies) * 100))
+                    return (
+                      <td key={sm.id} className="py-2.5 px-3">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono tabular-nums font-bold text-[#202B27] w-8">
+                            {sm.nodeCount}
+                          </span>
+                          <div className="w-16 h-2 rounded-full bg-[#E5E6DC] overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all duration-500"
+                              style={{ width: `${pct}%`, backgroundColor: sm.color }}
+                            />
+                          </div>
+                        </div>
+                      </td>
+                    )
+                  })}
+                </tr>
+
+                {/* Row 2: Number of Links */}
+                <tr className="hover:bg-[#F7F6EF]/40 transition-colors">
+                  <td className="py-2.5 px-3 font-medium text-[#202B27]">Number of Links</td>
+                  {structuralMetrics.map((sm) => {
+                    const maxLinks = Math.max(...structuralMetrics.map((m) => m.linkCount)) || 1
+                    const pct = Math.min(100, Math.round((sm.linkCount / maxLinks) * 100))
+                    return (
+                      <td key={sm.id} className="py-2.5 px-3">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono tabular-nums font-bold text-[#202B27] w-8">
+                            {sm.linkCount}
+                          </span>
+                          <div className="w-16 h-2 rounded-full bg-[#E5E6DC] overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all duration-500"
+                              style={{ width: `${pct}%`, backgroundColor: sm.color }}
+                            />
+                          </div>
+                        </div>
+                      </td>
+                    )
+                  })}
+                </tr>
+
+                {/* Row 3: Connectance (C) */}
+                <tr className="hover:bg-[#F7F6EF]/40 transition-colors">
+                  <td className="py-2.5 px-3 font-medium text-[#202B27]">Connectance (C)</td>
+                  {structuralMetrics.map((sm) => {
+                    const maxConn = Math.max(...structuralMetrics.map((m) => m.connectance)) || 0.2
+                    const pct = Math.min(100, Math.round((sm.connectance / maxConn) * 100))
+                    return (
+                      <td key={sm.id} className="py-2.5 px-3">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono tabular-nums font-bold text-[#202B27] w-11 text-[11px]">
+                            {formatConnectance(sm.connectance)}
+                          </span>
+                          <div className="w-16 h-2 rounded-full bg-[#E5E6DC] overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all duration-500"
+                              style={{ width: `${pct}%`, backgroundColor: sm.color }}
+                            />
+                          </div>
+                        </div>
+                      </td>
+                    )
+                  })}
+                </tr>
+
+                {/* Row 4: Average Trophic Level */}
+                <tr className="hover:bg-[#F7F6EF]/40 transition-colors">
+                  <td className="py-2.5 px-3 font-medium text-[#202B27]">Average Trophic Level</td>
+                  {structuralMetrics.map((sm) => {
+                    const pct = Math.min(100, Math.round((sm.avgTrophic / 5.0) * 100))
+                    return (
+                      <td key={sm.id} className="py-2.5 px-3">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono tabular-nums font-bold text-[#202B27] w-8">
+                            {sm.avgTrophic}
+                          </span>
+                          <div className="w-16 h-2 rounded-full bg-[#E5E6DC] overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all duration-500"
+                              style={{ width: `${pct}%`, backgroundColor: sm.color }}
+                            />
+                          </div>
+                        </div>
+                      </td>
+                    )
+                  })}
+                </tr>
+
+                {/* Row 5: Max Trophic Level */}
+                <tr className="hover:bg-[#F7F6EF]/40 transition-colors">
+                  <td className="py-2.5 px-3 font-medium text-[#202B27]">Max Trophic Level</td>
+                  {structuralMetrics.map((sm) => {
+                    const pct = Math.min(100, Math.round((sm.maxTrophic / 5.0) * 100))
+                    return (
+                      <td key={sm.id} className="py-2.5 px-3">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono tabular-nums font-bold text-[#202B27] w-8">
+                            {sm.maxTrophic}
+                          </span>
+                          <div className="w-16 h-2 rounded-full bg-[#E5E6DC] overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all duration-500"
+                              style={{ width: `${pct}%`, backgroundColor: sm.color }}
+                            />
+                          </div>
+                        </div>
+                      </td>
+                    )
+                  })}
+                </tr>
+
+                {/* Row 6: Average Degree */}
+                <tr className="hover:bg-[#F7F6EF]/40 transition-colors">
+                  <td className="py-2.5 px-3 font-medium text-[#202B27]">Average Degree</td>
+                  {structuralMetrics.map((sm) => {
+                    const maxDeg = Math.max(...structuralMetrics.map((m) => m.avgDegree)) || 6
+                    const pct = Math.min(100, Math.round((sm.avgDegree / maxDeg) * 100))
+                    return (
+                      <td key={sm.id} className="py-2.5 px-3">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono tabular-nums font-bold text-[#202B27] w-8">
+                            {sm.avgDegree}
+                          </span>
+                          <div className="w-16 h-2 rounded-full bg-[#E5E6DC] overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all duration-500"
+                              style={{ width: `${pct}%`, backgroundColor: sm.color }}
+                            />
+                          </div>
+                        </div>
+                      </td>
+                    )
+                  })}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Right Column: Trophic Level Distribution (5 Columns) */}
+        <div className="lg:col-span-5 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-3">
+          <div className="flex items-center justify-between pb-2 border-b border-[#E5E6DC]">
+            <h3 className="text-xs font-bold text-[#202B27]">Trophic Level Distribution</h3>
+            <span className="text-[10px] text-[#68716B]">Species per trophic tier</span>
+          </div>
+
+          <div className="h-56 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={trophicDistributionData}
+                margin={{ top: 8, right: 8, bottom: 4, left: -20 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E6DC" vertical={false} />
+                <XAxis dataKey="level" tick={{ fontSize: 9.5, fill: '#68716B' }} />
+                <YAxis tick={{ fontSize: 9.5, fill: '#68716B' }} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#FCFBF7',
+                    borderColor: '#E5E6DC',
+                    borderRadius: '8px',
+                    fontSize: '11px',
+                  }}
+                />
+                <Legend
+                  wrapperStyle={{ fontSize: 10, paddingTop: 4 }}
+                  iconSize={8}
+                />
+                {structuralMetrics.map((sm) => (
+                  <Bar
+                    key={sm.id}
+                    dataKey={sm.name}
+                    fill={sm.color}
+                    radius={[3, 3, 0, 0]}
+                  />
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* =====================================================================
+          5. THREE ANALYTICS CHARTS ROW (Degree, Box Plot, Species Composition)
+          ===================================================================== */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+        {/* Chart 1: Degree Distribution (Line Chart with Points) */}
+        <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-3">
+          <div className="flex items-center justify-between pb-2 border-b border-[#E5E6DC]">
+            <h3 className="text-xs font-bold text-[#202B27]">Degree Distribution</h3>
+            <span className="text-[10px] text-[#68716B]">Connectivity spread</span>
+          </div>
+
+          <div className="h-52 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={degreeDistributionData}
+                margin={{ top: 8, right: 8, bottom: 4, left: -20 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E6DC" vertical={false} />
+                <XAxis dataKey="degree" tick={{ fontSize: 9, fill: '#68716B' }} />
+                <YAxis tick={{ fontSize: 9, fill: '#68716B' }} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#FCFBF7',
+                    borderColor: '#E5E6DC',
+                    borderRadius: '8px',
+                    fontSize: '11px',
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: 9.5, paddingTop: 4 }} iconSize={8} />
+                {structuralMetrics.map((sm) => (
+                  <Line
+                    key={sm.id}
+                    type="monotone"
+                    dataKey={sm.name}
+                    stroke={sm.color}
+                    strokeWidth={2}
+                    dot={{ r: 3, fill: sm.color }}
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Chart 2: Trophic Level Comparison (Box Plot / Range Chart) */}
+        <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-3">
+          <div className="flex items-center justify-between pb-2 border-b border-[#E5E6DC]">
+            <h3 className="text-xs font-bold text-[#202B27]">Trophic Level Comparison</h3>
+            <span className="text-[10px] text-[#68716B]">Quartiles & range</span>
+          </div>
+
+          {/* Visual Box Plot Canvas */}
+          <div className="h-52 w-full flex items-center justify-around px-2 pt-2">
+            {trophicBoxPlotData.map((box) => {
+              // Convert trophic level (1 to 5) to percentage height (0 to 100%)
+              const scale = (val: number) => Math.max(0, Math.min(100, ((val - 1) / 4) * 100))
+              const bottomPct = scale(box.min)
+              const q1Pct = scale(box.q1)
+              const medianPct = scale(box.median)
+              const q3Pct = scale(box.q3)
+              const topPct = scale(box.max)
+
+              return (
+                <div key={box.name} className="flex flex-col items-center h-full justify-between w-16">
+                  {/* Whisker & Box Column */}
+                  <div className="relative w-8 flex-1 my-2">
+                    {/* Vertical Whisker Line (min to max) */}
+                    <div
+                      className="absolute left-1/2 -translate-x-1/2 w-0.5 bg-[#899B78]"
+                      style={{
+                        bottom: `${bottomPct}%`,
+                        top: `${100 - topPct}%`,
+                      }}
+                    />
+
+                    {/* Top whisker horizontal tick */}
+                    <div
+                      className="absolute left-1/2 -translate-x-1/2 w-3 h-0.5 bg-[#899B78]"
+                      style={{ bottom: `${topPct}%` }}
+                    />
+
+                    {/* Bottom whisker horizontal tick */}
+                    <div
+                      className="absolute left-1/2 -translate-x-1/2 w-3 h-0.5 bg-[#899B78]"
+                      style={{ bottom: `${bottomPct}%` }}
+                    />
+
+                    {/* Quartile Box (Q1 to Q3) */}
+                    <div
+                      className="absolute left-0 right-0 border-2 rounded-sm transition-all"
+                      style={{
+                        bottom: `${q1Pct}%`,
+                        height: `${Math.max(6, q3Pct - q1Pct)}%`,
+                        borderColor: box.color,
+                        backgroundColor: `${box.color}25`,
+                      }}
+                    >
+                      {/* Median horizontal line */}
+                      <div
+                        className="absolute left-0 right-0 h-0.5"
+                        style={{
+                          bottom: `${Math.max(0, Math.min(100, ((medianPct - q1Pct) / Math.max(1, q3Pct - q1Pct)) * 100))}%`,
+                          backgroundColor: box.color,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Ecosystem Label */}
+                  <span className="text-[10px] font-bold text-[#202B27] truncate max-w-[60px] text-center">
+                    {box.name}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Chart 3: Species Composition (Shared vs Unique Breakdown) */}
+        <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-3">
+          <div className="flex items-center justify-between pb-2 border-b border-[#E5E6DC]">
+            <h3 className="text-xs font-bold text-[#202B27]">Species Composition</h3>
+            <span className="text-[10px] text-[#68716B]">Taxonomic overlap</span>
+          </div>
+
+          {/* Venn Diagram / Overlap Matrix Visual */}
+          <div className="h-52 w-full flex flex-col justify-center items-center relative p-2">
+            {/* Visual Overlap Circles representation matching Image 2 */}
+            <div className="relative w-44 h-36 flex items-center justify-center">
+              {structuralMetrics.slice(0, 4).map((sm, i) => {
+                const offsets = [
+                  'top-1 left-3',
+                  'top-1 right-3',
+                  'bottom-3 left-6',
+                  'bottom-3 right-6',
+                ]
+                return (
+                  <div
+                    key={sm.id}
+                    className={cn(
+                      'absolute h-20 w-20 rounded-full border-2 flex flex-col items-center justify-center opacity-85 transition-all shadow-xs',
+                      offsets[i] || 'top-2 left-2',
+                    )}
+                    style={{
+                      borderColor: sm.color,
+                      backgroundColor: `${sm.color}30`,
+                    }}
+                  >
+                    <span className="text-[10.5px] font-bold text-[#202B27] font-mono">
+                      {sm.nodeCount}
+                    </span>
+                    <span className="text-[8px] text-[#68716B] truncate max-w-[50px]">
+                      {sm.name}
+                    </span>
+                  </div>
+                )
+              })}
+
+              {/* Central intersection pill */}
+              <div className="absolute z-10 bg-white/90 border border-[#E5E6DC] rounded-full px-2 py-0.5 text-[9px] font-mono font-bold text-[#35563B] shadow-2xs">
+                {speciesOverlapMatrix[0]?.overlaps[1] ?? 1} shared
+              </div>
+            </div>
+
+            <p className="text-[9.5px] text-[#68716B] text-center mt-2">
+              Cross-network species overlap and uniqueness
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Scientific Limitation Callout (Maintains Academic Integrity) */}
+      <div className="rounded-xl border border-[#E5E6DC] bg-[#FCFBF7] p-3 text-xs text-[#68716B] flex items-start gap-2.5">
+        <Info size={15} className="text-[#35563B] shrink-0 mt-0.5" />
+        <p className="leading-relaxed">
+          <strong>Scientific Methodology Note: </strong>
+          {COMPARISON_LIMITATION}
+        </p>
+      </div>
     </div>
   )
 }

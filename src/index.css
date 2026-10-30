@@ -1,92 +1,131 @@
 @import 'tailwindcss';
 
 /* ============================================================================
-   FoodWebGuard — Light Botanical Theme Design Tokens
-   Authoritative light theme tokens based on FoodWebGuard_Light_Redesign_Kit
+   FoodWebGuard — Scientific Nature-Inspired Design System
+   Palette: Warm Ivory, Off-White, Forest Green, Botanical Dark & Sage Green
+   Typography: Lora (Headings / Editorial) & DM Sans (Body / UI)
    ========================================================================== */
 :root {
   color-scheme: light;
-  --fwg-canvas: #F7FAF8;
-  --fwg-surface: #FFFFFF;
-  --fwg-surface-subtle: #EFF5F1;
-  --fwg-sidebar: #EDF5F0;
-  --fwg-border: #DCE7E1;
-  --fwg-border-strong: #C8D8CF;
-  --fwg-text: #122A23;
-  --fwg-text-muted: #536960;
-  --fwg-text-quiet: #71837B;
-  --fwg-primary: #0F6B52;
-  --fwg-primary-hover: #095742;
-  --fwg-primary-soft: #DDF2E9;
-  --fwg-teal: #218F91;
-  --fwg-blue: #2879B9;
-  --fwg-blue-soft: #E7F2FB;
-  --fwg-warning: #966113;
-  --fwg-warning-soft: #FFF4D9;
-  --fwg-danger: #B33D46;
-  --fwg-danger-soft: #FBEAEC;
-  --fwg-success: #16754D;
-  --fwg-success-soft: #E4F5EA;
-  --fwg-food-source-node: #4A9A6D;
-  --fwg-consumer-node: #2A8EAB;
-  --fwg-unknown-node: #899BA0;
-  --fwg-directly-affected: #C38A26;
-  --fwg-removed: #B33D46;
-  --fwg-font: 'Inter', 'Geist', 'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --fwg-forest: #35563B;
+  --fwg-botanical: #263D2D;
+  --fwg-sage: #899B78;
+  --fwg-sage-soft: #E8EDE0;
+  --fwg-sage-light: #F0F2E9;
+  --fwg-ivory: #F7F6EF;
+  --fwg-offwhite: #FCFBF7;
+  --fwg-muted-grey: #68716B;
+  --fwg-soft-border: #E5E6DC;
+  --fwg-charcoal: #202B27;
+
+  /* Supporting colors */
+  --fwg-coral: #EF9A88;
+  --fwg-warm-orange: #F1B36F;
+  --fwg-soft-yellow: #F3D98B;
+  --fwg-muted-blue: #91BFE0;
+  --fwg-botanical-green: #B5D39A;
+  --fwg-lavender: #C5B2DB;
+
+  --fwg-canvas: #F7F6EF;
+  --fwg-surface: #FCFBF7;
+  --fwg-surface-subtle: #F0F2E9;
+  --fwg-sidebar: #F7F6EF;
+  --fwg-border: #E5E6DC;
+  --fwg-border-strong: #D5D7C8;
+  --fwg-text: #202B27;
+  --fwg-text-muted: #68716B;
+  --fwg-text-quiet: #899B78;
+  --fwg-primary: #35563B;
+  --fwg-primary-hover: #263D2D;
+  --fwg-primary-soft: #E8EDE0;
+  --fwg-teal: #35563B;
+  --fwg-blue: #91BFE0;
+  --fwg-blue-soft: #EBF4FA;
+  --fwg-warning: #F1B36F;
+  --fwg-warning-soft: #FEF4E8;
+  --fwg-danger: #EF9A88;
+  --fwg-danger-soft: #FDEEEB;
+  --fwg-success: #35563B;
+  --fwg-success-soft: #E8EDE0;
+  --fwg-food-source-node: #899B78;
+  --fwg-consumer-node: #91BFE0;
+  --fwg-unknown-node: #68716B;
+  --fwg-directly-affected: #F1B36F;
+  --fwg-removed: #EF9A88;
+
+  --fwg-font: 'DM Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --fwg-font-serif: 'Lora', Georgia, serif;
   --fwg-radius-sm: 8px;
-  --fwg-radius-md: 12px;
-  --fwg-radius-lg: 16px;
-  --fwg-shadow-soft: 0 1px 3px rgb(18 42 35 / 4%), 0 8px 24px rgb(18 42 35 / 3%);
+  --fwg-radius-md: 10px;
+  --fwg-radius-lg: 14px;
+  --fwg-radius-xl: 18px;
+  --fwg-shadow-soft: 0 1px 3px rgb(32 43 39 / 3%), 0 6px 18px rgb(32 43 39 / 2%);
 }
 
 @theme {
-  /* Backgrounds: Warm white / light canvas */
-  --color-ink: #F7FAF8;
-  --color-ink-soft: #F7FAF8;
-
-  /* Surfaces: Crisp white and pale sage tints */
-  --color-surface: #FFFFFF;
-  --color-surface-2: #F4F8F5;
-  --color-surface-muted: #EBF3EE;
-  --color-sidebar: #EDF5F0;
-
-  /* Lines: Restrained neutral botanical borders (WCAG contrast compliant) */
-  --color-line: #DCE7E1;
-  --color-line-soft: #E8EFEA;
-  --color-line-strong: #C8D8CF;
-
-  /* Semantics: Forest green primary action, teal secondary accent */
-  --color-primary: #0F6B52;
-  --color-primary-hover: #095742;
-  --color-primary-soft: #DDF2E9;
-  --color-secondary: #218F91;
-  --color-secondary-soft: #E0F2F1;
-  --color-blue: #2879B9;
-  --color-blue-soft: #E7F2FB;
-  --color-highlight: #966113;
-  --color-highlight-soft: #FFF4D9;
-  --color-danger: #B33D46;
-  --color-danger-soft: #FBEAEC;
-  --color-success: #16754D;
-  --color-success-soft: #E4F5EA;
-
-  /* Text: Deep green-black and muted green-slate (WCAG AA compliant) */
-  --color-fg: #122A23;
-  --color-fg-muted: #536960;
-  --color-fg-faint: #71837B;
-
-  --font-sans:
-    'Inter', 'Geist', 'DM Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
-    sans-serif;
+  --font-serif: 'Lora', Georgia, serif;
+  --font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  --radius-card: 1rem; /* 16px clean modern radius matching mockups */
+  --color-forest: #35563B;
+  --color-botanical: #263D2D;
+  --color-sage: #899B78;
+  --color-sage-soft: #E8EDE0;
+  --color-sage-light: #F0F2E9;
+  --color-ivory: #F7F6EF;
+  --color-offwhite: #FCFBF7;
+  --color-muted-grey: #68716B;
+  --color-soft-border: #E5E6DC;
+  --color-charcoal: #202B27;
+
+  --color-coral: #EF9A88;
+  --color-warm-orange: #F1B36F;
+  --color-soft-yellow: #F3D98B;
+  --color-muted-blue: #91BFE0;
+  --color-botanical-green: #B5D39A;
+  --color-lavender: #C5B2DB;
+
+  /* Surfaces & Canvas */
+  --color-ink: #F7F6EF;
+  --color-ink-soft: #F7F6EF;
+  --color-surface: #FCFBF7;
+  --color-surface-2: #F0F2E9;
+  --color-surface-muted: #E8EDE0;
+  --color-sidebar: #F7F6EF;
+
+  /* Lines & Borders */
+  --color-line: #E5E6DC;
+  --color-line-soft: #EFEFE8;
+  --color-line-strong: #D5D7C8;
+
+  /* Actions & Semantics */
+  --color-primary: #35563B;
+  --color-primary-hover: #263D2D;
+  --color-primary-soft: #E8EDE0;
+  --color-secondary: #899B78;
+  --color-secondary-soft: #E8EDE0;
+  --color-blue: #91BFE0;
+  --color-blue-soft: #EBF4FA;
+  --color-highlight: #F1B36F;
+  --color-highlight-soft: #FEF4E8;
+  --color-danger: #EF9A88;
+  --color-danger-soft: #FDEEEB;
+  --color-success: #35563B;
+  --color-success-soft: #E8EDE0;
+
+  /* Text */
+  --color-fg: #202B27;
+  --color-fg-muted: #68716B;
+  --color-fg-faint: #899B78;
+
+  --radius-card: 14px;
 }
 
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
     color-scheme: light;
+    scroll-behavior: smooth;
   }
 
   body {
@@ -102,35 +141,44 @@
 
   h1,
   h2,
-  h3,
-  h4 {
-    font-weight: 650;
-    letter-spacing: -0.012em;
+  h3 {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    letter-spacing: -0.015em;
     line-height: 1.25;
     margin: 0;
     color: var(--color-fg);
   }
 
-  /* Visible focus indicator for keyboard users */
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+    margin: 0;
+    color: var(--color-fg);
+  }
+
   :focus-visible {
-    outline: 2px solid var(--color-blue);
+    outline: 2px solid var(--color-forest);
     outline-offset: 2px;
     border-radius: 6px;
   }
 
   ::selection {
-    background: #DDF2E9;
-    color: #0F6B52;
+    background: #E8EDE0;
+    color: #263D2D;
   }
 
-  /* Scrollbars — subtle, light botanical */
   * {
     scrollbar-color: var(--color-line-strong) transparent;
     scrollbar-width: thin;
   }
   *::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
   *::-webkit-scrollbar-track {
     background: transparent;
@@ -138,12 +186,9 @@
   *::-webkit-scrollbar-thumb {
     background: var(--color-line);
     border-radius: 999px;
-    border: 2px solid transparent;
-    background-clip: content-box;
   }
   *::-webkit-scrollbar-thumb:hover {
     background: var(--color-line-strong);
-    background-clip: content-box;
   }
 }
 
@@ -152,14 +197,14 @@
     background-color: var(--color-surface);
     border: 1px solid var(--color-line);
     border-radius: var(--radius-card);
-    box-shadow: 0 1px 3px rgb(18 42 35 / 3%), 0 6px 18px rgb(18 42 35 / 2%);
+    box-shadow: 0 1px 3px rgb(32 43 39 / 2%), 0 4px 14px rgb(32 43 39 / 2%);
   }
 
   .fwg-panel {
     background-color: var(--color-surface);
     border: 1px solid var(--color-line);
-    border-radius: 1rem;
-    box-shadow: 0 1px 3px rgb(18 42 35 / 3%), 0 6px 18px rgb(18 42 35 / 2%);
+    border-radius: 14px;
+    box-shadow: 0 1px 3px rgb(32 43 39 / 2%), 0 4px 14px rgb(32 43 39 / 2%);
   }
 
   .fwg-sidebar {
@@ -170,12 +215,12 @@
   .fwg-field {
     background-color: var(--color-surface);
     border: 1px solid var(--color-line);
-    border-radius: 0.625rem;
+    border-radius: 8px;
     color: var(--color-fg);
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
   .fwg-field::placeholder {
-    color: var(--color-fg-faint);
+    color: var(--color-fg-muted);
   }
   .fwg-field:hover {
     border-color: var(--color-line-strong);
@@ -216,11 +261,10 @@
 
 .fwg-graph-surface {
   background:
-    radial-gradient(circle at 50% 40%, rgba(15, 107, 82, 0.04), transparent 70%),
-    linear-gradient(180deg, #FFFFFF 0%, #F7FAF8 100%);
+    radial-gradient(circle at 50% 40%, rgba(53, 86, 59, 0.03), transparent 70%),
+    linear-gradient(180deg, #FCFBF7 0%, #F7F6EF 100%);
 }
 
-/* Ensure Cytoscape container always fills its parent relative canvas */
 .__________cytoscape_container {
   position: absolute !important;
   inset: 0 !important;
@@ -249,78 +293,18 @@
     print-color-adjust: exact !important;
   }
 
-  /* When printing the report modal, hide the entire background app */
-  body.report-modal-open #root,
-  body:has(#academic-report-portal) #root {
-    display: none !important;
-  }
-
-  /* Reset portal and backdrop to natural document flow */
-  #academic-report-portal {
-    display: block !important;
-    position: static !important;
-    width: 100% !important;
-    height: auto !important;
-    overflow: visible !important;
-    background: #ffffff !important;
-  }
-
-  .academic-report-backdrop {
-    position: static !important;
-    inset: auto !important;
-    background: transparent !important;
-    backdrop-filter: none !important;
-    padding: 0 !important;
-    overflow: visible !important;
-    display: block !important;
-    width: 100% !important;
-    height: auto !important;
-    max-height: none !important;
-  }
-
-  .academic-report-card {
-    position: static !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    max-height: none !important;
-    height: auto !important;
-    box-shadow: none !important;
-    border: none !important;
-    border-radius: 0 !important;
-    overflow: visible !important;
-    display: block !important;
-    background: #ffffff !important;
-  }
-
-  #academic-report-canvas {
-    position: static !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    height: auto !important;
-    overflow: visible !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    display: block !important;
-    background: #ffffff !important;
-  }
-
+  header,
+  nav,
+  aside,
+  button,
   .no-print {
     display: none !important;
   }
 
-  /* Prevent sections and cards from splitting mid-block across page breaks */
-  section,
-  .print-break-inside-avoid {
-    break-inside: avoid !important;
-    page-break-inside: avoid !important;
-  }
-
-  table {
-    page-break-inside: auto;
-  }
-
-  tr {
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
+  .fwg-card,
+  .fwg-panel {
+    box-shadow: none !important;
+    border: 1px solid #cbd5e1 !important;
+    break-inside: avoid;
   }
 }

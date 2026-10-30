@@ -5,8 +5,12 @@ import { useHashRoute } from './components/layout/routes'
 import { CompareResults } from './pages/CompareResults'
 import { DatasetLibraryPage } from './pages/DatasetLibraryPage'
 import { Explore } from './pages/Explore'
+import { SimulationPage } from './pages/SimulationPage'
+import { CascadeTimelinePage } from './pages/CascadeTimelinePage'
 import { Methodology } from './pages/Methodology'
+import { DatasetImportPage } from './pages/DatasetImportPage'
 import { Overview } from './pages/Overview'
+import { FeaturesPage } from './pages/FeaturesPage'
 import { ScenarioAnalysis } from './pages/ScenarioAnalysis'
 import { ConservationAtlas } from './pages/ConservationAtlas'
 import { AppStateProvider, useAppState } from './state/AppState'
@@ -24,15 +28,19 @@ function Routed() {
 
   return (
     <>
-      <Shell route={route} onNavigate={navigate}>
-        {route === 'overview' ? <Overview onNavigate={navigate} /> : null}
+      <Shell route={route} onNavigate={navigate} onOpenImport={() => setImportOpen(true)}>
+        {route === 'overview' ? <Overview onNavigate={navigate} onOpenImport={() => setImportOpen(true)} /> : null}
+        {route === 'features' ? <FeaturesPage onNavigate={navigate} onOpenImport={() => setImportOpen(true)} /> : null}
         {route === 'explore' ? <Explore onNavigate={navigate} /> : null}
+        {route === 'simulation' ? <SimulationPage onNavigate={navigate} /> : null}
+        {route === 'timeline' ? <CascadeTimelinePage onNavigate={navigate} /> : null}
         {route === 'experiment' ? <ScenarioAnalysis onNavigate={navigate} /> : null}
         {route === 'compare' ? <CompareResults /> : null}
         {route === 'conservation' ? <ConservationAtlas onNavigate={navigate} /> : null}
         {route === 'library' ? (
           <DatasetLibraryPage onNavigate={navigate} onOpenImport={() => setImportOpen(true)} />
         ) : null}
+        {route === 'import' ? <DatasetImportPage onNavigate={navigate} /> : null}
         {route === 'methodology' ? <Methodology /> : null}
       </Shell>
 

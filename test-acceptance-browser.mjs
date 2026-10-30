@@ -151,7 +151,7 @@ async function runBrowserAudit() {
     for (const r of routes) {
       const url = `${PREVIEW_URL}/#/${r.id}`
       await cdp.send('Page.navigate', { url })
-      await wait(700)
+      await wait(1000)
       const pageInfo = await cdp.evaluate(`(() => {
         return {
           title: document.title,
@@ -626,10 +626,15 @@ async function runBrowserAudit() {
         const body = document.body;
         const scrollW = Math.max(docEl.scrollWidth, body.scrollWidth);
         const clientW = window.innerWidth;
+        const bad = Array.from(document.querySelectorAll('*'))
+          .filter((el) => el.getBoundingClientRect().right > clientW + 2)
+          .map((el) => el.tagName + '.' + el.className + ' r:' + Math.round(el.getBoundingClientRect().right))
+          .slice(0, 5)
         return {
           scrollW,
           clientW,
           hasHorizontalScroll: scrollW > clientW + 2,
+          bad,
         };
       })()`)
 
@@ -642,7 +647,7 @@ async function runBrowserAudit() {
         actual: `scrollW=${overflow.scrollW}, clientW=${overflow.clientW}, overflow=${overflow.hasHorizontalScroll}`,
         pass: vpPassed,
       })
-      console.log(`Viewport ${vp.name} (${vp.width}x${vp.height}): ${vpPassed ? 'PASS' : 'FAIL'}`)
+      console.log(`Viewport ${vp.name} (${vp.width}x${vp.height}): ${vpPassed ? 'PASS' : 'FAIL'}`, overflow.scrollW, overflow.clientW, overflow.bad)
     }
 
     results.consoleErrors = cdp.consoleErrors

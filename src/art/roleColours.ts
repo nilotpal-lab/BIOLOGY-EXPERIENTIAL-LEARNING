@@ -12,14 +12,25 @@ import { TROPHIC_ROLE_LABEL, type TrophicRole } from '../core/types'
  * ========================================================================== */
 
 export const ROLE_COLOURS: Record<TrophicRole, string> = {
-  'producer': '#2DD4BF',
-  'basal-group': '#14B8A6',
-  'primary-consumer': '#818CF8',
-  'secondary-consumer': '#A78BFA',
-  'apex-predator': '#FCD34D',
-  'omnivore': '#F472B6',
-  'decomposer': '#94A3B8',
-  'other': '#64748B',
+  'producer': '#B5D39A',
+  'basal-group': '#B5D39A',
+  'primary-consumer': '#91BFE0',
+  'secondary-consumer': '#F3D98B',
+  'apex-predator': '#EF9A88',
+  'omnivore': '#F1B36F',
+  'decomposer': '#C49A6C',
+  'other': '#68716B',
+}
+
+export const ROLE_BG_COLOURS: Record<TrophicRole, string> = {
+  'producer': '#F2F8ED',
+  'basal-group': '#F2F8ED',
+  'primary-consumer': '#EEF5FA',
+  'secondary-consumer': '#FEF9EC',
+  'apex-predator': '#FDF1EE',
+  'omnivore': '#FEF5EA',
+  'decomposer': '#F9F5F0',
+  'other': '#F5F6F4',
 }
 
 export interface GraphLegendItem {
