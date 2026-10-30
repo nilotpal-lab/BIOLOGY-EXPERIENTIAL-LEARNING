@@ -11,11 +11,12 @@ import {
   Play,
   RotateCcw,
 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import { FoodWebGraph } from '../components/graph/FoodWebGraph'
 import { SpeciesIcon } from '../components/SpeciesIcon'
 import { Button, SelectInput, cn } from '../components/ui/primitives'
 import { computeBaselineMetrics, formatPercent } from '../core/metrics'
+import { runScenario } from '../core/scenarios'
 import { TROPHIC_ROLE_LABEL } from '../core/types'
 import { useAppState } from '../state/AppState'
 import type { RouteId } from '../components/layout/routes'
@@ -26,6 +27,7 @@ export interface SimulationPageProps {
 
 export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps = {}) {
   const {
+    dataset,
     graph,
     selectedNodeId,
     selectNode,
@@ -36,29 +38,27 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
     result,
   } = useAppState()
 
-  const [simMode, setSimMode] = useState<'direct' | 'cascade'>('direct')
   const [showAnimation, setShowAnimation] = useState(true)
   const [animSpeed, setAnimSpeed] = useState<'slow' | 'normal' | 'fast'>('normal')
   const [isPlaying, setIsPlaying] = useState(false)
   const [timelineStep, setTimelineStep] = useState<number>(0)
   const [affectedTab, setAffectedTab] = useState<'direct' | 'cascade'>('direct')
   const [affectedCollapsed, setAffectedCollapsed] = useState(false)
-
-  // Keep global mode in sync
-  useEffect(() => {
-    if (mode !== simMode) {
-      setMode(simMode)
-    }
-  }, [simMode, mode, setMode])
+  const userResetRef = useRef(false)
 
   const baseline = useMemo(() => (graph ? computeBaselineMetrics(graph) : null), [graph])
 
-  // Default to first consumer or carp/fish if none selected
+  // Default to carp or first consumer if none selected
   useEffect(() => {
     if (!selectedNodeId && graph && graph.nodes.length > 0) {
       const defaultNode =
-        graph.nodes.find((n) => n.trophicRole === 'secondary-consumer' || n.trophicRole === 'omnivore') ||
-        graph.nodes[0]
+        graph.nodes.find(
+          (n) =>
+            n.name.toLowerCase().includes('carp') ||
+            n.id.toLowerCase().includes('carp') ||
+            n.trophicRole === 'secondary-consumer' ||
+            n.trophicRole === 'omnivore',
+        ) || graph.nodes[0]
       if (defaultNode) {
         selectNode(defaultNode.id)
       }
@@ -70,26 +70,39 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
     [graph, selectedNodeId],
   )
 
-  // When result updates, set timeline step to final round
+  const activeResult = useMemo(() => {
+    if (userResetRef.current) return null
+    if (result) return result
+    if (graph && selectedNode && dataset) {
+      try {
+        return runScenario(graph, dataset.name, selectedNode.id, mode)
+      } catch {
+        return null
+      }
+    }
+    return null
+  }, [result, graph, selectedNode, dataset, mode])
+
+  // When activeResult updates, set timeline step to final round
   useEffect(() => {
-    if (result && result.mode === 'cascade' && result.rounds.length > 0) {
-      setTimelineStep(result.rounds.length)
-    } else if (result) {
+    if (activeResult && activeResult.mode === 'cascade' && activeResult.rounds.length > 0) {
+      setTimelineStep(activeResult.rounds.length)
+    } else if (activeResult) {
       setTimelineStep(1)
     } else {
       setTimelineStep(0)
     }
     setIsPlaying(false)
-  }, [result])
+  }, [activeResult])
 
   // Playback timer for timeline
   useEffect(() => {
-    if (!isPlaying || !result || result.mode !== 'cascade' || result.rounds.length === 0) return
+    if (!isPlaying || !activeResult || activeResult.mode !== 'cascade' || activeResult.rounds.length === 0) return
 
     const delay = animSpeed === 'slow' ? 2200 : animSpeed === 'fast' ? 800 : 1400
     const timer = setInterval(() => {
       setTimelineStep((curr) => {
-        if (curr >= result.rounds.length) {
+        if (curr >= activeResult.rounds.length) {
           setIsPlaying(false)
           return curr
         }
@@ -98,21 +111,21 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
     }, delay)
 
     return () => clearInterval(timer)
-  }, [isPlaying, result, animSpeed])
+  }, [isPlaying, activeResult, animSpeed])
 
   // Calculate nodes currently removed based on timeline scrubber
   const activeRemovedIds = useMemo(() => {
-    if (!result) return []
-    if (result.mode !== 'cascade' || result.rounds.length === 0) {
-      return result.removedNodeIds
+    if (!activeResult) return []
+    if (activeResult.mode !== 'cascade' || activeResult.rounds.length === 0) {
+      return activeResult.removedNodeIds
     }
     if (timelineStep === 0) return []
-    if (timelineStep === 1) return [result.primaryNodeId]
+    if (timelineStep === 1) return [activeResult.primaryNodeId]
     const roundIdx = timelineStep - 1
-    const includedRounds = result.rounds.slice(0, roundIdx)
+    const includedRounds = activeResult.rounds.slice(0, roundIdx)
     const secondaryIds = includedRounds.flatMap((r) => r.removals.map((rem) => rem.nodeId))
-    return [result.primaryNodeId, ...secondaryIds]
-  }, [result, timelineStep])
+    return [activeResult.primaryNodeId, ...secondaryIds]
+  }, [activeResult, timelineStep])
 
   // Available species list for selector
   const availableSpecies = useMemo(() => {
@@ -122,24 +135,28 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
 
   // Directly affected consumers list
   const directlyAffectedList = useMemo(() => {
-    if (!result || !graph) return []
-    return result.scenario.directlyAffectedConsumerIds.map((id) => {
+    if (!activeResult || !graph) return []
+    return activeResult.scenario.directlyAffectedConsumerIds.map((id) => {
       const node = graph.nodeById.get(id)
-      const isDepleted = result.scenario.foodDepletedConsumerIds.includes(id)
+      const isDepleted = activeResult.scenario.foodDepletedConsumerIds.includes(id)
+      const lostLinks = graph.edges.filter(
+        (e) => e.source === activeResult.primaryNodeId && e.target === id,
+      ).length
       return {
         id,
         name: node?.name ?? id,
         scientificName: node?.scientificName,
         iconKey: node?.iconKey,
         isDepleted,
+        lostLinks: Math.max(1, lostLinks),
       }
     })
-  }, [result, graph])
+  }, [activeResult, graph])
 
   // Secondary cascade removals list
   const cascadeRemovalsList = useMemo(() => {
-    if (!result || result.mode !== 'cascade' || !graph) return []
-    return result.rounds.flatMap((r) =>
+    if (!activeResult || activeResult.mode !== 'cascade' || !graph) return []
+    return activeResult.rounds.flatMap((r) =>
       r.removals.map((rem) => {
         const node = graph.nodeById.get(rem.nodeId)
         return {
@@ -152,29 +169,29 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
         }
       }),
     )
-  }, [result, graph])
+  }, [activeResult, graph])
 
-  const totalRounds = result && result.mode === 'cascade' ? Math.max(1, result.rounds.length) : 1
+  const totalRounds = activeResult && activeResult.mode === 'cascade' ? Math.max(1, activeResult.rounds.length) : 1
 
   return (
-    <div className="space-y-5 max-w-[1780px] mx-auto pb-8">
+    <div className="space-y-3.5 sm:space-y-4 max-w-[1780px] mx-auto pb-6">
       {/* =====================================================================
           PAGE HEADER / BANNER (Matching Image 2 Reference)
           ===================================================================== */}
       <div className="relative rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] overflow-hidden shadow-2xs">
         <div className="grid grid-cols-1 lg:grid-cols-12 items-center">
           {/* Banner Text */}
-          <div className="lg:col-span-8 p-5 sm:p-6 lg:p-7 space-y-1.5 z-10">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-normal text-[#202B27] tracking-tight">
+          <div className="lg:col-span-8 p-4 sm:p-5 lg:p-5 space-y-1 z-10">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-serif font-normal text-[#202B27] tracking-tight">
               Simulation Laboratory
             </h1>
-            <p className="text-xs sm:text-sm text-[#68716B] max-w-2xl leading-relaxed">
+            <p className="text-xs sm:text-[13px] text-[#68716B] max-w-2xl leading-relaxed">
               Remove species and observe how the ecosystem responds. Choose a species and simulate direct removal or cascading effects to analyse ecosystem stability.
             </p>
           </div>
 
           {/* Banner Ecosystem Art on Right softly fading to Warm Ivory */}
-          <div className="lg:col-span-4 relative h-32 sm:h-36 lg:h-full min-h-[120px] w-full overflow-hidden">
+          <div className="lg:col-span-4 relative h-24 sm:h-28 lg:h-full min-h-[90px] w-full overflow-hidden">
             <img
               src="/hero-ecosystem.jpg"
               alt="Freshwater ecosystem scenery"
@@ -188,7 +205,7 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
       {/* =====================================================================
           MAIN 3-COLUMN WORKSPACE: Controls | Simulation View | Results
           ===================================================================== */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 sm:gap-4 items-start">
         {/* -------------------------------------------------------------------
             COLUMN 1 (Left 3.5 cols): SIMULATION CONTROLS
             1. Select Simulation Mode
@@ -206,10 +223,13 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
               {/* Option A: Direct Removal */}
               <button
                 type="button"
-                onClick={() => setSimMode('direct')}
+                onClick={() => {
+                  userResetRef.current = false
+                  setMode('direct')
+                }}
                 className={cn(
                   'w-full flex items-start gap-3 p-3 rounded-xl border text-left transition-all',
-                  simMode === 'direct'
+                  mode === 'direct'
                     ? 'border-[#35563B] bg-[#E8EDE0]/90 shadow-2xs'
                     : 'border-[#E5E6DC] bg-white hover:bg-[#F7F6EF]',
                 )}
@@ -217,7 +237,7 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
                 <div
                   className={cn(
                     'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg mt-0.5',
-                    simMode === 'direct' ? 'bg-[#35563B] text-white' : 'bg-[#F0F2E9] text-[#68716B]',
+                    mode === 'direct' ? 'bg-[#35563B] text-white' : 'bg-[#F0F2E9] text-[#68716B]',
                   )}
                 >
                   <Leaf size={14} />
@@ -233,10 +253,13 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
               {/* Option B: Direct Removal + Cascade */}
               <button
                 type="button"
-                onClick={() => setSimMode('cascade')}
+                onClick={() => {
+                  userResetRef.current = false
+                  setMode('cascade')
+                }}
                 className={cn(
                   'w-full flex items-start gap-3 p-3 rounded-xl border text-left transition-all',
-                  simMode === 'cascade'
+                  mode === 'cascade'
                     ? 'border-[#35563B] bg-[#E8EDE0]/90 shadow-2xs'
                     : 'border-[#E5E6DC] bg-white hover:bg-[#F7F6EF]',
                 )}
@@ -244,7 +267,7 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
                 <div
                   className={cn(
                     'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg mt-0.5',
-                    simMode === 'cascade' ? 'bg-[#35563B] text-white' : 'bg-[#F0F2E9] text-[#68716B]',
+                    mode === 'cascade' ? 'bg-[#35563B] text-white' : 'bg-[#F0F2E9] text-[#68716B]',
                   )}
                 >
                   <Network size={14} />
@@ -270,7 +293,10 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
               <SelectInput
                 aria-label="Select species for simulation"
                 value={selectedNodeId ?? ''}
-                onChange={(e) => selectNode(e.target.value)}
+                onChange={(e) => {
+                  userResetRef.current = false
+                  selectNode(e.target.value)
+                }}
                 className="w-full text-xs font-semibold text-[#202B27] rounded-xl border border-[#E5E6DC] bg-white py-2 pl-3 pr-8 shadow-2xs"
               >
                 {availableSpecies.map((n) => (
@@ -376,7 +402,10 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
                 size="md"
                 block
                 icon={<Play size={15} className="fill-white" />}
-                onClick={runSelectedScenario}
+                onClick={() => {
+                  userResetRef.current = false
+                  runSelectedScenario()
+                }}
                 disabled={!selectedNodeId}
                 className="bg-[#35563B] hover:bg-[#263D2D] text-white font-bold py-2.5 text-xs sm:text-sm shadow-xs"
               >
@@ -390,7 +419,10 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
                   size="sm"
                   block
                   icon={<RotateCcw size={13} />}
-                  onClick={resetScenario}
+                  onClick={() => {
+                    userResetRef.current = true
+                    resetScenario()
+                  }}
                   className="text-xs py-1.5 border-[#E5E6DC] text-[#68716B] hover:text-[#202B27]"
                 >
                   Reset simulation
@@ -401,12 +433,12 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
         </div>
 
         {/* -------------------------------------------------------------------
-            COLUMN 2 (Center 5.5 cols): FOOD WEB (SIMULATION VIEW)
+            COLUMN 2 (Center 6 cols): FOOD WEB (SIMULATION VIEW)
             ------------------------------------------------------------------- */}
-        <div className="lg:col-span-6 xl:col-span-6 space-y-4">
-          <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs flex flex-col min-h-[580px]">
+        <div className="lg:col-span-6 xl:col-span-6 space-y-3">
+          <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-3.5 shadow-2xs flex flex-col min-h-[460px]">
             {/* Header: Title + Mini Legend */}
-            <div className="flex flex-wrap items-center justify-between pb-3 border-b border-[#E5E6DC] gap-2">
+            <div className="flex flex-wrap items-center justify-between pb-2.5 border-b border-[#E5E6DC] gap-2">
               <div className="flex items-center gap-2">
                 <h3 className="text-sm sm:text-base font-bold text-[#202B27]">
                   Food Web (Simulation View)
@@ -428,7 +460,7 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
             </div>
 
             {/* Cytoscape Simulation Graph Canvas */}
-            <div className="flex-1 relative mt-3 rounded-xl border border-[#E5E6DC] bg-[#F7F6EF] overflow-hidden min-h-[500px]">
+            <div className="flex-1 relative mt-2.5 rounded-xl border border-[#E5E6DC] bg-[#F7F6EF] overflow-hidden h-[390px] min-h-[360px]">
               {graph ? (
                 <FoodWebGraph
                   graph={graph}
@@ -455,7 +487,7 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
           <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-3">
             <div className="flex items-center justify-between pb-2 border-b border-[#E5E6DC]">
               <h3 className="text-sm font-bold text-[#202B27]">Simulation Results</h3>
-              {result && (
+              {activeResult && (
                 <span className="rounded-full bg-[#FDEEEB] border border-[#EF9A88]/40 px-2 py-0.5 text-[10px] font-bold text-[#EF9A88]">
                   {selectedNode?.name ?? 'Species'} Removed
                 </span>
@@ -468,7 +500,7 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
               <div className="p-2.5 rounded-xl border border-[#E5E6DC] bg-white">
                 <span className="text-[10px] font-semibold text-[#68716B] block uppercase">Species Removed</span>
                 <p className="text-xl font-bold text-[#202B27] tabular-nums mt-0.5">
-                  {result ? (result.mode === 'cascade' ? 1 : result.removedNodeIds.length) : '0'}
+                  {activeResult ? (activeResult.mode === 'cascade' ? 1 : activeResult.removedNodeIds.length) : '0'}
                 </p>
                 <span className="text-[10px] text-[#899B78]">(Direct)</span>
               </div>
@@ -477,10 +509,10 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
               <div className="p-2.5 rounded-xl border border-[#E5E6DC] bg-white">
                 <span className="text-[10px] font-semibold text-[#68716B] block uppercase">Links Lost</span>
                 <p className="text-xl font-bold text-[#202B27] tabular-nums mt-0.5">
-                  {result ? result.scenario.linksLost : '0'}
+                  {activeResult ? activeResult.scenario.linksLost : '0'}
                 </p>
                 <span className="text-[10px] text-[#68716B] tabular-nums truncate block">
-                  out of {baseline?.linkCount ?? 0} {result && result.scenario.linkLossPercent.value !== null ? `(${formatPercent(result.scenario.linkLossPercent.value)})` : ''}
+                  out of {baseline?.linkCount ?? 0} {activeResult && activeResult.scenario.linkLossPercent.value !== null ? `(${formatPercent(activeResult.scenario.linkLossPercent.value)})` : ''}
                 </span>
               </div>
 
@@ -488,7 +520,7 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
               <div className="p-2.5 rounded-xl border border-[#E5E6DC] bg-white">
                 <span className="text-[10px] font-semibold text-[#68716B] block uppercase">Secondary Removals</span>
                 <p className="text-xl font-bold text-[#202B27] tabular-nums mt-0.5">
-                  {result ? result.scenario.secondaryRemovals : '0'}
+                  {activeResult ? activeResult.scenario.secondaryRemovals : '0'}
                 </p>
                 <span className="text-[10px] text-[#899B78]">(via cascade)</span>
               </div>
@@ -497,7 +529,7 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
               <div className="p-2.5 rounded-xl border border-[#E5E6DC] bg-white">
                 <span className="text-[10px] font-semibold text-[#68716B] block uppercase">Total Removed</span>
                 <p className="text-xl font-bold text-[#202B27] tabular-nums mt-0.5">
-                  {result ? result.removedNodeIds.length : '0'}
+                  {activeResult ? activeResult.removedNodeIds.length : '0'}
                 </p>
                 <span className="text-[10px] text-[#68716B] tabular-nums truncate block">
                   out of {baseline?.nodeCount ?? 0}
@@ -562,10 +594,10 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
                             <SpeciesIcon iconKey={item.iconKey} size={22} className="shrink-0" />
                             <span className="font-semibold text-[#202B27] truncate">{item.name}</span>
                           </div>
-                          <div className="flex items-center gap-1 shrink-0">
+                          <div className="flex items-center gap-1.5 shrink-0">
                             <span
                               className={cn(
-                                'px-1.5 py-0.5 rounded text-[9.5px] font-semibold',
+                                'px-2 py-0.5 rounded text-[9.5px] font-semibold',
                                 item.isDepleted
                                   ? 'bg-[#FEF9E7] text-[#C06918] border border-[#F3D98B]'
                                   : 'bg-[#FDEEEB] text-[#EF9A88] border border-[#EF9A88]/40',
@@ -573,12 +605,15 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
                             >
                               {item.isDepleted ? 'Food depleted' : 'Lost food source'}
                             </span>
+                            <span className="text-[10px] font-semibold text-[#EF9A88] tabular-nums">
+                              ↓ -{item.lostLinks} link
+                            </span>
                           </div>
                         </div>
                       ))
                     ) : (
                       <p className="text-xs text-[#68716B] italic py-2 text-center">
-                        {result ? 'No direct consumers affected.' : 'Run a simulation to observe effects.'}
+                        {activeResult ? 'No direct consumers affected.' : 'Run a simulation to observe effects.'}
                       </p>
                     )
                   ) : cascadeRemovalsList.length ? (
@@ -601,7 +636,7 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
                     ))
                   ) : (
                     <p className="text-xs text-[#68716B] italic py-2 text-center">
-                      {result && result.mode === 'cascade'
+                      {activeResult && activeResult.mode === 'cascade'
                         ? 'No secondary cascading removals.'
                         : 'Cascade mode not active or no secondary removals.'}
                     </p>
@@ -625,7 +660,7 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
               Cascade Timeline
             </h3>
             <span className="text-xs text-[#68716B]">
-              ({result ? result.removedNodeIds.length : 0} species removed)
+              ({activeResult ? activeResult.removedNodeIds.length : 0} species removed)
             </span>
           </div>
 
@@ -634,7 +669,7 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
             <button
               type="button"
               onClick={() => setIsPlaying((p) => !p)}
-              disabled={!result || result.mode !== 'cascade' || result.rounds.length === 0}
+              disabled={!activeResult || activeResult.mode !== 'cascade' || activeResult.rounds.length === 0}
               className="flex h-7 w-7 items-center justify-center rounded-full bg-[#35563B] text-white hover:bg-[#263D2D] disabled:opacity-40 transition-colors shadow-2xs"
               title={isPlaying ? 'Pause timeline' : 'Play timeline'}
             >
@@ -651,7 +686,7 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
                 setTimelineStep(Number(e.target.value))
                 setIsPlaying(false)
               }}
-              disabled={!result || result.mode !== 'cascade'}
+              disabled={!activeResult || activeResult.mode !== 'cascade'}
               className="w-28 sm:w-44 accent-[#35563B] cursor-pointer"
             />
 
@@ -753,7 +788,7 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
                 {cascadeRemovalsList[0]?.name ? `${cascadeRemovalsList[0].name} removed` : 'Secondary cascade'}
               </p>
               <p className="text-[10px] text-[#68716B] tabular-nums">
-                {result && result.rounds[0] ? `${result.rounds[0].removals.length} species affected` : '—'}
+                {activeResult && activeResult.rounds[0] ? `${activeResult.rounds[0].removals.length} species affected` : '—'}
               </p>
             </div>
           </div>
@@ -785,7 +820,7 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
                 {cascadeRemovalsList[1]?.name ? `${cascadeRemovalsList[1].name} removed` : 'Stabilized state'}
               </p>
               <p className="text-[10px] text-[#68716B] tabular-nums">
-                {result ? `${result.removedNodeIds.length} total removed` : '—'}
+                {activeResult ? `${activeResult.removedNodeIds.length} total removed` : '—'}
               </p>
             </div>
           </div>
