@@ -41,6 +41,8 @@ export interface FoodWebGraphProps {
   searchQuery?: string
   ghostBaseline?: boolean
   className?: string
+  hideControls?: boolean
+  hideLegend?: boolean
 }
 
 function buildElements(
@@ -99,6 +101,8 @@ export function FoodWebGraph({
   searchQuery = '',
   ghostBaseline = false,
   className,
+  hideControls = false,
+  hideLegend = false,
 }: FoodWebGraphProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const cyRef = useRef<Core | null>(null)
@@ -350,137 +354,139 @@ export function FoodWebGraph({
   return (
     <div className={cn('relative flex min-h-0 flex-col', className)}>
       {/* Top Floating Graph Controls Toolbar (Matching Image 1 Reference) */}
-      <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-[#E5E6DC] bg-[#FCFBF7] p-2 shadow-2xs">
-        {/* Layout Mode Selector (Trophic vs Force) */}
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => handleLayoutChange('trophic')}
-            className={cn(
-              'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
-              layoutMode === 'trophic'
-                ? 'bg-[#35563B] text-white shadow-2xs'
-                : 'border border-[#E5E6DC] bg-[#F7F6EF] text-[#68716B] hover:text-[#202B27] hover:bg-white',
-            )}
-          >
-            <Waypoints size={13} />
-            <span>Trophic Layout</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => handleLayoutChange('force')}
-            className={cn(
-              'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
-              layoutMode === 'force'
-                ? 'bg-[#35563B] text-white shadow-2xs'
-                : 'border border-[#E5E6DC] bg-[#F7F6EF] text-[#68716B] hover:text-[#202B27] hover:bg-white',
-            )}
-          >
-            <Network size={13} />
-            <span>Force Layout</span>
-          </button>
-        </div>
-
-        {/* Center: Switches for Show Labels & Highlight Links */}
-        <div className="flex items-center gap-4 text-xs font-medium text-[#202B27]">
-          {/* Show Labels Toggle */}
-          <div className="flex items-center gap-2">
-            <span className="text-[#68716B]">Show Labels</span>
+      {!hideControls && (
+        <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-[#E5E6DC] bg-[#FCFBF7] p-2 shadow-2xs">
+          {/* Layout Mode Selector (Trophic vs Force) */}
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
-              role="switch"
-              aria-checked={showLabels}
-              aria-label="Toggle node labels"
-              onClick={handleToggleLabels}
+              onClick={() => handleLayoutChange('trophic')}
               className={cn(
-                'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
-                showLabels ? 'bg-[#35563B]' : 'bg-[#E5E6DC]',
+                'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
+                layoutMode === 'trophic'
+                  ? 'bg-[#35563B] text-white shadow-2xs'
+                  : 'border border-[#E5E6DC] bg-[#F7F6EF] text-[#68716B] hover:text-[#202B27] hover:bg-white',
               )}
             >
-              <span
-                className={cn(
-                  'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out',
-                  showLabels ? 'translate-x-4' : 'translate-x-0',
-                )}
-              />
+              <Waypoints size={13} />
+              <span>Trophic Layout</span>
             </button>
-          </div>
-
-          {/* Highlight Links Toggle */}
-          <div className="flex items-center gap-2">
-            <span className="text-[#68716B]">Highlight Links</span>
             <button
               type="button"
-              role="switch"
-              aria-checked={linksHighlighted}
-              aria-label="Toggle link highlighting"
-              onClick={handleToggleHighlightLinks}
+              onClick={() => handleLayoutChange('force')}
               className={cn(
-                'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
-                linksHighlighted ? 'bg-[#35563B]' : 'bg-[#E5E6DC]',
+                'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
+                layoutMode === 'force'
+                  ? 'bg-[#35563B] text-white shadow-2xs'
+                  : 'border border-[#E5E6DC] bg-[#F7F6EF] text-[#68716B] hover:text-[#202B27] hover:bg-white',
               )}
             >
-              <span
+              <Network size={13} />
+              <span>Force Layout</span>
+            </button>
+          </div>
+
+          {/* Center: Switches for Show Labels & Highlight Links */}
+          <div className="flex items-center gap-4 text-xs font-medium text-[#202B27]">
+            {/* Show Labels Toggle */}
+            <div className="flex items-center gap-2">
+              <span className="text-[#68716B]">Show Labels</span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={showLabels}
+                aria-label="Toggle node labels"
+                onClick={handleToggleLabels}
                 className={cn(
-                  'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out',
-                  linksHighlighted ? 'translate-x-4' : 'translate-x-0',
+                  'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
+                  showLabels ? 'bg-[#35563B]' : 'bg-[#E5E6DC]',
                 )}
-              />
+              >
+                <span
+                  className={cn(
+                    'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out',
+                    showLabels ? 'translate-x-4' : 'translate-x-0',
+                  )}
+                />
+              </button>
+            </div>
+
+            {/* Highlight Links Toggle */}
+            <div className="flex items-center gap-2">
+              <span className="text-[#68716B]">Highlight Links</span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={linksHighlighted}
+                aria-label="Toggle link highlighting"
+                onClick={handleToggleHighlightLinks}
+                className={cn(
+                  'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
+                  linksHighlighted ? 'bg-[#35563B]' : 'bg-[#E5E6DC]',
+                )}
+              >
+                <span
+                  className={cn(
+                    'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out',
+                    linksHighlighted ? 'translate-x-4' : 'translate-x-0',
+                  )}
+                />
+              </button>
+            </div>
+          </div>
+
+          {/* Right: Reset View & Zoom Controls */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={resetLayout}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#E5E6DC] bg-[#F7F6EF] hover:bg-white hover:text-[#202B27] px-2.5 py-1.5 text-xs font-medium text-[#68716B] transition-colors shadow-2xs"
+              title="Reset layout and center graph"
+            >
+              <RotateCcw size={13} />
+              <span>Reset View</span>
             </button>
+
+            <div className="flex items-center rounded-lg border border-[#E5E6DC] bg-[#F7F6EF] px-1 py-0.5 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => zoomBy(0.8)}
+                className="p-1 text-[#68716B] hover:text-[#35563B] transition-colors"
+                title="Zoom out"
+                aria-label="Zoom out"
+              >
+                <Minus size={13} />
+              </button>
+              <span className="min-w-[42px] px-1 text-center font-mono text-[11px] font-bold text-[#202B27] tabular-nums select-none">
+                {Math.round(zoomLevel * 100)}%
+              </span>
+              <button
+                type="button"
+                onClick={() => zoomBy(1.25)}
+                className="p-1 text-[#68716B] hover:text-[#35563B] transition-colors"
+                title="Zoom in"
+                aria-label="Zoom in"
+              >
+                <Plus size={13} />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  cyRef.current?.fit(undefined, 48)
+                  if (cyRef.current) setZoomLevel(cyRef.current.zoom())
+                }}
+                className="ml-1 border-l border-[#E5E6DC] p-1 pl-1.5 text-[#68716B] hover:text-[#35563B] transition-colors"
+                title="Fit to canvas"
+                aria-label="Fit to canvas"
+              >
+                <Maximize2 size={13} />
+              </button>
+            </div>
           </div>
         </div>
+      )}
 
-        {/* Right: Reset View & Zoom Controls */}
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={resetLayout}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[#E5E6DC] bg-[#F7F6EF] hover:bg-white hover:text-[#202B27] px-2.5 py-1.5 text-xs font-medium text-[#68716B] transition-colors shadow-2xs"
-            title="Reset layout and center graph"
-          >
-            <RotateCcw size={13} />
-            <span>Reset View</span>
-          </button>
-
-          <div className="flex items-center rounded-lg border border-[#E5E6DC] bg-[#F7F6EF] px-1 py-0.5 shadow-2xs">
-            <button
-              type="button"
-              onClick={() => zoomBy(0.8)}
-              className="p-1 text-[#68716B] hover:text-[#35563B] transition-colors"
-              title="Zoom out"
-              aria-label="Zoom out"
-            >
-              <Minus size={13} />
-            </button>
-            <span className="min-w-[42px] px-1 text-center font-mono text-[11px] font-bold text-[#202B27] tabular-nums select-none">
-              {Math.round(zoomLevel * 100)}%
-            </span>
-            <button
-              type="button"
-              onClick={() => zoomBy(1.25)}
-              className="p-1 text-[#68716B] hover:text-[#35563B] transition-colors"
-              title="Zoom in"
-              aria-label="Zoom in"
-            >
-              <Plus size={13} />
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                cyRef.current?.fit(undefined, 48)
-                if (cyRef.current) setZoomLevel(cyRef.current.zoom())
-              }}
-              className="ml-1 border-l border-[#E5E6DC] p-1 pl-1.5 text-[#68716B] hover:text-[#35563B] transition-colors"
-              title="Fit to canvas"
-              aria-label="Fit to canvas"
-            >
-              <Maximize2 size={13} />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="relative min-h-[480px] lg:min-h-[540px] flex-1 overflow-hidden rounded-xl border border-[#E5E6DC] bg-[#F7F6EF]/50">
+      <div className={cn('relative flex-1 overflow-hidden rounded-xl border border-[#E5E6DC] bg-[#F7F6EF]/50', hideControls ? 'h-full min-h-0' : 'min-h-[480px] lg:min-h-[540px]')}>
         <div
           ref={containerRef}
           role="application"
@@ -499,32 +505,34 @@ export function FoodWebGraph({
         ) : null}
 
         {/* Floating Bottom-Left Trophic Legend (Matching Image 1) */}
-        <div className="pointer-events-auto absolute bottom-4 left-4 z-10 rounded-xl border border-[#E5E6DC]/90 bg-[#FCFBF7]/95 p-3 shadow-xs backdrop-blur-md space-y-1.5 text-[11px]">
-          <div className="flex items-center gap-2 font-medium text-[#202B27]">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#EF9A88] border border-[#EF9A88]" />
-            <span>Apex Predator</span>
+        {!hideLegend && (
+          <div className="pointer-events-auto absolute bottom-4 left-4 z-10 rounded-xl border border-[#E5E6DC]/90 bg-[#FCFBF7]/95 p-3 shadow-xs backdrop-blur-md space-y-1.5 text-[11px]">
+            <div className="flex items-center gap-2 font-medium text-[#202B27]">
+              <span className="h-2.5 w-2.5 rounded-full bg-[#EF9A88] border border-[#EF9A88]" />
+              <span>Apex Predator</span>
+            </div>
+            <div className="flex items-center gap-2 font-medium text-[#202B27]">
+              <span className="h-2.5 w-2.5 rounded-full bg-[#F1B36F] border border-[#F1B36F]" />
+              <span>Tertiary Consumer</span>
+            </div>
+            <div className="flex items-center gap-2 font-medium text-[#202B27]">
+              <span className="h-2.5 w-2.5 rounded-full bg-[#F3D98B] border border-[#F3D98B]" />
+              <span>Secondary Consumer</span>
+            </div>
+            <div className="flex items-center gap-2 font-medium text-[#202B27]">
+              <span className="h-2.5 w-2.5 rounded-full bg-[#91BFE0] border border-[#91BFE0]" />
+              <span>Primary Consumer</span>
+            </div>
+            <div className="flex items-center gap-2 font-medium text-[#202B27]">
+              <span className="h-2.5 w-2.5 rounded-full bg-[#B5D39A] border border-[#B5D39A]" />
+              <span>Primary Producer</span>
+            </div>
+            <div className="flex items-center gap-2 font-medium text-[#202B27]">
+              <span className="h-2.5 w-2.5 rounded-full bg-[#C49A6C] border border-[#C49A6C]" />
+              <span>Detritus</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2 font-medium text-[#202B27]">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#F1B36F] border border-[#F1B36F]" />
-            <span>Tertiary Consumer</span>
-          </div>
-          <div className="flex items-center gap-2 font-medium text-[#202B27]">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#F3D98B] border border-[#F3D98B]" />
-            <span>Secondary Consumer</span>
-          </div>
-          <div className="flex items-center gap-2 font-medium text-[#202B27]">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#91BFE0] border border-[#91BFE0]" />
-            <span>Primary Consumer</span>
-          </div>
-          <div className="flex items-center gap-2 font-medium text-[#202B27]">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#B5D39A] border border-[#B5D39A]" />
-            <span>Primary Producer</span>
-          </div>
-          <div className="flex items-center gap-2 font-medium text-[#202B27]">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#C49A6C] border border-[#C49A6C]" />
-            <span>Detritus</span>
-          </div>
-        </div>
+        )}
 
         {tooltip ? (
           <div

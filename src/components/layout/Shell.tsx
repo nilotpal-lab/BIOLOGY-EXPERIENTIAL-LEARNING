@@ -236,17 +236,19 @@ export function Shell({
               </button>
             </nav>
 
-            {/* Right: Open Explorer Button + Mobile Hamburger */}
+            {/* Right: Blank on Home per 01_Landing_Page.png, Open Explorer on Features per 02_Features_Page.png */}
             <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => navigate('explore')}
-                className="inline-flex items-center gap-2 rounded-[10px] bg-[#35563B] hover:bg-[#263D2D] text-white px-4 py-2 text-xs sm:text-[13px] font-semibold shadow-xs transition-colors"
-              >
-                <Network size={15} />
-                <span>Open Explorer</span>
-                <ArrowRight size={14} />
-              </button>
+              {route === 'features' && (
+                <button
+                  type="button"
+                  onClick={() => navigate('explore')}
+                  className="hidden sm:inline-flex items-center gap-2 rounded-[10px] bg-[#35563B] hover:bg-[#263D2D] text-white px-4 py-2 text-xs sm:text-[13px] font-semibold shadow-xs transition-colors"
+                >
+                  <Network size={15} />
+                  <span>Open Explorer</span>
+                  <ArrowRight size={14} />
+                </button>
+              )}
 
               <button
                 type="button"
