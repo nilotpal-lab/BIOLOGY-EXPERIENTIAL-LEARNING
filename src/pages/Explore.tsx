@@ -496,7 +496,7 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
   // STANDARD WORKSPACE (Matching 03_Explorer_Page.png)
   // =========================================================================
   return (
-    <div className="relative flex flex-col h-[calc(100vh-68px)] overflow-hidden select-none bg-[#F7F6EF]">
+    <div className="relative flex-1 flex flex-col h-full min-h-0 overflow-hidden select-none bg-[#F7F6EF]">
       {/* Required Accessible Heading for Chrome CDP Acceptance Check */}
       <h2 className="sr-only">Workspace</h2>
 

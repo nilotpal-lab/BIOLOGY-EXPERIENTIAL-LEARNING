@@ -526,7 +526,15 @@ export function Shell({
           </aside>
 
           {/* Main Flexible Content Workspace */}
-          <main id="main-content" className="flex-1 min-w-0 p-3 sm:p-5 lg:p-6">
+          <main
+            id="main-content"
+            className={cn(
+              'flex-1 min-w-0',
+              route === 'explore'
+                ? 'p-1.5 sm:p-2.5 h-[calc(100vh-64px)] overflow-hidden flex flex-col'
+                : 'p-3 sm:p-5 lg:p-6',
+            )}
+          >
             {children}
           </main>
         </div>

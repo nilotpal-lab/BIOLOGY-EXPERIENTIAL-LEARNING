@@ -135,7 +135,7 @@ export function FoodWebGraph({
       container,
       elements: buildElements(graph, removed, ghostBaseline),
       style: graphStyles(),
-      layout: { name: 'preset', positions: layoutPositions, fit: true, padding: 36 },
+      layout: { name: 'preset', positions: layoutPositions, fit: true, padding: 50 },
       wheelSensitivity: 0.22,
       minZoom: 0.1,
       maxZoom: 3.2,
@@ -150,7 +150,7 @@ export function FoodWebGraph({
     const fitGraph = () => {
       if (cyRef.current) {
         cyRef.current.resize?.()
-        cyRef.current.fit?.(undefined, 36)
+        cyRef.current.fit?.(undefined, 50)
         setZoomLevel(cyRef.current.zoom())
       }
     }
@@ -172,7 +172,7 @@ export function FoodWebGraph({
         cyRef.current.resize?.()
         if (resizeTimer) clearTimeout(resizeTimer)
         resizeTimer = setTimeout(() => {
-          cyRef.current?.fit?.(undefined, 36)
+          cyRef.current?.fit?.(undefined, 50)
         }, 120)
       }
     })
@@ -486,7 +486,7 @@ export function FoodWebGraph({
         </div>
       )}
 
-      <div className={cn('relative flex-1 overflow-hidden rounded-xl border border-[#E5E6DC] bg-[#F7F6EF]/50', hideControls ? 'h-full min-h-0' : 'min-h-[480px] lg:min-h-[540px]')}>
+      <div className="relative flex-1 min-h-0 overflow-hidden rounded-xl border border-[#E5E6DC] bg-[#F7F6EF]/50">
         <div
           ref={containerRef}
           role="application"
@@ -506,7 +506,7 @@ export function FoodWebGraph({
 
         {/* Floating Bottom-Left Trophic Legend (Matching Image 1) */}
         {!hideLegend && (
-          <div className="pointer-events-auto absolute bottom-4 left-4 z-10 rounded-xl border border-[#E5E6DC]/90 bg-[#FCFBF7]/95 p-3 shadow-xs backdrop-blur-md space-y-1.5 text-[11px]">
+          <div className="pointer-events-auto absolute bottom-3 left-3 z-10 rounded-xl border border-[#E5E6DC]/90 bg-[#FCFBF7]/95 p-2.5 sm:p-3 shadow-xs backdrop-blur-md space-y-1 sm:space-y-1.5 text-[10.5px] sm:text-[11px] max-h-[calc(100%-24px)] overflow-y-auto">
             <div className="flex items-center gap-2 font-medium text-[#202B27]">
               <span className="h-2.5 w-2.5 rounded-full bg-[#EF9A88] border border-[#EF9A88]" />
               <span>Apex Predator</span>
