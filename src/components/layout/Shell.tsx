@@ -21,8 +21,6 @@ import { ECOSYSTEM_LABEL } from '../../core/types'
 import { SelectInput, cn } from '../ui/primitives'
 import { useAppState } from '../../state/AppState'
 import { type RouteId } from './routes'
-import { EcosystemThumbnail } from './EcosystemThumbnail'
-import { HeronCard } from './HeronCard'
 
 export type { RouteId } from './routes'
 
@@ -461,7 +459,7 @@ export function Shell({
           If application: collapsible left sidebar + large flexible workspace
           ===================================================================== */}
       {isPublicPage ? (
-        <main id="main-content" className="flex-1 w-full overflow-y-auto">
+        <main id="main-content" className="flex-1 w-full">
           {children}
         </main>
       ) : (
@@ -469,7 +467,7 @@ export function Shell({
           {/* Collapsible Left Navigation Sidebar (Section 10) */}
           <aside
             className={cn(
-              'hidden lg:flex shrink-0 flex-col border-r border-[#E5E6DC] bg-[#FCFBF7] transition-all duration-300 sticky top-14 max-h-[calc(100vh-56px)] overflow-y-auto',
+              'hidden lg:flex shrink-0 flex-col border-r border-[#E5E6DC] bg-[#FCFBF7] transition-all duration-300 sticky top-16 h-[calc(100vh-64px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
               sidebarCollapsed ? 'w-16 p-2.5' : 'w-60 xl:w-64 p-3.5',
             )}
           >
@@ -525,18 +523,10 @@ export function Shell({
                 Scenario analysis
               </button>
             </nav>
-
-            {/* In expanded mode: Quick network summary and Heron card */}
-            {!sidebarCollapsed && (
-              <div className="mt-auto pt-4 space-y-3">
-                {dataset && <EcosystemThumbnail ecosystem={dataset.ecosystem} />}
-                <HeronCard />
-              </div>
-            )}
           </aside>
 
           {/* Main Flexible Content Workspace */}
-          <main id="main-content" className="flex-1 min-w-0 p-3 sm:p-5 lg:p-6 overflow-y-auto">
+          <main id="main-content" className="flex-1 min-w-0 p-3 sm:p-5 lg:p-6">
             {children}
           </main>
         </div>
