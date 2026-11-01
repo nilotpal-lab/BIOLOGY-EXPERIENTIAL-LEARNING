@@ -23,6 +23,7 @@ import {
   YAxis,
 } from 'recharts'
 import { SpeciesIcon } from '../components/SpeciesIcon'
+import { RobustnessLab } from '../components/robustness/RobustnessLab'
 import {
   Button,
   Card,
@@ -65,6 +66,7 @@ export function ScenarioAnalysis({ onNavigate }: ScenarioAnalysisProps) {
     cancelAnalyse,
   } = useAppState()
 
+  const [activeStudioTab, setActiveStudioTab] = useState<'keystone' | 'robustness'>('keystone')
   const [activeMetricTab, setActiveMetricTab] = useState<RankingMetricKey>('linkLossPercent')
   const [analysisMode, setAnalysisMode] = useState<'all' | 'custom'>('all')
   const [search, setSearch] = useState('')
@@ -243,10 +245,45 @@ export function ScenarioAnalysis({ onNavigate }: ScenarioAnalysisProps) {
         </div>
       </div>
 
-      {/* =====================================================================
-          2. CONTROLS ROW: DATASET SELECTOR & ANALYSIS SETTINGS (Image 06)
-          ===================================================================== */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-4">
+      {/* Studio Tab Navigation */}
+      <div className="flex items-center gap-2 border-b border-[#E5E6DC] pb-1">
+        <button
+          type="button"
+          onClick={() => setActiveStudioTab('keystone')}
+          className={cn(
+            'inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all border cursor-pointer',
+            activeStudioTab === 'keystone'
+              ? 'bg-[#35563B] text-white border-[#35563B] shadow-xs'
+              : 'bg-white text-[#68716B] border-[#E5E6DC] hover:text-[#202B27] hover:bg-[#F7F6EF]',
+          )}
+        >
+          <span>Keystone Sensitivity Rankings</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveStudioTab('robustness')}
+          className={cn(
+            'inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all border cursor-pointer',
+            activeStudioTab === 'robustness'
+              ? 'bg-[#35563B] text-white border-[#35563B] shadow-xs'
+              : 'bg-white text-[#68716B] border-[#E5E6DC] hover:text-[#202B27] hover:bg-[#F7F6EF]',
+          )}
+        >
+          <span>Network Robustness Lab (Dunne 2002)</span>
+          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-800">
+            R₅₀
+          </span>
+        </button>
+      </div>
+
+      {activeStudioTab === 'robustness' ? (
+        <RobustnessLab onNavigateToLibrary={() => onNavigate?.('library')} />
+      ) : (
+        <>
+          {/* =====================================================================
+              2. CONTROLS ROW: DATASET SELECTOR & ANALYSIS SETTINGS (Image 06)
+              ===================================================================== */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-4">
         {/* 1. Select Dataset */}
         <div className="xl:col-span-4 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-2.5">
           <p className="text-[11px] font-bold uppercase tracking-wider text-[#68716B]">
@@ -977,6 +1014,8 @@ export function ScenarioAnalysis({ onNavigate }: ScenarioAnalysisProps) {
         </div>
         )}
       </div>
+        </>
+      )}
     </div>
   )
 }

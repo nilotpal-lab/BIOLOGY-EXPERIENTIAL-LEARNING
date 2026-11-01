@@ -15,6 +15,8 @@ export const NOT_APPLICABLE = {
     'Not applicable — the baseline network has no feeding links, so there is no link loss to express as a percentage.',
   connectanceTooFewNodes:
     'Not applicable — connectance needs at least two nodes, because the denominator is N x (N - 1).',
+  dunneConnectanceEmpty:
+    'Not applicable — Dunne connectance needs at least one node, because the denominator is S^2.',
   removedPercentEmptyBaseline:
     'Not applicable — the baseline network contains no nodes, so a percentage of baseline nodes cannot be formed.',
 } as const
@@ -46,6 +48,18 @@ export function computeConnectance(nodeCount: number, linkCount: number): Metric
     return { value: null, notApplicable: NOT_APPLICABLE.connectanceTooFewNodes }
   }
   return { value: linkCount / (nodeCount * (nodeCount - 1)) }
+}
+
+/**
+ * Dunne connectance = L / S^2 as defined in Dunne, Williams, and Martinez (2002).
+ * Separately labelled to preserve the existing FoodWebGuard connectance L / (N x (N - 1)).
+ * Valid when S >= 1.
+ */
+export function computeDunneConnectance(nodeCount: number, linkCount: number): MetricValue {
+  if (nodeCount < 1) {
+    return { value: null, notApplicable: NOT_APPLICABLE.dunneConnectanceEmpty }
+  }
+  return { value: linkCount / (nodeCount * nodeCount) }
 }
 
 /**

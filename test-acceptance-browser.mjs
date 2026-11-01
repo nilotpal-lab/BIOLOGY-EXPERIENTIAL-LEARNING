@@ -428,6 +428,72 @@ async function runBrowserAudit() {
     console.log(`Rankings Search & Filter: ${filterPassed ? 'PASS' : 'FAIL'}`)
 
     // ------------------------------------------------------------------------
+    // Audit Section 6.2: Network Robustness Lab (Dunne 2002)
+    // ------------------------------------------------------------------------
+    console.log('--- 8.2. Testing Network Robustness Lab (Dunne 2002) ---')
+    await cdp.evaluate(`(() => {
+      const buttons = Array.from(document.querySelectorAll('button'));
+      const robustnessTab = buttons.find(b => b.textContent.includes('Network Robustness Lab'));
+      if (robustnessTab) robustnessTab.click();
+    })()`)
+    await wait(800)
+
+    const robustnessState = await cdp.evaluate(`(() => {
+      const text = document.body.innerText.toLowerCase();
+      const hasTitle = text.includes('extinction curves') || text.includes('dunne et al');
+      const hasStrategyA = text.includes('strategy a') && text.includes('most-connected');
+      const hasStrategyD = text.includes('strategy d') && text.includes('random');
+      const hasConnectance = text.includes('dunne connectance') && text.includes('foodwebguard c');
+      const hasReplay = text.includes('step-by-step removal replay');
+      const hasChart = !!document.querySelector('.recharts-surface');
+
+      // Click open the methodology & audit table
+      const buttons = Array.from(document.querySelectorAll('button'));
+      const methBtn = buttons.find(b => b.textContent.includes('Methodology & Literature Citation'));
+      if (methBtn) methBtn.click();
+
+      return {
+        hasTitle,
+        hasStrategyA,
+        hasStrategyD,
+        hasConnectance,
+        hasReplay,
+        hasChart,
+      };
+    })()`)
+    await wait(400)
+
+    const auditTableState = await cdp.evaluate(`(() => {
+      const text = document.body.innerText.toLowerCase();
+      return {
+        hasAuditTable: text.includes('pre-implementation dataset audit') && text.includes('eligibility table'),
+        hasCitation: text.includes('dunne') && text.includes('ecology letters'),
+      };
+    })()`)
+
+    const robustnessPassed =
+      Boolean(robustnessState?.hasTitle) &&
+      Boolean(robustnessState?.hasStrategyA) &&
+      Boolean(robustnessState?.hasStrategyD) &&
+      Boolean(robustnessState?.hasConnectance) &&
+      Boolean(robustnessState?.hasReplay) &&
+      Boolean(robustnessState?.hasChart) &&
+      Boolean(auditTableState?.hasAuditTable) &&
+      Boolean(auditTableState?.hasCitation)
+
+    console.log('Robustness details:', JSON.stringify({ robustnessState, auditTableState }))
+
+    results.controls.push({
+      screen: 'robustness-lab',
+      control: 'Network Robustness Lab (Dunne 2002)',
+      action: 'Switch to robustness tab, render curves, inspect R50 cards and audit table',
+      expected: 'Computes R50 across all 4 strategies, renders extinction curves, confidence envelope, replay scrubber and audit table',
+      actual: `Passed=${robustnessPassed}, Chart=${robustnessState?.hasChart}, AuditTable=${auditTableState?.hasAuditTable}`,
+      pass: robustnessPassed,
+    })
+    console.log(`Network Robustness Lab: ${robustnessPassed ? 'PASS' : 'FAIL'}`)
+
+    // ------------------------------------------------------------------------
     // Audit Section 7: Cross-Network Benchmark / Multi-Web Comparison
     // ------------------------------------------------------------------------
     console.log('--- 9. Testing Cross-Network Benchmark (Insights & Compare) ---')

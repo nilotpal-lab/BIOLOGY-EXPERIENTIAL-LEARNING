@@ -283,6 +283,18 @@ describe('Scenario analysis', () => {
     await user().click(screen.getByRole('button', { name: 'Clear filters' }))
     expect(screen.getByText('6 species ranked')).toBeTruthy()
   })
+
+  it('switches to Network Robustness Lab tab, computes R50, and displays extinction curves', async () => {
+    await renderApp('experiment')
+    const robustnessTab = screen.getByRole('button', { name: /Network Robustness Lab/ })
+    await user().click(robustnessTab)
+
+    expect(await screen.findByText(/Extinction Curves & Biodiversity Collapse/)).toBeTruthy()
+    expect(screen.getByText(/Dunne Connectance/)).toBeTruthy()
+    expect(screen.getByText(/Step-by-Step Removal Replay/)).toBeTruthy()
+    expect(screen.getAllByText(/Strategy A/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Strategy D/).length).toBeGreaterThan(0)
+  })
 })
 
 describe('Dataset library and import', () => {
