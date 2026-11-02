@@ -118,13 +118,13 @@ export function Overview({ onNavigate, onOpenImport: _onOpenImport }: OverviewPr
   return (
     <div className="relative min-h-[calc(100vh-64px)] bg-[#F7F6EF] text-[#202B27] flex flex-col justify-between overflow-x-hidden select-none">
       {/* Botanical watercolor leaves framing the page corners */}
-      <div className="pointer-events-none absolute -top-4 -left-6 z-0 w-28 sm:w-36 lg:w-44 opacity-75">
+      <div className="pointer-events-none top-0 left-0 z-0 w-28 sm:w-36 lg:w-44 opacity-75">
         <BotanicalCorner position="top-left" className="w-full h-auto" />
       </div>
-      <div className="pointer-events-none absolute -bottom-4 -left-6 z-0 w-28 sm:w-36 lg:w-44 opacity-75">
+      <div className="pointer-events-none bottom-0 right-0 z-0 w-28 sm:w-36 lg:w-44 opacity-75">
         <BotanicalCorner position="bottom-left" className="w-full h-auto" />
       </div>
-      <div className="pointer-events-none absolute -bottom-4 -right-6 z-0 w-28 sm:w-36 lg:w-44 opacity-75">
+      <div className="pointer-events-none bottom-0 left-0 z-0 w-28 sm:w-36 lg:w-44 opacity-75">
         <BotanicalCorner position="bottom-right" className="w-full h-auto" />
       </div>
 

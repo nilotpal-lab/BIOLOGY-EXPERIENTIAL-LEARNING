@@ -248,6 +248,7 @@ export function FoodWebGraph({
         }
       })
 
+      cy.fit()
       cy.edges().forEach((edge) => {
         const source = edge.data('source') as string
         const target = edge.data('target') as string
@@ -275,7 +276,8 @@ export function FoodWebGraph({
               edge.addClass('consumer-link')
               touched.add(edge.id())
             })
-            cy.edges().forEach((edge) => {
+            cy.fit()
+      cy.edges().forEach((edge) => {
               if (!touched.has(edge.id()) && !edge.hasClass('hidden')) edge.addClass('dimmed')
             })
           }

@@ -39,7 +39,15 @@ export function AcademicReportModal({
   if (!isOpen) return null
 
   const handlePrint = () => {
+    // Ensure full content is visible for printing by temporarily adjusting body styles
+    const originalBodyOverflow = document.body.style.overflow
+    const originalBodyHeight = document.body.style.height
+    document.body.style.overflow = 'visible'
+    document.body.style.height = 'auto'
     window.print()
+    // Restore original styles after print
+    document.body.style.overflow = originalBodyOverflow
+    document.body.style.height = originalBodyHeight
   }
 
   const { baseline, scenario } = result
