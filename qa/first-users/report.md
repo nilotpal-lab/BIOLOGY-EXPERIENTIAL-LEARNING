@@ -72,3 +72,54 @@ Full verdicts with evidence paths: `qa/first-users/verdicts.md`. Counts: **9 fix
 - Findings & fix map: `qa/first-users/findings-run-1.md` · Judge verdicts: `qa/first-users/verdicts.md`
 - Commits: `25b9a0e` baseline → `dcf20a3` fix pass 1 → `ac57e25` handoff → `545224f` fix pass 2 → `6242323` run artifacts → this report
 - Verification at every pass: 133/133 Vitest green, `tsc -b` 0 errors, oxlint 0 errors, production build clean.
+
+---
+
+## Addendum — post-QA design-revamp visual audit (2026-11-02, commit 7bb92fa)
+
+Scope: the three pages named by the stakeholder — Simulation (`#/simulation`),
+Dataset Import (`#/import`), Cascade Timeline (`#/timeline`) — on the current main
+build (production bundle `index-Bt8u7Zqg.js` at foodwebguard.vercel.app), desktop
+1366×850 and mobile 375×667.
+
+### How the pages look now
+
+- **Simulation** — hero, mode cards, species picker, settings, results cards and the
+  inline cascade-timeline strip all render cleanly. **Blocker found & fixed:** the
+  "Food Web (Simulation View)" panel was completely empty — all three cytoscape
+  canvases measured 486×0 CSS px. Cause: the panel wrapper had `flex-1` (flex-basis
+  0% overrides its own `h-[390px]`) inside a card whose height came from
+  `min-h-[460px]`, an indefinite chain, so `FoodWebGraph`'s `h-full` could not
+  resolve. Fix: definite `h-[390px]` on the wrapper
+  (`src/pages/SimulationPage.tsx:463`). After: canvases 309×261, graph renders at
+  both viewports.
+- **Dataset Import** — no defects. Hero, format-guide tabs, example tables (already
+  inside `overflow-x-auto` swipe containers), upload zone, paste fields, Step 2/3,
+  validation report, parsed preview and "Activate Dataset & Open Explorer" all
+  verified; the sample-dataset → validate flow returns "Ready to import, 0 errors".
+- **Cascade Timeline** — no defects. Hero, species picker, mode cards, run button,
+  summary cards, round scrubber, round cards, both charts and the food-web graph all
+  render; the graph works here because the page passes `min-h-[460px] lg:min-h-[520px]`.
+
+### Second fix — 375px horizontal overflow (all workspace pages)
+
+Every workspace page scrolled sideways at 375px: `scrollWidth 447 vs 365`. The
+header dataset-picker cluster carried `shrink-0`, pushing the mobile hamburger menu
+fully off-screen (left=415). Fix (`src/components/layout/Shell.tsx:360`): allow the
+cluster to shrink (`min-w-0`) and hide the decorative thumbnail below `sm`. After:
+`scrollWidth == clientWidth == 365` on simulation/timeline/import at 375px, desktop
+and mobile verified live in the browser, and re-verified on production after deploy.
+
+### Verification
+
+- `tsc -b` 0 errors · oxlint 0 errors · Vitest 156/156 green (main @ 7bb92fa).
+- Fixes verified on a local dev server (desktop + 375px screenshots), then pushed
+  to `main` **only** (`b7b6ef5..7bb92fa`) and re-verified on the deployed
+  production site (bundle `index-Bt8u7Zqg.js`, canvas 261px, no overflow).
+- Not tested: console/network capture and Slow-3G/CPU throttling (runtime limits,
+  unchanged from the main study); full-page screenshot stitching in the in-app
+  browser duplicates fixed elements, so section-by-section viewport captures were
+  used and `fullPage` images discarded as artifacts.
+
+Note: the local branch `qa/first-users-fixes` is a stale pointer fully contained in
+main's history (merge-base == branch tip); no other branch was pushed.
