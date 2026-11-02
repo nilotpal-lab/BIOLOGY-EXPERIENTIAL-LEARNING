@@ -460,7 +460,10 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
             </div>
 
             {/* Cytoscape Simulation Graph Canvas */}
-            <div className="flex-1 relative mt-2.5 rounded-xl border border-[#E5E6DC] bg-[#F7F6EF] overflow-hidden h-[390px] min-h-[360px]">
+            {/* Definite height (no flex-1): flex-basis 0% would override h-[390px] and the
+                min-h-based card height is indefinite, so FoodWebGraph's h-full collapses
+                to content height and the cytoscape canvas renders 0px tall. */}
+            <div className="relative mt-2.5 rounded-xl border border-[#E5E6DC] bg-[#F7F6EF] overflow-hidden h-[390px] min-h-[360px]">
               {graph ? (
                 <FoodWebGraph
                   graph={graph}
