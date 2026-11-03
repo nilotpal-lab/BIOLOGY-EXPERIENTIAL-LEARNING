@@ -357,12 +357,10 @@ export function Shell({
             </div>
 
             {/* Dataset selector with thumbnail photo (middle-right) */}
-            {/* min-w-0 + shrink: on small viewports the picker shrinks (select text truncates)
-                instead of pushing the mobile menu button past the right edge (375px overflow). */}
-            <div className="relative flex min-w-0 items-center gap-2">
-              <div className="relative flex min-w-0 items-center gap-2 rounded-xl border border-[#E5E6DC] bg-[#F7F6EF] p-1.5 pr-2.5 shadow-2xs max-w-[200px] sm:max-w-[240px] md:max-w-[280px]">
+            <div className="relative flex items-center gap-2 shrink-0">
+              <div className="relative flex items-center gap-2 rounded-xl border border-[#E5E6DC] bg-[#F7F6EF] p-1.5 pr-2.5 shadow-2xs max-w-[200px] sm:max-w-[240px] md:max-w-[280px]">
                 {/* Dynamic Ecosystem Landscape Photo Thumbnail */}
-                <div className="hidden h-8 w-11 sm:block sm:h-9 sm:w-12 rounded-lg overflow-hidden shrink-0 border border-[#E5E6DC] bg-white">
+                <div className="h-8 w-11 sm:h-9 sm:w-12 rounded-lg overflow-hidden shrink-0 border border-[#E5E6DC] bg-white">
                   <img
                     src="/hero-ecosystem.jpg"
                     alt="Ecosystem thumbnail"
@@ -378,11 +376,13 @@ export function Shell({
                     onChange={(e) => selectDataset(e.target.value)}
                     className="border-none bg-transparent p-0 text-xs font-bold text-[#202B27] focus:ring-0 cursor-pointer w-full truncate"
                   >
-                    {datasets.map((entry) => (
-                      <option key={entry.id} value={entry.id}>
-                        {entry.name}
-                      </option>
-                    ))}
+                    {datasets
+                      .filter((entry) => !['RES-TER-C', 'RES-TER-D', 'MAR-TATOOSH-1', 'MAR-YTHAN-1'].includes(entry.id))
+                      .map((entry) => (
+                        <option key={entry.id} value={entry.id}>
+                          {entry.name}
+                        </option>
+                      ))}
                   </SelectInput>
                   <p className="text-[10px] text-[#68716B] truncate">
                     {dataset ? `${ECOSYSTEM_LABEL[dataset.ecosystem]} (UK)` : 'Ecosystem'}

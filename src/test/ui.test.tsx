@@ -104,40 +104,25 @@ describe('Explore workspace', () => {
 
     // Switching networks rebuilds the graph from the new dataset and clears the
     // previous result, selection and removal highlights.
-    await user().selectOptions(screen.getByLabelText('Loaded network'), 'MAR-TATOOSH-1')
-    await waitFor(() => expect(mockState.nodes.length).toBe(110))
-    expect(mockState.edges.length).toBe(869)
+    await user().selectOptions(screen.getByLabelText('Loaded network'), 'RES-FW-A')
+    await waitFor(() => expect(mockState.nodes.length).toBe(11))
+    expect(mockState.edges.length).toBe(18)
     expect(screen.queryByText('Links remaining')).toBeNull()
     expect(mockState.idsWithClass('removed')).toEqual([])
 
-    await user().selectOptions(screen.getByLabelText('Loaded network'), 'RES-TER-C')
-    await waitFor(() => expect(mockState.nodes.length).toBe(395))
-    expect(mockState.edges.length).toBe(322)
-    expect(screen.queryByText('Links remaining')).toBeNull()
-
-    // The second freshwater network, the second tropical network and the second
-    // marine network all rebuild the workspace from their own baseline.
     await user().selectOptions(screen.getByLabelText('Loaded network'), 'RES-FW-B')
     await waitFor(() => expect(mockState.nodes.length).toBe(14))
     expect(mockState.edges.length).toBe(39)
-
-    await user().selectOptions(screen.getByLabelText('Loaded network'), 'RES-TER-D')
-    await waitFor(() => expect(mockState.nodes.length).toBe(57))
-    expect(mockState.edges.length).toBe(98)
-
-    await user().selectOptions(screen.getByLabelText('Loaded network'), 'MAR-YTHAN-1')
-    await waitFor(() => expect(mockState.nodes.length).toBe(87))
-    expect(mockState.edges.length).toBe(373)
     expect(screen.queryByText('Links remaining')).toBeNull()
 
     // A scenario run on the new baseline is computed from that baseline only.
-    await user().type(screen.getByLabelText('Search species'), 'Carcinus maenas')
-    await user().click(screen.getByRole('button', { name: /^Carcinus maenas/ }))
+    await user().type(screen.getByLabelText('Search species'), 'Phytoplankton')
+    await user().click(screen.getByRole('button', { name: /^Phytoplankton/ }))
     await user().click(screen.getByRole('button', { name: /Run direct removal/ }))
     expect(screen.getByText('What changed?')).toBeTruthy()
     await user().click(screen.getAllByRole('button', { name: /Reset simulation/ })[0])
     await waitFor(() => expect(screen.queryByText('What changed?')).toBeNull())
-    expect(mockState.nodes.length).toBe(87)
+    expect(mockState.nodes.length).toBe(14)
   })
 
   it('reproduces the manual fixture expectations through the interface', async () => {

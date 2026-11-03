@@ -305,11 +305,13 @@ export function ScenarioAnalysis({ onNavigate }: ScenarioAnalysisProps) {
                 onChange={(e: ChangeEvent<HTMLSelectElement>) => selectDataset(e.target.value)}
                 className="w-full text-xs font-bold text-[#202B27] border-none p-0 focus:ring-0 cursor-pointer"
               >
-                {datasets.map((entry) => (
-                  <option key={entry.id} value={entry.id}>
-                    {entry.name}
-                  </option>
-                ))}
+                {datasets
+                  .filter((entry) => !['RES-TER-C', 'RES-TER-D', 'MAR-TATOOSH-1', 'MAR-YTHAN-1'].includes(entry.id))
+                  .map((entry) => (
+                    <option key={entry.id} value={entry.id}>
+                      {entry.name}
+                    </option>
+                  ))}
               </SelectInput>
               <p className="text-[10px] text-[#68716B] truncate">
                 {ECOSYSTEM_LABEL[dataset.ecosystem]} (UK)

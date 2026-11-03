@@ -34,7 +34,7 @@ import {
   TextInput,
   cn,
 } from '../components/ui/primitives'
-import { computeBaselineMetrics, formatConnectance, formatPercent } from '../core/metrics'
+import { computeBaselineMetrics, formatPercent } from '../core/metrics'
 import { edgesExportCsv, downloadArtifact, nodesExportCsv } from '../core/exportUtils'
 import { ECOSYSTEM_LABEL, TROPHIC_ROLE_LABEL, TROPHIC_ROLES, type TrophicRole } from '../core/types'
 import { useAppState } from '../state/AppState'
@@ -248,18 +248,7 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
                   </span>
                 </div>
               </div>
-            ) : (
-              <div className="pointer-events-auto inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/90 backdrop-blur-md border border-[#E5E6DC] shadow-xs text-xs text-[#202B27]">
-                <span className="font-bold tabular-nums">{baseline.nodeCount}</span>
-                <span className="text-[#68716B]">species</span>
-                <span className="text-[#68716B]">·</span>
-                <span className="font-bold tabular-nums">{baseline.linkCount}</span>
-                <span className="text-[#68716B]">links</span>
-                <span className="text-[#68716B]">·</span>
-                <span className="text-[#68716B]">Connectance:</span>
-                <span className="font-mono font-semibold">{formatConnectance(baseline.connectance.value)}</span>
-              </div>
-            )}
+            ) : null}
           </div>
 
           {/* Slide-over panels in Presentation view */}
@@ -531,10 +520,6 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-[11px] text-[#68716B] hidden sm:inline">
-                {baseline.nodeCount} species · {baseline.linkCount} links · Connectance: {formatConnectance(baseline.connectance.value)}
-              </span>
-
               <Button
                 size="sm"
                 variant="outline"

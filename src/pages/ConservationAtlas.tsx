@@ -19,7 +19,12 @@ export function ConservationAtlas({ onNavigate }: { onNavigate: (route: RouteId)
   const { datasets, dataset, selectDataset } = useAppState()
 
   const researchDatasets = useMemo(
-    () => datasets.filter((d) => d.sourceStatus === 'research-verified'),
+    () =>
+      datasets.filter(
+        (d) =>
+          d.sourceStatus === 'research-verified' &&
+          !['RES-TER-C', 'RES-TER-D', 'MAR-TATOOSH-1', 'MAR-YTHAN-1'].includes(d.id),
+      ),
     [datasets],
   )
 
