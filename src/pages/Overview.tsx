@@ -169,6 +169,11 @@ export function Overview({ onNavigate, onOpenImport: _onOpenImport }: OverviewPr
                 </button>
               </div>
 
+              {/* Beginner tip — restored after the landing redesign dropped it (finding F11) */}
+              <p className="text-xs text-[#68716B] pt-0.5">
+                New here? Start with the green <strong className="font-semibold text-[#35563B]">Open Explorer</strong> button — then try the Simulation Lab.
+              </p>
+
               {/* Statistics Row: 6 Real Ecosystems · 200+ Species · 500+ Feeding Links · 9 Analysis Tools */}
               <div className="pt-4 border-t border-[#E5E6DC]/80 grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div className="flex items-center gap-2.5">

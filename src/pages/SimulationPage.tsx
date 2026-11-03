@@ -45,6 +45,16 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
   const [affectedTab, setAffectedTab] = useState<'direct' | 'cascade'>('direct')
   const [affectedCollapsed, setAffectedCollapsed] = useState(false)
   const userResetRef = useRef(false)
+  // Results panel anchor: on narrow viewports the results render below the fold,
+  // so the run action scrolls them into view (desktop columns are side by side).
+  const resultsRef = useRef<HTMLDivElement | null>(null)
+  const scrollToResultsOnMobile = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      window.setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 60)
+    }
+  }
 
   const baseline = useMemo(() => (graph ? computeBaselineMetrics(graph) : null), [graph])
 
@@ -405,9 +415,10 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
                 onClick={() => {
                   userResetRef.current = false
                   runSelectedScenario()
+                  scrollToResultsOnMobile()
                 }}
                 disabled={!selectedNodeId}
-                className="bg-[#35563B] hover:bg-[#263D2D] text-white font-bold py-2.5 text-xs sm:text-sm shadow-xs"
+                className="bg-[#35563B] hover:bg-[#263D2D] text-white font-bold py-2.5 text-xs sm:text-sm shadow-xs min-h-[44px]"
               >
                 <span>Run Simulation</span>
                 <ArrowRight size={15} />
@@ -485,7 +496,7 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
         {/* -------------------------------------------------------------------
             COLUMN 3 (Right 3 cols): SIMULATION RESULTS & AFFECTED SPECIES
             ------------------------------------------------------------------- */}
-        <div className="lg:col-span-3 xl:col-span-3 space-y-4">
+        <div ref={resultsRef} className="lg:col-span-3 xl:col-span-3 space-y-4 scroll-mt-20">
           {/* Header & Status Card */}
           <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-3">
             <div className="flex items-center justify-between pb-2 border-b border-[#E5E6DC]">

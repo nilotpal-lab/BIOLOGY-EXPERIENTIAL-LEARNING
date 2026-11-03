@@ -111,7 +111,13 @@ export function DatasetLibraryPage({
           </p>
         </div>
 
-        <ResearchSlotsPanel verifiedCount={verified} onOpenImport={onOpenImport} />
+        {/* Distinct actions: header button opens the quick import dialog; this one
+            opens the full Import Studio page (was previously a duplicate dialog CTA). */}
+        <ResearchSlotsPanel
+          verifiedCount={verified}
+          onOpenImport={onOpenImport}
+          onOpenImportStudio={() => onNavigate('import')}
+        />
       </div>
     </div>
   )

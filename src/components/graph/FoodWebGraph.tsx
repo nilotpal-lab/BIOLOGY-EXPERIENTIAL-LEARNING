@@ -449,6 +449,10 @@ export function FoodWebGraph({
               <span>Reset View</span>
             </button>
 
+            {/* Visible caption so the −/+/fit icon buttons are not icon-only on touch */}
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-[#68716B] select-none">
+              Zoom
+            </span>
             <div className="flex items-center rounded-lg border border-[#E5E6DC] bg-[#F7F6EF] px-1 py-0.5 shadow-2xs">
               <button
                 type="button"

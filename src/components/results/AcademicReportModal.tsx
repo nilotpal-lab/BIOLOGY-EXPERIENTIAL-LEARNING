@@ -212,7 +212,7 @@ export function AcademicReportModal({
                     </td>
                   </tr>
                   <tr>
-                    <td className="py-2 px-3 font-medium">Directly Affected Consumers (Lost ≥1 food link)</td>
+                    <td className="py-2 px-3 font-medium">Directly Affected Consumers (Lost 1 or more food links)</td>
                     <td className="py-2 px-3 text-right text-slate-400 font-mono">—</td>
                     <td className="py-2 px-3 text-right font-mono">{scenario.directlyAffectedConsumerIds.length}</td>
                     <td className="py-2 px-3 text-right font-mono text-amber-700 font-semibold">

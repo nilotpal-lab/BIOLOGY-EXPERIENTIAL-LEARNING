@@ -650,9 +650,12 @@ export function DatasetBrowser({
 export function ResearchSlotsPanel({
   verifiedCount,
   onOpenImport,
+  onOpenImportStudio,
 }: {
   verifiedCount: number
   onOpenImport: () => void
+  /** Optional distinct action: open the full Import Studio page instead of the quick dialog. */
+  onOpenImportStudio?: () => void
 }) {
   const grouped: Record<EcosystemCategory, typeof RESEARCH_SLOTS> = {
     freshwater: RESEARCH_SLOTS.filter((slot) => slot.ecosystem === 'freshwater'),
@@ -667,9 +670,15 @@ export function ResearchSlotsPanel({
         title="Research dataset library — curation status"
         subtitle="The target is six documented research networks, two per ecosystem category. Each slot shows the network it carries and the checks that were actually completed; a slot is only marked “Research source verified” when its source, conversion, citation and reuse terms have all been checked. No provenance is invented anywhere in this application."
         actions={
-          <Button variant="outline" size="sm" onClick={onOpenImport}>
-            Import a research dataset
-          </Button>
+          onOpenImportStudio ? (
+            <Button variant="outline" size="sm" onClick={onOpenImportStudio}>
+              Open Import Studio
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" onClick={onOpenImport}>
+              Import a research dataset
+            </Button>
+          )
         }
       />
 

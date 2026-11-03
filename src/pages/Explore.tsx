@@ -621,6 +621,13 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
         </div>
 
         <div className="space-y-2">
+          {/* Visible label — placeholder-only input was flagged by non-native readers */}
+          <label
+            htmlFor="species-directory-search"
+            className="block text-[10px] font-bold uppercase tracking-wider text-[#68716B]"
+          >
+            Search species
+          </label>
           {/* Accessible Search Input */}
           <div className="relative">
             <Search size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[#899B78]" />
@@ -629,6 +636,7 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search species..."
               aria-label="Search species"
+              id="species-directory-search"
               className="pl-8 text-xs h-8.5"
             />
             {search && (

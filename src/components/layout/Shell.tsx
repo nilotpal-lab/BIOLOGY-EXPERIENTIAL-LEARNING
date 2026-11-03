@@ -378,11 +378,24 @@ export function Shell({
                   >
                     {datasets
                       .filter((entry) => !['RES-TER-C', 'RES-TER-D', 'MAR-TATOOSH-1', 'MAR-YTHAN-1'].includes(entry.id))
-                      .map((entry) => (
-                        <option key={entry.id} value={entry.id}>
-                          {entry.name}
-                        </option>
-                      ))}
+                      .map((entry) =>
+                        entry.id.startsWith('VALIDATION-') ? null : (
+                          <option key={entry.id} value={entry.id}>
+                            {entry.name}
+                          </option>
+                        ),
+                      )}
+                    {datasets.some((entry) => entry.id.startsWith('VALIDATION-')) ? (
+                      <optgroup label="— Internal test fixtures (used by automated tests) —">
+                        {datasets
+                          .filter((entry) => entry.id.startsWith('VALIDATION-'))
+                          .map((entry) => (
+                            <option key={entry.id} value={entry.id}>
+                              {entry.name}
+                            </option>
+                          ))}
+                      </optgroup>
+                    ) : null}
                   </SelectInput>
                   <p className="text-[10px] text-[#68716B] truncate">
                     {dataset ? `${ECOSYSTEM_LABEL[dataset.ecosystem]} (UK)` : 'Ecosystem'}
