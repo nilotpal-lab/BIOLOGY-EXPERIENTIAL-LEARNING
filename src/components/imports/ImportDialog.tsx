@@ -149,24 +149,58 @@ export function ImportDialog({
   onClose: () => void
   onImport: (preview: ImportPreview) => void
 }) {
-  const [format, setFormat] = useState<Format>('csv')
+  // The dialog unmounts when closed, which used to wipe every typed field
+  // (QA breaker: "metadata vanishes if the dialog is closed and reopened").
+  // The draft now survives close/reopen via localStorage and is cleared on
+  // a completed import or explicit reset.
+  const draft = (() => {
+    try {
+      return JSON.parse(window.localStorage.getItem('fwg-import-draft') || '{}') as Record<string, unknown>
+    } catch {
+      return {} as Record<string, unknown>
+    }
+  })()
+  const draftStr = (key: string, fallback = ''): string => (typeof draft[key] === 'string' ? (draft[key] as string) : fallback)
+
+  const [format, setFormat] = useState<Format>(draftStr('format') === 'json' ? 'json' : 'csv')
   const [exampleTab, setExampleTab] = useState<'links' | 'nodes' | 'json'>('links')
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
 
-  const [nodesText, setNodesText] = useState('')
-  const [edgesText, setEdgesText] = useState('')
-  const [jsonText, setJsonText] = useState('')
+  const [nodesText, setNodesText] = useState(draftStr('nodesText'))
+  const [edgesText, setEdgesText] = useState(draftStr('edgesText'))
+  const [jsonText, setJsonText] = useState(draftStr('jsonText'))
   const [fileName, setFileName] = useState<string | undefined>(undefined)
-  const [datasetName, setDatasetName] = useState('')
-  const [ecosystem, setEcosystem] = useState<EcosystemCategory>('freshwater')
-  const [citation, setCitation] = useState('')
-  const [origin, setOrigin] = useState('')
-  const [sourceUrl, setSourceUrl] = useState('')
-  const [license, setLicense] = useState('')
-  const [nodeUnit, setNodeUnit] = useState('')
-  const [repair, setRepair] = useState(false)
+  const [datasetName, setDatasetName] = useState(draftStr('datasetName'))
+  const [ecosystem, setEcosystem] = useState<EcosystemCategory>(
+    draft.ecosystem === 'terrestrial' || draft.ecosystem === 'marine' ? (draft.ecosystem as EcosystemCategory) : 'freshwater',
+  )
+  const [citation, setCitation] = useState(draftStr('citation'))
+  const [origin, setOrigin] = useState(draftStr('origin'))
+  const [sourceUrl, setSourceUrl] = useState(draftStr('sourceUrl'))
+  const [license, setLicense] = useState(draftStr('license'))
+  const [nodeUnit, setNodeUnit] = useState(draftStr('nodeUnit'))
+  const [repair, setRepair] = useState(draft.repair === true)
   const [preview, setPreview] = useState<ImportPreview | null>(null)
   const firstFieldRef = useRef<HTMLInputElement | null>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const payload = JSON.stringify({ format, nodesText, edgesText, jsonText, datasetName, ecosystem, citation, origin, sourceUrl, license, nodeUnit, repair })
+    try {
+      window.localStorage.setItem('fwg-import-draft', payload)
+    } catch {
+      // Storage may be unavailable (private mode); the dialog still works,
+      // the draft just does not survive a close/reopen.
+    }
+  }, [open, format, nodesText, edgesText, jsonText, datasetName, ecosystem, citation, origin, sourceUrl, license, nodeUnit, repair])
+
+  const clearDraft = useCallback(() => {
+    try {
+      window.localStorage.removeItem('fwg-import-draft')
+    } catch {
+      // Non-fatal: see the persistence comment above.
+    }
+  }, [])
 
   useEffect(() => {
     if (open) firstFieldRef.current?.focus()
@@ -188,7 +222,8 @@ export function ImportDialog({
     setFileName(undefined)
     setPreview(null)
     setRepair(false)
-  }, [])
+    clearDraft()
+  }, [clearDraft])
 
   const copyToClipboard = (text: string, key: string) => {
     void navigator.clipboard.writeText(text)

@@ -234,6 +234,9 @@ export function Methodology() {
   const [suite, setSuite] = useState<CheckResult[]>(() => runValidationSuite().checks)
   const [rankingChecks, setRankingChecks] = useState<CheckResult[] | null>(null)
   const [running, setRunning] = useState(false)
+  // The suite finishes in well under a second, so a bare busy-state flash read as
+  // "no feedback" (QA skeptic). A completion timestamp proves the re-run happened.
+  const [lastRunAt, setLastRunAt] = useState<Date | null>(null)
 
   const run = useCallback(async () => {
     setRunning(true)
@@ -241,6 +244,7 @@ export function Methodology() {
     const asyncChecks = await runRankingChecks()
     setRankingChecks(asyncChecks)
     setRunning(false)
+    setLastRunAt(new Date())
   }, [])
 
   useEffect(() => {
@@ -330,6 +334,16 @@ export function Methodology() {
               <Play size={14} className={running ? 'animate-spin' : ''} />
               {running ? 'Executing checks…' : 'Re-run checks'}
             </button>
+
+            {lastRunAt && !running && (
+              <span
+                className="text-[11px] font-semibold text-[#35563B]"
+                aria-live="polite"
+                role="status"
+              >
+                ✓ Checks re-ran at {lastRunAt.toLocaleTimeString()} — {passed} passed, {failed} failed.
+              </span>
+            )}
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { HelpCircle, Info } from 'lucide-react'
-import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
+import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, RefObject, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
 import {
   ROLE_PROVENANCE_LABEL,
   SOURCE_STATUS_LABEL,
@@ -102,12 +102,22 @@ export function Card({
   children,
   className,
   as: Tag = 'section',
+  cardRef,
 }: {
   children: ReactNode
   className?: string
   as?: 'section' | 'div' | 'article' | 'aside'
+  /** Optional ref to the rendered card element (used for scroll-into-view feedback). */
+  cardRef?: RefObject<HTMLElement | null>
 }) {
-  return <Tag className={cn('fwg-card p-4 sm:p-5', className)}>{children}</Tag>
+  // The polymorphic tag makes TS pick one element's ref type; the casts keep the
+  // prop honest at the call site while accepting any of the four tags.
+  const RefTag = Tag as unknown as 'div'
+  return (
+    <RefTag ref={cardRef as RefObject<HTMLDivElement | null>} className={cn('fwg-card p-4 sm:p-5', className)}>
+      {children}
+    </RefTag>
+  )
 }
 
 export function CardHeading({

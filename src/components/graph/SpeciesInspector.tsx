@@ -75,7 +75,7 @@ export function SpeciesInspector({
             <button
               type="button"
               onClick={onClose}
-              className="text-[#68716B] hover:text-[#202B27] p-1 rounded-md"
+              className="flex h-11 w-11 items-center justify-center text-[#68716B] hover:text-[#202B27] rounded-md"
               aria-label="Close inspector"
             >
               <X size={15} />
@@ -123,7 +123,7 @@ export function SpeciesInspector({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#E5E6DC] bg-[#F7F6EF] text-[#68716B] hover:text-[#202B27] hover:bg-[#E8EDE0] transition-colors"
+            className="flex h-11 w-11 items-center justify-center rounded-lg border border-[#E5E6DC] bg-[#F7F6EF] text-[#68716B] hover:text-[#202B27] hover:bg-[#E8EDE0] transition-colors"
             title="Close inspector"
             aria-label="Close inspector"
           >
@@ -131,6 +131,13 @@ export function SpeciesInspector({
           </button>
         )}
       </div>
+
+      {/* Explains why a species is already selected when the page first loads
+          (QA mobile + non-native: inspector opened with no explanation). */}
+      <p className="text-[11px] text-[#68716B] leading-relaxed">
+        Showing an example species. Click any node in the food web, or a row in the
+        species list, to inspect a different organism.
+      </p>
 
       {/* =====================================================================
           ORGANISM SHOWCASE: Illustration + Trophic Level Pill Badge

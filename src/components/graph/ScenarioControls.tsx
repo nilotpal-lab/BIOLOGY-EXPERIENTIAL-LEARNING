@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react'
 import { Download, FileText, GitBranch, Play, RotateCcw, Target, Waves } from 'lucide-react'
 import {
   cascadeRoundsExportCsv,
@@ -54,8 +55,24 @@ export function ScenarioControls({
 }) {
   const disabled = !dataset || dataset.nodes.length === 0 || !node
 
+  // Mobile feedback: the results render below the fold, so after a run the card
+  // scrolls into view and an aria-live line confirms the computation happened
+  // (QA mobile: "zero feedback — I had to tap it twice").
+  const cardRef = useRef<HTMLDivElement | null>(null)
+  const [justRan, setJustRan] = useState(false)
+  const handleRun = () => {
+    onRun()
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      window.setTimeout(() => {
+        cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 60)
+    }
+    setJustRan(true)
+    window.setTimeout(() => setJustRan(false), 4000)
+  }
+
   return (
-    <Card>
+    <Card cardRef={cardRef}>
       <CardHeading
         icon={<Target size={16} />}
         title="Simulation"
@@ -122,13 +139,24 @@ export function ScenarioControls({
       </fieldset>
 
       <div className="flex flex-wrap gap-2">
-        <Button variant="primary" icon={<Play size={15} />} onClick={onRun} disabled={disabled}>
+        <Button
+          variant="primary"
+          icon={<Play size={15} />}
+          onClick={handleRun}
+          disabled={disabled}
+          className="min-h-[44px]"
+        >
           Run {mode === 'cascade' ? 'cascade scenario' : 'direct removal'}
         </Button>
-        <Button variant="outline" icon={<RotateCcw size={15} />} onClick={onReset} disabled={!result}>
+        <Button variant="outline" icon={<RotateCcw size={15} />} onClick={onReset} disabled={!result} className="min-h-[44px]">
           Reset simulation
         </Button>
       </div>
+
+      {/* Visible + screen-reader feedback that the run actually happened */}
+      <p className="mt-2 text-xs font-semibold text-[#35563B]" aria-live="polite" role="status">
+        {justRan ? 'Scenario computed — the updated results and affected species are shown below.' : ''}
+      </p>
 
       {disabled ? (
         <p className="mt-2 text-xs font-medium text-fg-muted" aria-live="polite">

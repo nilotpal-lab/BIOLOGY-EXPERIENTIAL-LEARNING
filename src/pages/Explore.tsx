@@ -613,7 +613,7 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
           <button
             type="button"
             onClick={() => setLeftPanelOpen(false)}
-            className="p-1 text-[#68716B] hover:text-[#202B27]"
+            className="flex h-11 w-11 items-center justify-center text-[#68716B] hover:text-[#202B27]"
             aria-label="Close species panel"
           >
             <X size={14} />

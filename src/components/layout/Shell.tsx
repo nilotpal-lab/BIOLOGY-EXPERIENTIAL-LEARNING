@@ -357,10 +357,13 @@ export function Shell({
             </div>
 
             {/* Dataset selector with thumbnail photo (middle-right) */}
-            <div className="relative flex items-center gap-2 shrink-0">
-              <div className="relative flex items-center gap-2 rounded-xl border border-[#E5E6DC] bg-[#F7F6EF] p-1.5 pr-2.5 shadow-2xs max-w-[200px] sm:max-w-[240px] md:max-w-[280px]">
+            {/* min-w-0 + shrink: on small viewports the picker shrinks (select text truncates)
+                instead of pushing the mobile menu button past the right edge (375px overflow).
+                Re-applied: commit f23efab restored shrink-0 and reintroduced the overflow. */}
+            <div className="relative flex min-w-0 items-center gap-2">
+              <div className="relative flex min-w-0 items-center gap-2 rounded-xl border border-[#E5E6DC] bg-[#F7F6EF] p-1.5 pr-2.5 shadow-2xs max-w-[200px] sm:max-w-[240px] md:max-w-[280px]">
                 {/* Dynamic Ecosystem Landscape Photo Thumbnail */}
-                <div className="h-8 w-11 sm:h-9 sm:w-12 rounded-lg overflow-hidden shrink-0 border border-[#E5E6DC] bg-white">
+                <div className="hidden h-8 w-11 sm:block sm:h-9 sm:w-12 rounded-lg overflow-hidden shrink-0 border border-[#E5E6DC] bg-white">
                   <img
                     src="/hero-ecosystem.jpg"
                     alt="Ecosystem thumbnail"

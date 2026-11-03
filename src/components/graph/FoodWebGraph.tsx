@@ -106,6 +106,7 @@ export function FoodWebGraph({
 }: FoodWebGraphProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const cyRef = useRef<Core | null>(null)
+  const lastStructureKeyRef = useRef<string>('')
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
   const [ready, setReady] = useState(false)
   const [layoutMode, setLayoutMode] = useState<'trophic' | 'force'>('trophic')
@@ -234,6 +235,19 @@ export function FoodWebGraph({
     const depleted = new Set(foodDepletedIds)
     const query = searchQuery.trim().toLowerCase()
 
+    // The graph may only re-fit itself when the scenario structure (removed /
+    // affected / depleted sets, search filter or baseline ghosting) changes —
+    // not when the user merely selects another node. A fit on every selection
+    // change zoomed and re-centred the canvas "uninvited" (QA impatient #3).
+    const structureKey = `${removedKey}|${affectedKey}|${depletedKey}|${ghostBaseline ? 1 : 0}|${query}`
+    const structureChanged = structureKey !== lastStructureKeyRef.current
+    lastStructureKeyRef.current = structureKey
+
+    // A hover tooltip is a snapshot taken at hover time; after a scenario runs
+    // its "Status: present" line would go stale, so drop it and let the next
+    // hover rebuild it (QA impatient #7).
+    if (structureChanged) setTooltip(null)
+
     cy.batch(() => {
       cy.nodes().forEach((node) => {
         const id = node.id()
@@ -248,7 +262,7 @@ export function FoodWebGraph({
         }
       })
 
-      cy.fit()
+      if (structureChanged) cy.fit()
       cy.edges().forEach((edge) => {
         const source = edge.data('source') as string
         const target = edge.data('target') as string
@@ -276,7 +290,7 @@ export function FoodWebGraph({
               edge.addClass('consumer-link')
               touched.add(edge.id())
             })
-            cy.fit()
+            if (structureChanged) cy.fit()
       cy.edges().forEach((edge) => {
               if (!touched.has(edge.id()) && !edge.hasClass('hidden')) edge.addClass('dimmed')
             })
@@ -363,6 +377,7 @@ export function FoodWebGraph({
             <button
               type="button"
               onClick={() => handleLayoutChange('trophic')}
+              title="Arrange species in horizontal layers by feeding level: producers at the bottom, predators at the top"
               className={cn(
                 'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
                 layoutMode === 'trophic'
@@ -376,6 +391,7 @@ export function FoodWebGraph({
             <button
               type="button"
               onClick={() => handleLayoutChange('force')}
+              title="Arrange species with a physics-style spring simulation; connections pull related species together"
               className={cn(
                 'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
                 layoutMode === 'force'

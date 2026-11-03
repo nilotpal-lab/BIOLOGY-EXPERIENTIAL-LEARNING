@@ -93,6 +93,12 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
     return null
   }, [result, graph, selectedNode, dataset, mode])
 
+  // True while the results card shows the auto-computed example scenario
+  // (before the user has run anything). Three QA users read this pre-loaded
+  // result as "stale data from a previous session", so it is labelled.
+  const [hasUserResult, setHasUserResult] = useState(false)
+  const isAutoPreview = !hasUserResult && !userResetRef.current && activeResult !== null
+
   // When activeResult updates, set timeline step to final round
   useEffect(() => {
     if (activeResult && activeResult.mode === 'cascade' && activeResult.rounds.length > 0) {
@@ -414,6 +420,7 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
                 icon={<Play size={15} className="fill-white" />}
                 onClick={() => {
                   userResetRef.current = false
+                  setHasUserResult(true)
                   runSelectedScenario()
                   scrollToResultsOnMobile()
                 }}
@@ -432,6 +439,7 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
                   icon={<RotateCcw size={13} />}
                   onClick={() => {
                     userResetRef.current = true
+                    setHasUserResult(false)
                     resetScenario()
                   }}
                   className="text-xs py-1.5 border-[#E5E6DC] text-[#68716B] hover:text-[#202B27]"
@@ -507,6 +515,14 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
                 </span>
               )}
             </div>
+
+            {isAutoPreview && (
+              <p className="rounded-lg border border-[#E5E6DC] bg-[#F0F2E9]/70 px-2.5 py-1.5 text-[10.5px] leading-relaxed text-[#4A544E]" aria-live="polite">
+                <strong className="font-semibold text-[#35563B]">Example preview</strong> — computed automatically so you can
+                see how results look. Choose your own species and press <strong className="font-semibold">Run Simulation</strong> to
+                replace it with your own scenario.
+              </p>
+            )}
 
             {/* 2x2 Quantitative Metrics Grid */}
             <div className="grid grid-cols-2 gap-2 text-center">
@@ -606,7 +622,11 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
                         >
                           <div className="flex items-center gap-2 min-w-0 pr-1">
                             <SpeciesIcon iconKey={item.iconKey} size={22} className="shrink-0" />
-                            <span className="font-semibold text-[#202B27] truncate">{item.name}</span>
+                            {/* Full name with wrap: one-letter truncation ("P…") made affected
+                                species unidentifiable for a non-native reader. */}
+                            <span className="font-semibold text-[#202B27] leading-tight min-w-0">
+                              {item.name}
+                            </span>
                           </div>
                           <div className="flex items-center gap-1.5 shrink-0">
                             <span
