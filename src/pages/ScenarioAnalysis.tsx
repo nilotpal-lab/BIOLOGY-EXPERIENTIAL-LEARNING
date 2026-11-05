@@ -305,13 +305,35 @@ export function ScenarioAnalysis({ onNavigate }: ScenarioAnalysisProps) {
                 onChange={(e: ChangeEvent<HTMLSelectElement>) => selectDataset(e.target.value)}
                 className="w-full text-xs font-bold text-[#202B27] border-none p-0 focus:ring-0 cursor-pointer"
               >
-                {datasets
-                  .filter((entry) => !['RES-TER-C', 'RES-TER-D', 'MAR-TATOOSH-1', 'MAR-YTHAN-1'].includes(entry.id))
-                  .map((entry) => (
-                    <option key={entry.id} value={entry.id}>
-                      {entry.name}
-                    </option>
-                  ))}
+                <optgroup label="— Illustrative Demo Networks —">
+                  {datasets
+                    .filter((entry) => entry.isDemo && !entry.id.startsWith('VALIDATION-') && !entry.id.includes('fixture'))
+                    .map((entry) => (
+                      <option key={entry.id} value={entry.id}>
+                        {entry.name}
+                      </option>
+                    ))}
+                </optgroup>
+                <optgroup label="— Empirical Research Networks —">
+                  {datasets
+                    .filter((entry) => !entry.isDemo && entry.sourceStatus === 'research-verified' && !entry.userProvided && !entry.id.startsWith('VALIDATION-') && !entry.id.includes('fixture'))
+                    .map((entry) => (
+                      <option key={entry.id} value={entry.id}>
+                        {entry.name}
+                      </option>
+                    ))}
+                </optgroup>
+                {datasets.some((entry) => entry.userProvided) ? (
+                  <optgroup label="— Custom Uploaded Networks —">
+                    {datasets
+                      .filter((entry) => entry.userProvided)
+                      .map((entry) => (
+                        <option key={entry.id} value={entry.id}>
+                          {entry.name}
+                        </option>
+                      ))}
+                  </optgroup>
+                ) : null}
               </SelectInput>
               <p className="text-[10px] text-[#68716B] truncate">
                 {ECOSYSTEM_LABEL[dataset.ecosystem]} (UK)

@@ -19,12 +19,7 @@ export function ConservationAtlas({ onNavigate }: { onNavigate: (route: RouteId)
   const { datasets, dataset, selectDataset } = useAppState()
 
   const researchDatasets = useMemo(
-    () =>
-      datasets.filter(
-        (d) =>
-          d.sourceStatus === 'research-verified' &&
-          !['RES-TER-C', 'RES-TER-D', 'MAR-TATOOSH-1', 'MAR-YTHAN-1'].includes(d.id),
-      ),
+    () => datasets.filter((d) => d.sourceStatus === 'research-verified' && !d.userProvided),
     [datasets],
   )
 
@@ -77,6 +72,23 @@ export function ConservationAtlas({ onNavigate }: { onNavigate: (route: RouteId)
             />
           </div>
         </div>
+      </div>
+
+      {/* Studio Tab Navigation (Counterpart to Multi-Ecosystem Comparison) */}
+      <div className="flex items-center gap-2 border-b border-[#E5E6DC] pb-1">
+        <button
+          type="button"
+          onClick={() => onNavigate('compare')}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all border cursor-pointer bg-white text-[#68716B] border-[#E5E6DC] hover:text-[#202B27] hover:bg-[#F7F6EF]"
+        >
+          <span>Multi-Ecosystem Comparison</span>
+        </button>
+        <button
+          type="button"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all border cursor-pointer bg-[#35563B] text-white border-[#35563B] shadow-xs"
+        >
+          <span>Conservation Biome Atlas</span>
+        </button>
       </div>
 
       {/* Header Actions */}

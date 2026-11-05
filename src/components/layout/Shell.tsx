@@ -402,19 +402,39 @@ export function Shell({
                     onChange={(e) => selectDataset(e.target.value)}
                     className="border-none bg-transparent p-0 text-xs font-bold text-[#202B27] focus:ring-0 cursor-pointer w-full truncate"
                   >
-                    {datasets
-                      .filter((entry) => !['RES-TER-C', 'RES-TER-D', 'MAR-TATOOSH-1', 'MAR-YTHAN-1'].includes(entry.id))
-                      .map((entry) =>
-                        entry.id.startsWith('VALIDATION-') ? null : (
+                    <optgroup label="— Illustrative Demo Networks —">
+                      {datasets
+                        .filter((entry) => entry.isDemo && !entry.id.startsWith('VALIDATION-') && !entry.id.includes('fixture'))
+                        .map((entry) => (
                           <option key={entry.id} value={entry.id}>
                             {entry.name}
                           </option>
-                        ),
-                      )}
-                    {datasets.some((entry) => entry.id.startsWith('VALIDATION-')) ? (
+                        ))}
+                    </optgroup>
+                    <optgroup label="— Empirical Research Networks —">
+                      {datasets
+                        .filter((entry) => !entry.isDemo && entry.sourceStatus === 'research-verified' && !entry.userProvided && !entry.id.startsWith('VALIDATION-') && !entry.id.includes('fixture'))
+                        .map((entry) => (
+                          <option key={entry.id} value={entry.id}>
+                            {entry.name}
+                          </option>
+                        ))}
+                    </optgroup>
+                    {datasets.some((entry) => entry.userProvided) ? (
+                      <optgroup label="— Custom Uploaded Networks —">
+                        {datasets
+                          .filter((entry) => entry.userProvided)
+                          .map((entry) => (
+                            <option key={entry.id} value={entry.id}>
+                              {entry.name}
+                            </option>
+                          ))}
+                      </optgroup>
+                    ) : null}
+                    {datasets.some((entry) => entry.id.startsWith('VALIDATION-') || entry.id.includes('fixture')) ? (
                       <optgroup label="— Internal test fixtures (used by automated tests) —">
                         {datasets
-                          .filter((entry) => entry.id.startsWith('VALIDATION-'))
+                          .filter((entry) => entry.id.startsWith('VALIDATION-') || entry.id.includes('fixture'))
                           .map((entry) => (
                             <option key={entry.id} value={entry.id}>
                               {entry.name}

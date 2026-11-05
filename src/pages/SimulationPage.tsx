@@ -700,6 +700,15 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
             <span className="text-xs text-[#68716B]">
               ({activeResult ? activeResult.removedNodeIds.length : 0} species removed)
             </span>
+            {_onNavigate && (
+              <button
+                type="button"
+                onClick={() => _onNavigate('timeline')}
+                className="ml-2 inline-flex items-center gap-1 text-[11px] font-semibold text-[#35563B] hover:text-[#263D2D] hover:underline cursor-pointer"
+              >
+                <span>Open Full Timeline Studio →</span>
+              </button>
+            )}
           </div>
 
           {/* Controls: Play/Pause, Slider, Round indicator, Step buttons */}

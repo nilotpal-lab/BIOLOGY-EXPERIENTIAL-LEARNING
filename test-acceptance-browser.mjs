@@ -222,15 +222,16 @@ async function runBrowserAudit() {
       })()`)
 
       await wait(600)
+      const pass = res?.value === ds.id
       results.controls.push({
         screen: 'explore',
         control: `Dataset switch -> ${ds.id}`,
         action: 'Change select option',
         expected: `${ds.expectedNodes} nodes, ${ds.expectedLinks} links`,
-        actual: `Loaded ${ds.id}`,
-        pass: !res?.error,
+        actual: `Loaded ${res?.value || 'unknown'}`,
+        pass,
       })
-      console.log(`Dataset ${ds.id}: Switched OK`)
+      console.log(`Dataset ${ds.id}: ${pass ? 'Switched OK' : 'FAIL (got: ' + res?.value + ')'}`)
     }
 
     // ------------------------------------------------------------------------
