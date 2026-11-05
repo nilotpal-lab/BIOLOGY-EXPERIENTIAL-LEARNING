@@ -1,4 +1,4 @@
-import { AlertTriangle, FileText } from 'lucide-react'
+import { AlertTriangle, BookOpen, FileText } from 'lucide-react'
 import { describeScenario } from '../../core/scenarios'
 import { Card, CardHeading, Callout } from '../ui/primitives'
 import type { ScenarioResult } from '../../core/types'
@@ -19,6 +19,10 @@ export function WhatChanged({
   labelFor: (id: string) => string
 }) {
   const lines = describeScenario(result)
+  const isCascade = result.mode === 'cascade'
+  const secondaryCount = result.scenario.secondaryRemovals
+  const affectedCount = result.scenario.directlyAffectedConsumerIds.length
+  const depletedCount = result.scenario.foodDepletedConsumerIds.length
 
   return (
     <Card>
@@ -36,9 +40,32 @@ export function WhatChanged({
         ))}
       </ol>
 
+      {/* Plain-English Educational Insight for Students */}
+      <div className="mt-3 rounded-xl border border-[#35563B]/20 bg-[#F7F6EF] p-3 text-xs space-y-1.5">
+        <div className="flex items-center gap-1.5 font-bold text-[#35563B]">
+          <BookOpen size={14} />
+          <span>Plain-English Ecosystem Summary:</span>
+        </div>
+        <p className="text-[12px] text-[#4A544E] leading-relaxed">
+          {isCascade && secondaryCount > 0 ? (
+            <>
+              <strong>🚨 Domino Starvation Occurred:</strong> Removing <span className="font-semibold text-[#202B27]">{result.primaryNodeLabel}</span> broke vital energy pathways. {secondaryCount} consumer species depended exclusively on the removed organisms and starved in {result.rounds.length} round(s).
+            </>
+          ) : isCascade ? (
+            <>
+              <strong>🛡️ High Dietary Resilience:</strong> Even though {affectedCount} species lost a food item, <strong>zero secondary species starved</strong> because surviving predators had alternative prey available (dietary redundancy).
+            </>
+          ) : (
+            <>
+              <strong>🔍 Direct Removal Evaluation:</strong> Measures the immediate severance of {result.directlyRemovedLinks.length} feeding links. {depletedCount > 0 ? `${depletedCount} species lost all food and would starve in a cascade.` : 'Surviving predators retain alternative prey options.'}
+            </>
+          )}
+        </p>
+      </div>
+
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         <div className="rounded-lg border border-line-soft bg-surface-2 p-2.5 text-[12px]">
-          <p className="text-fg-faint">Links removed by the initial removal</p>
+          <p className="text-fg-faint font-medium">Links removed by the initial removal</p>
           <ul className="mt-1 space-y-0.5 text-fg-muted">
             {result.directlyRemovedLinks.length ? (
               result.directlyRemovedLinks.map((link) => (
@@ -52,15 +79,15 @@ export function WhatChanged({
           </ul>
         </div>
         <div className="rounded-lg border border-line-soft bg-surface-2 p-2.5 text-[12px]">
-          <p className="text-fg-faint">Nodes removed in total ({result.scenario.totalRemoved})</p>
+          <p className="text-fg-faint font-medium">Nodes removed in total ({result.scenario.totalRemoved})</p>
           <ul className="mt-1 space-y-0.5 text-fg-muted">
             <li>
-              Initial selection: <span className="text-fg">{result.primaryNodeLabel}</span>
+              Initial selection: <span className="text-fg font-semibold">{result.primaryNodeLabel}</span>
             </li>
             {result.rounds.flatMap((round) =>
               round.removals.map((removal) => (
                 <li key={removal.nodeId}>
-                  Round {round.round}: <span className="text-fg">{removal.label}</span>
+                  Round {round.round}: <span className="text-fg font-semibold">{removal.label}</span> (Starved)
                 </li>
               )),
             )}

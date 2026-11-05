@@ -535,6 +535,45 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
 
           {/* Interactive Graph Component */}
           <div className="flex-1 relative overflow-hidden">
+            {/* Floating Simulation HUD in Standard Lab View */}
+            {result && (
+              <div className="absolute top-3 left-3 z-20 flex flex-wrap items-center gap-2 p-2 rounded-xl bg-white/95 backdrop-blur-md border border-[#E5E6DC] shadow-md text-xs max-w-lg pointer-events-auto">
+                <span className="font-bold text-[#202B27] flex items-center gap-1.5">
+                  <Play size={12} className="text-[#35563B] fill-[#35563B]" />
+                  <span>{result.primaryNodeLabel} Removed</span>
+                </span>
+                <span className="text-[#68716B]">·</span>
+                <span className="text-[#68716B]">
+                  Nodes: <strong className="text-[#202B27]">{result.scenario.nodeCount}/{result.baseline.nodeCount}</strong>
+                </span>
+                <span className="text-[#68716B]">·</span>
+                <span className="text-[#D96B50] font-semibold">
+                  Links: -{result.scenario.linksLost} {result.scenario.linkLossPercent.value !== null ? `(-${formatPercent(result.scenario.linkLossPercent.value)})` : ''}
+                </span>
+                {result.scenario.secondaryRemovals > 0 && (
+                  <span className="px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 font-bold border border-rose-200">
+                    +{result.scenario.secondaryRemovals} starved
+                  </span>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setDrawerState((prev) => (prev === 'expanded' ? 'collapsed' : 'expanded'))}
+                  className="h-6 text-[10.5px] px-2 py-0 border-[#35563B] text-[#35563B] font-semibold"
+                >
+                  {drawerState === 'expanded' ? 'Hide Details' : 'What Changed?'}
+                </Button>
+                <button
+                  type="button"
+                  onClick={resetScenario}
+                  className="p-1 text-[#68716B] hover:text-[#202B27]"
+                  title="Reset simulation"
+                  aria-label="Reset simulation"
+                >
+                  <RotateCcw size={12} />
+                </button>
+              </div>
+            )}
             <FoodWebGraph
               graph={graph}
               removedNodeIds={activeRemovedNodeIds}
@@ -585,6 +624,9 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
                 onReset={resetScenario}
                 result={result}
                 onOpenReport={() => setReportModalOpen(true)}
+                graph={graph}
+                onSelectSpecies={selectNode}
+                onNavigate={onNavigate}
               />
             </div>
           </div>
@@ -713,12 +755,54 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
 
       {/* Results Drawer when scenario is active */}
       {result && (
-        <div className="sr-only" aria-label="Scenario Results Summary">
-          <BaselineVsScenario baseline={result.baseline} result={result} labelFor={labelFor} />
-          <WhatChanged result={result} labelFor={labelFor} />
-          <button type="button" onClick={resetScenario}>
-            Reset simulation
-          </button>
+        <div
+          className={cn(
+            'border-t border-[#E5E6DC] bg-white transition-all',
+            drawerState === 'closed' ? 'sr-only' : 'p-3 mx-2 sm:mx-3 mb-2 rounded-2xl border shadow-md',
+          )}
+          aria-label="Scenario Results Summary"
+        >
+          <div className="flex items-center justify-between pb-2 border-b border-[#E5E6DC]">
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="font-bold text-[#202B27]">Simulation Quantitative Results:</span>
+              <span className="text-[#68716B]">
+                Target: <strong className="text-[#202B27]">{result.primaryNodeLabel}</strong> · {result.mode === 'cascade' ? 'Cascade mode' : 'Direct mode'} · {result.scenario.totalRemoved} node(s) removed total ({result.scenario.secondaryRemovals} starved)
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setDrawerState((prev) => (prev === 'expanded' ? 'collapsed' : 'expanded'))}
+                className="h-7 text-xs px-2"
+                aria-label={drawerState === 'expanded' ? 'Collapse drawer' : 'Expand drawer'}
+              >
+                {drawerState === 'expanded' ? (
+                  <>
+                    <ChevronDown size={13} className="mr-1" /> Collapse
+                  </>
+                ) : (
+                  <>
+                    <ChevronUp size={13} className="mr-1" /> Expand details
+                  </>
+                )}
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={resetScenario}
+                className="h-7 text-xs px-2 text-[#68716B] hover:text-[#202B27]"
+                aria-label="Reset simulation"
+              >
+                <RotateCcw size={13} className="mr-1" /> Reset simulation
+              </Button>
+            </div>
+          </div>
+
+          <div className={cn(drawerState === 'expanded' ? 'pt-3 space-y-4 max-h-[45vh] overflow-y-auto' : 'sr-only')}>
+            <BaselineVsScenario baseline={result.baseline} result={result} labelFor={labelFor} />
+            <WhatChanged result={result} labelFor={labelFor} />
+          </div>
         </div>
       )}
 

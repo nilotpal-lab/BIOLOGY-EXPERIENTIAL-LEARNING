@@ -1,11 +1,17 @@
 import {
   ArrowDown,
+  BookOpen,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
+  Info,
+  Lightbulb,
   Network,
   Pause,
   Play,
   Search,
+  Sparkles,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import {
@@ -24,6 +30,11 @@ import { computeBaselineMetrics, formatPercent } from '../core/metrics'
 import { runScenario } from '../core/scenarios'
 import { TROPHIC_ROLE_LABEL } from '../core/types'
 import { useAppState } from '../state/AppState'
+import {
+  generatePlainEnglishStory,
+  getEducationalPresets,
+  type EducationalPreset,
+} from '../core/plainEnglishExplanations'
 import type { RouteId } from '../components/layout/routes'
 
 export interface CascadeTimelinePageProps {
@@ -45,6 +56,7 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
   const [simMode, setSimMode] = useState<'direct' | 'cascade'>('cascade')
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentStep, setCurrentStep] = useState<number>(0)
+  const [showGuide, setShowGuide] = useState(false)
 
   // Sync mode with global app state
   useEffect(() => {
@@ -92,6 +104,27 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
     return null
   }, [result, graph, selectedNode, dataset, simMode, selectedNodeId])
 
+  // Plain-English story generated dynamically from computed results
+  const plainStory = useMemo(() => {
+    if (!graph || !baseline || !activeResult) return null
+    return generatePlainEnglishStory(graph, baseline, activeResult)
+  }, [graph, baseline, activeResult])
+
+  // Educational presets for 1-click exploration
+  const educationalPresets = useMemo(
+    () => (graph ? getEducationalPresets(graph) : []),
+    [graph],
+  )
+
+  const handleApplyPreset = (preset: EducationalPreset) => {
+    selectNode(preset.speciesId)
+    setSimMode(preset.mode)
+    setMode(preset.mode)
+    window.setTimeout(() => {
+      runSelectedScenario()
+    }, 40)
+  }
+
   // Total progression steps: 0 = Initial, 1 = Round 1, ..., N = Round N
   const totalRounds = useMemo(() => {
     if (!activeResult) return 0
@@ -104,7 +137,6 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
   // When activeResult changes, set default step to Round 2 (or total rounds) to showcase active cascade
   useEffect(() => {
     if (activeResult && activeResult.mode === 'cascade' && activeResult.rounds.length > 0) {
-      // Default to round 2 (or max rounds) matching design reference 05
       setCurrentStep(Math.min(2, 1 + activeResult.rounds.length))
     } else if (activeResult) {
       setCurrentStep(1)
@@ -189,7 +221,7 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
     return points
   }, [baseline, activeResult])
 
-  // Removed species list with round details
+  // Removed species list with round details and plain-English cause
   const removedSpeciesCards = useMemo(() => {
     if (!activeResult || !graph) return []
     const cards: Array<{
@@ -197,6 +229,8 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
       name: string
       iconKey?: string
       roundLabel: string
+      role: string
+      reason: string
     }> = []
 
     // Primary initial removal
@@ -206,6 +240,8 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
       name: primaryNode?.name ?? activeResult.primaryNodeId,
       iconKey: primaryNode?.iconKey,
       roundLabel: 'Round 1',
+      role: primaryNode?.trophicRole ? (TROPHIC_ROLE_LABEL[primaryNode.trophicRole] ?? 'Target') : 'Target',
+      reason: 'Deliberately removed at start of experiment',
     })
 
     // Cascade secondary removals
@@ -218,6 +254,8 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
             name: node?.name ?? rem.nodeId,
             iconKey: node?.iconKey,
             roundLabel: `Round ${r.round + 1}`,
+            role: node?.trophicRole ? (TROPHIC_ROLE_LABEL[node.trophicRole] ?? 'Consumer') : 'Consumer',
+            reason: rem.reason || 'Lost 100% of recorded food sources and starved',
           })
         })
       })
@@ -225,22 +263,73 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
     return cards
   }, [activeResult, graph])
 
+  // Real-time round description
+  const currentStepDescription = useMemo(() => {
+    if (!activeResult) return 'Select a species to examine round-by-round effects.'
+    if (currentStep === 0) {
+      return `Baseline Ecosystem: All ${baseline?.nodeCount ?? 0} species and ${baseline?.linkCount ?? 0} feeding links intact.`
+    }
+    if (currentStep === 1) {
+      return `Round 1 (Direct Removal): "${activeResult.primaryNodeLabel}" removed. ${activeResult.directlyRemovedLinks.length} feeding links severed.`
+    }
+    if (activeResult.mode === 'cascade' && activeResult.rounds[currentStep - 2]) {
+      const r = activeResult.rounds[currentStep - 2]
+      return `Round ${r.round + 1} (Starvation Cascade): ${r.removals.map((rem) => rem.label).join(', ')} had 0 food sources remaining and starved.`
+    }
+    return `Ecosystem Stabilized: No further consumer met the starvation rule.`
+  }, [activeResult, currentStep, baseline])
+
   return (
-    <div className="space-y-5 max-w-[1780px] mx-auto pb-8">
+    <div className="space-y-4 max-w-[1780px] mx-auto pb-8">
       {/* =====================================================================
-          1. PAGE HEADER / BANNER (Matching Image 05 Reference)
+          1. PAGE HEADER / BANNER WITH NEWCOMER ONBOARDING
           ===================================================================== */}
       <div className="relative rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] overflow-hidden shadow-2xs">
         <div className="grid grid-cols-1 lg:grid-cols-12 items-center">
           {/* Banner Text */}
-          <div className="lg:col-span-8 p-5 sm:p-6 lg:p-7 space-y-1.5 z-10">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-normal text-[#202B27] tracking-tight">
-              Cascade Timeline
-            </h1>
+          <div className="lg:col-span-8 p-5 sm:p-6 lg:p-6 space-y-2 z-10">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-normal text-[#202B27] tracking-tight">
+                Cascade Timeline
+              </h1>
+              <span className="rounded-full bg-[#E8EDE0] border border-[#35563B]/20 px-2.5 py-0.5 text-[11px] font-semibold text-[#35563B]">
+                Step-by-Step Chain Reaction Studio
+              </span>
+            </div>
             <p className="text-xs sm:text-[13.5px] text-[#68716B] max-w-2xl leading-relaxed">
-              Explore the step-by-step effects of species removal. See how the loss of one species
-              can trigger a chain reaction across the entire ecosystem.
+              Explore the sequential rounds of species loss. Watch how the disappearance of a single organism can trigger a domino effect across the entire food web.
             </p>
+
+            {/* Quick Action Presets & Guide Toggle */}
+            <div className="pt-1 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowGuide((prev) => !prev)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[#35563B] bg-[#35563B]/10 px-2.5 py-1 text-xs font-semibold text-[#35563B] hover:bg-[#35563B]/20 transition-colors cursor-pointer"
+              >
+                <BookOpen size={13} />
+                <span>{showGuide ? 'Hide Timeline Guide' : '🎓 How Cascade Extinctions Work'}</span>
+                {showGuide ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+              </button>
+
+              <span className="text-[11px] font-bold text-[#899B78] uppercase tracking-wider hidden sm:inline ml-1">
+                Try Examples:
+              </span>
+
+              {educationalPresets.map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  onClick={() => handleApplyPreset(preset)}
+                  title={preset.description}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-[#E5E6DC] bg-white px-2 py-1 text-xs font-medium text-[#202B27] hover:border-[#35563B] hover:bg-[#F7F6EF] transition-all shadow-2xs cursor-pointer"
+                >
+                  <Sparkles size={12} className="text-[#C06918]" />
+                  <span>{preset.title}</span>
+                  <span className="text-[10px] text-[#68716B] font-mono">({preset.speciesName})</span>
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Freshwater Ecosystem Illustration */}
@@ -253,10 +342,56 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
             />
           </div>
         </div>
+
+        {/* ===================================================================
+            EXPANDABLE GUIDE: "What is an Extinction Cascade?"
+            =================================================================== */}
+        {showGuide && (
+          <div className="border-t border-[#E5E6DC] bg-[#F7F6EF] p-4 sm:p-5 animate-in fade-in duration-200">
+            <div className="max-w-4xl space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Lightbulb size={18} className="text-[#C06918]" />
+                  <h3 className="font-serif text-sm sm:text-base font-bold text-[#202B27]">
+                    How Extinction Cascades Work in Nature and in This Studio
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowGuide(false)}
+                  className="text-xs text-[#68716B] hover:text-[#202B27] underline cursor-pointer"
+                >
+                  Close guide ✕
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div className="p-3 rounded-xl border border-[#E5E6DC] bg-white space-y-1">
+                  <span className="font-bold text-[#202B27] block">1. The Trigger Event</span>
+                  <p className="text-[11px] text-[#68716B] leading-relaxed">
+                    A species is removed (Round 1). Its predators suddenly lose a primary food source, while its prey species are relieved of hunting pressure.
+                  </p>
+                </div>
+                <div className="p-3 rounded-xl border border-[#E5E6DC] bg-white space-y-1">
+                  <span className="font-bold text-[#202B27] block">2. The 100% Starvation Rule</span>
+                  <p className="text-[11px] text-[#68716B] leading-relaxed">
+                    Under standard ecological modeling rules, a consumer is only removed if <strong className="text-[#C04938]">all 100%</strong> of its recorded food items disappear. If it has backup foods, it survives!
+                  </p>
+                </div>
+                <div className="p-3 rounded-xl border border-[#E5E6DC] bg-white space-y-1">
+                  <span className="font-bold text-[#202B27] block">3. Multi-Round Dominoes</span>
+                  <p className="text-[11px] text-[#68716B] leading-relaxed">
+                    When Round 2 creatures starve, predators eating *them* may also run out of food in Round 3. The cascade halts when every surviving animal has at least one meal.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* =====================================================================
-          2. SETUP & CONTROLS ROW (Matching Image 05 Reference)
+          2. SETUP & CONTROLS ROW
           ===================================================================== */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-4">
         {/* Card 1: 1. Select a Species to Remove */}
@@ -274,7 +409,7 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
               aria-label="Select a species to remove"
               value={selectedNodeId ?? ''}
               onChange={(e) => selectNode(e.target.value)}
-              className="w-full text-xs font-semibold text-[#202B27] rounded-xl border border-[#E5E6DC] bg-white py-2 pl-9 pr-8 shadow-2xs"
+              className="w-full text-xs font-semibold text-[#202B27] rounded-xl border border-[#E5E6DC] bg-white py-2 pl-9 pr-8 shadow-2xs cursor-pointer"
             >
               {availableSpecies.map((n) => (
                 <option key={n.id} value={n.id}>
@@ -290,7 +425,7 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
               <div className="flex items-center gap-3 min-w-0">
                 <SpeciesIcon
                   iconKey={selectedNode.iconKey}
-                  size={52}
+                  size={48}
                   className="rounded-lg bg-white border border-[#E5E6DC] p-1 shrink-0"
                   label={selectedNode.name}
                 />
@@ -299,6 +434,11 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
                   <p className="text-[11px] italic text-[#68716B] truncate">
                     {selectedNode.scientificName || `${selectedNode.name.toLowerCase()} sp.`}
                   </p>
+                  {graph && (
+                    <p className="text-[10px] text-[#68716B] mt-0.5">
+                      {(graph.foodSourcesOf.get(selectedNode.id) ?? []).length} food sources · {(graph.consumersOf.get(selectedNode.id) ?? []).length} predators
+                    </p>
+                  )}
                 </div>
               </div>
               <span className="inline-block text-[10px] font-semibold bg-[#FEF4E8] text-[#C06918] px-2.5 py-1 rounded-md border border-[#F1B36F]/40 shrink-0">
@@ -322,7 +462,7 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
                   className={cn(
                     'flex items-start gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-all',
                     simMode === 'direct'
-                      ? 'border-[#35563B] bg-[#E8EDE0] shadow-2xs'
+                      ? 'border-[#35563B] bg-[#E8EDE0] shadow-2xs ring-1 ring-[#35563B]'
                       : 'border-[#E5E6DC] bg-white hover:bg-[#F7F6EF]',
                   )}
                 >
@@ -334,9 +474,12 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
                     className="mt-0.5 text-[#35563B] focus:ring-[#35563B]"
                   />
                   <div className="min-w-0 text-xs">
-                    <p className="font-bold text-[#202B27]">Direct Removal</p>
-                    <p className="text-[10.5px] text-[#68716B] leading-snug">
-                      Remove only the selected species
+                    <div className="flex items-center justify-between">
+                      <p className="font-bold text-[#202B27]">Direct Removal</p>
+                      <span className="text-[9.5px] px-1.5 py-0.2 rounded bg-white border border-[#E5E6DC] text-[#68716B]">1 Step</span>
+                    </div>
+                    <p className="text-[10.5px] text-[#68716B] leading-snug mt-0.5">
+                      Remove only the selected species without triggering starvation waves.
                     </p>
                   </div>
                 </label>
@@ -346,7 +489,7 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
                   className={cn(
                     'flex items-start gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-all',
                     simMode === 'cascade'
-                      ? 'border-[#35563B] bg-[#E8EDE0] shadow-2xs'
+                      ? 'border-[#35563B] bg-[#E8EDE0] shadow-2xs ring-1 ring-[#35563B]'
                       : 'border-[#E5E6DC] bg-white hover:bg-[#F7F6EF]',
                   )}
                 >
@@ -358,9 +501,12 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
                     className="mt-0.5 text-[#35563B] focus:ring-[#35563B]"
                   />
                   <div className="min-w-0 text-xs">
-                    <p className="font-bold text-[#202B27]">Direct Removal + Cascade</p>
-                    <p className="text-[10.5px] text-[#68716B] leading-snug">
-                      Simulate cascading effects when consumers lose all food sources
+                    <div className="flex items-center justify-between">
+                      <p className="font-bold text-[#202B27]">Direct Removal + Cascade</p>
+                      <span className="text-[9.5px] px-1.5 py-0.2 rounded bg-[#FEF4E8] border border-[#F1B36F]/40 text-[#C06918]">Chain Reaction</span>
+                    </div>
+                    <p className="text-[10.5px] text-[#68716B] leading-snug mt-0.5">
+                      Simulate multi-round starvation cascades when consumers lose all food.
                     </p>
                   </div>
                 </label>
@@ -372,7 +518,7 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
                   type="button"
                   onClick={runSelectedScenario}
                   disabled={!selectedNodeId}
-                  className="w-full h-full min-h-[74px] inline-flex items-center justify-center gap-2 rounded-xl bg-[#35563B] hover:bg-[#263D2D] text-white py-3 px-3 text-xs font-bold transition-all shadow-sm hover:shadow disabled:opacity-50 text-center"
+                  className="w-full h-full min-h-[74px] inline-flex items-center justify-center gap-2 rounded-xl bg-[#35563B] hover:bg-[#263D2D] text-white py-3 px-3 text-xs font-bold transition-all shadow-sm hover:shadow disabled:opacity-50 text-center cursor-pointer"
                 >
                   <Play size={13} className="fill-current shrink-0" />
                   <span>Run Cascade Simulation →</span>
@@ -386,9 +532,15 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
         <div className="xl:col-span-3 min-w-0 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-3">
           <div className="flex items-center justify-between pb-2 border-b border-[#E5E6DC]">
             <span className="font-bold text-xs text-[#202B27]">Simulation Summary</span>
-            {activeResult && (
-              <span className="inline-block text-[10px] font-bold bg-[#FCEBE7] text-[#C04938] px-2.5 py-0.5 rounded-full border border-[#EF9A88]/40">
-                Cascade Complete
+            {plainStory && (
+              <span
+                className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full border bg-white"
+                style={{
+                  color: plainStory.severityColor.text,
+                  borderColor: plainStory.severityColor.border,
+                }}
+              >
+                {plainStory.severityLabel}
               </span>
             )}
           </div>
@@ -402,6 +554,7 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
               <p className="text-xl font-bold text-[#202B27] tabular-nums mt-0.5">
                 {baseline?.nodeCount ?? 0}
               </p>
+              <span className="text-[9.5px] text-[#899B78] block">Baseline total</span>
             </div>
 
             {/* Stat 2: Total Removed */}
@@ -415,6 +568,7 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
               <span className="text-[10px] text-[#68716B] tabular-nums block">
                 ({baseline && activeResult ? formatPercent((activeResult.removedNodeIds.length / baseline.nodeCount) * 100) : '0%'})
               </span>
+              <span className="text-[9.5px] text-[#68716B] block">Initial + cascade</span>
             </div>
 
             {/* Stat 3: Rounds */}
@@ -425,6 +579,7 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
               <p className="text-xl font-bold text-[#202B27] tabular-nums mt-0.5">
                 {totalRounds}
               </p>
+              <span className="text-[9.5px] text-[#899B78] block">Starvation waves</span>
             </div>
 
             {/* Stat 4: Links Lost */}
@@ -438,6 +593,7 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
               <span className="text-[10px] text-[#68716B] tabular-nums block">
                 ({activeResult && activeResult.scenario.linkLossPercent.value !== null ? formatPercent(activeResult.scenario.linkLossPercent.value) : '0%'})
               </span>
+              <span className="text-[9.5px] text-[#68716B] block">Energy pathways cut</span>
             </div>
           </div>
         </div>
@@ -501,6 +657,15 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
               />
             </div>
           )}
+
+          {/* Live Step Context Bar */}
+          <div className="rounded-xl border border-[#E5E6DC] bg-white p-3 flex items-start gap-2.5 text-xs">
+            <Info size={15} className="text-[#35563B] shrink-0 mt-0.5" />
+            <div>
+              <span className="font-bold text-[#202B27] mr-1">Round Status: </span>
+              <span className="text-[#4A544E]">{currentStepDescription}</span>
+            </div>
+          </div>
         </div>
 
         {/* Right Column: Cascade Timeline Scrubber & Round Stack (4 Columns) */}
@@ -513,7 +678,7 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
                 <button
                   type="button"
                   onClick={() => setIsPlaying((prev) => !prev)}
-                  className="h-6 w-6 rounded-full bg-[#35563B] text-white flex items-center justify-center hover:bg-[#263D2D] transition-colors shrink-0 shadow-2xs"
+                  className="h-6 w-6 rounded-full bg-[#35563B] text-white flex items-center justify-center hover:bg-[#263D2D] transition-colors shrink-0 shadow-2xs cursor-pointer"
                   title={isPlaying ? 'Pause timeline' : 'Play timeline progression'}
                 >
                   {isPlaying ? <Pause size={11} /> : <Play size={11} className="ml-0.5 fill-current" />}
@@ -535,7 +700,7 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
                     type="button"
                     onClick={() => setCurrentStep((prev) => Math.max(0, prev - 1))}
                     disabled={currentStep <= 0}
-                    className="h-6 w-6 rounded-md border border-[#E5E6DC] bg-white flex items-center justify-center text-[#202B27] disabled:opacity-30"
+                    className="h-6 w-6 rounded-md border border-[#E5E6DC] bg-white flex items-center justify-center text-[#202B27] disabled:opacity-30 cursor-pointer"
                     aria-label="Previous round"
                   >
                     <ChevronLeft size={13} />
@@ -544,7 +709,7 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
                     type="button"
                     onClick={() => setCurrentStep((prev) => Math.min(Math.max(1, totalRounds), prev + 1))}
                     disabled={currentStep >= Math.max(1, totalRounds)}
-                    className="h-6 w-6 rounded-md border border-[#E5E6DC] bg-white flex items-center justify-center text-[#202B27] disabled:opacity-30"
+                    className="h-6 w-6 rounded-md border border-[#E5E6DC] bg-white flex items-center justify-center text-[#202B27] disabled:opacity-30 cursor-pointer"
                     aria-label="Next round"
                   >
                     <ChevronRight size={13} />
@@ -554,7 +719,7 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
             </div>
           </div>
 
-          {/* Vertical Stack of Round Cards with Flow Arrows */}
+          {/* Vertical Stack of Round Cards with Flow Arrows & Plain-English Explanations */}
           <div className="space-y-2 max-h-[520px] overflow-y-auto pr-1">
             {/* Round 0: Initial State Card */}
             <div
@@ -562,7 +727,7 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
               className={cn(
                 'p-3 rounded-xl border transition-all cursor-pointer text-xs',
                 currentStep === 0
-                  ? 'border-[#35563B] bg-[#E8EDE0] shadow-2xs'
+                  ? 'border-[#35563B] bg-[#E8EDE0] shadow-2xs ring-1 ring-[#35563B]'
                   : 'border-[#E5E6DC] bg-white hover:bg-[#F7F6EF]',
               )}
             >
@@ -571,12 +736,15 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
                   <Network size={16} />
                 </div>
                 <div className="min-w-0">
-                  <p className="font-bold text-[#202B27]">Initial State</p>
+                  <div className="flex items-center justify-between">
+                    <p className="font-bold text-[#202B27]">Initial State (Baseline)</p>
+                    <span className="text-[9.5px] px-1.5 py-0.2 rounded bg-white border border-[#E5E6DC] text-[#35563B] font-semibold">Healthy</span>
+                  </div>
                   <p className="text-[10.5px] text-[#68716B]">
                     {baseline?.nodeCount ?? 0} species · {baseline?.linkCount ?? 0} links
                   </p>
                   <p className="text-[10px] text-[#899B78] mt-0.5">
-                    All species present in the ecosystem.
+                    Undisturbed ecosystem. All feeding links intact.
                   </p>
                 </div>
               </div>
@@ -612,7 +780,10 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
                     </span>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="font-bold text-[#C04938]">Round 1</p>
+                    <div className="flex items-center justify-between">
+                      <p className="font-bold text-[#C04938]">Round 1</p>
+                      <span className="text-[9.5px] px-1.5 py-0.2 rounded bg-white border border-[#EF9A88]/40 text-[#C04938] font-semibold">Direct Action</span>
+                    </div>
                     <p className="text-[11px] font-bold text-[#C04938] truncate">
                       {activeResult.primaryNodeLabel} removed
                     </p>
@@ -620,7 +791,7 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
                       {activeResult.scenario.directlyAffectedConsumerIds.length} species affected · {activeResult.directlyRemovedLinks.length} links lost
                     </p>
                     <p className="text-[10px] text-[#68716B] mt-0.5 leading-tight">
-                      {activeResult.primaryNodeLabel} is removed. Species that depended on {activeResult.primaryNodeLabel} lose their food source.
+                      Target species is eliminated. Predators of {activeResult.primaryNodeLabel} lose a feeding link.
                     </p>
                   </div>
                 </div>
@@ -662,16 +833,19 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
                           </span>
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="font-bold text-[#C04938]">Round {round.round + 1}</p>
+                          <div className="flex items-center justify-between">
+                            <p className="font-bold text-[#C04938]">Round {round.round + 1}</p>
+                            <span className="text-[9.5px] px-1.5 py-0.2 rounded bg-[#FDEEEB] border border-[#EF9A88]/40 text-[#C04938] font-semibold">Starvation Wave</span>
+                          </div>
                           <p className="text-[11px] font-bold text-[#C04938] truncate">
-                            {round.removals.map((r) => r.label).join(', ')} removed
+                            {round.removals.map((r) => r.label).join(', ')} starved
                           </p>
                           <p className="text-[10.5px] text-[#68716B]">
                             {round.removals.length} species removed
                           </p>
                           <p className="text-[10px] text-[#68716B] mt-0.5 leading-tight">
                             {firstRemoval?.reason ||
-                              'Consumer loses all food sources and is removed. Cascade ends.'}
+                              'Consumer had zero remaining food sources and starved. Cascade propagates.'}
                           </p>
                         </div>
                       </div>
@@ -679,17 +853,66 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
                   </div>
                 )
               })}
+
+            {/* Stabilized State Box for Zero Secondary Starvations */}
+            {activeResult && activeResult.mode === 'cascade' && activeResult.rounds.length === 0 && (
+              <div className="p-3 rounded-xl border border-[#35563B]/30 bg-[#E8EDE0]/60 text-xs text-center space-y-1">
+                <p className="font-bold text-[#35563B]">🛡️ Zero Secondary Starvations</p>
+                <p className="text-[10.5px] text-[#4A544E]">
+                  Cascade halted immediately. Surviving predators possessed alternative food sources.
+                </p>
+              </div>
+            )}
+
+            {/* Equilibrium Reached Box for Multi-round cascades */}
+            {activeResult && activeResult.mode === 'cascade' && activeResult.rounds.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex justify-center text-[#35563B] py-0.5">
+                  <ArrowDown size={14} className="stroke-[2.5]" />
+                </div>
+                <div
+                  onClick={() => setCurrentStep(totalRounds)}
+                  className={cn(
+                    'p-3 rounded-xl border transition-all cursor-pointer text-xs',
+                    currentStep === totalRounds
+                      ? 'border-[#35563B] bg-[#E8EDE0] shadow-2xs ring-1 ring-[#35563B]'
+                      : 'border-[#E5E6DC] bg-white hover:bg-[#F7F6EF]',
+                  )}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-8 w-8 rounded-lg bg-[#FCFBF7] border border-[#E5E6DC] flex items-center justify-center text-[#35563B] shrink-0 text-sm">
+                      ⚖️
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center justify-between">
+                        <p className="font-bold text-[#202B27]">Equilibrium Reached</p>
+                        <span className="text-[9.5px] px-1.5 py-0.2 rounded bg-white border border-[#E5E6DC] text-[#35563B] font-semibold">Stabilized</span>
+                      </div>
+                      <p className="text-[10.5px] text-[#68716B]">
+                        {baseline ? baseline.nodeCount - activeResult.removedNodeIds.length : 0} surviving species
+                      </p>
+                      <p className="text-[10px] text-[#899B78] mt-0.5">
+                        Cascade concluded. Every surviving consumer has at least one recorded food source.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* =====================================================================
-          4. BOTTOM SECTION: RECHARTS GRAPHS & REMOVED SPECIES CARDS
+          4. BOTTOM SECTION: CHARTS WITH PLAIN-ENGLISH GUIDES & REMOVED SPECIES
           ===================================================================== */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-4">
         {/* Chart 1: Species Remaining Over Rounds (4 Columns) */}
         <div className="xl:col-span-4 min-w-0 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-2">
-          <p className="text-xs font-bold text-[#202B27]">Species Remaining Over Rounds</p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-bold text-[#202B27]">Species Remaining Over Rounds</p>
+            <span className="text-[10px] text-[#899B78]">Survival Curve</span>
+          </div>
           <div className="h-40 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={progressionData} margin={{ top: 8, right: 12, left: -10, bottom: 0 }}>
@@ -724,11 +947,17 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
               </LineChart>
             </ResponsiveContainer>
           </div>
+          <p className="text-[10px] text-[#68716B] leading-tight">
+            📉 <strong>How to read:</strong> Steeper declines reflect specialist-heavy webs vulnerable to rapid chain-reaction collapses.
+          </p>
         </div>
 
         {/* Chart 2: Cumulative Link Loss (4 Columns) */}
         <div className="xl:col-span-4 min-w-0 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-2">
-          <p className="text-xs font-bold text-[#202B27]">Cumulative Link Loss</p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-bold text-[#202B27]">Cumulative Link Loss</p>
+            <span className="text-[10px] text-[#C06918]">Interaction Severance</span>
+          </div>
           <div className="h-40 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={progressionData} margin={{ top: 8, right: 12, left: -10, bottom: 0 }}>
@@ -763,15 +992,21 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
               </LineChart>
             </ResponsiveContainer>
           </div>
+          <p className="text-[10px] text-[#68716B] leading-tight">
+            📈 <strong>How to read:</strong> Tracks the progressive breakage of predator-prey energy pathways across sequential rounds.
+          </p>
         </div>
 
         {/* Panel 3: Removed Species Cards List (4 Columns) */}
         <div className="xl:col-span-4 min-w-0 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-2">
-          <p className="text-xs font-bold text-[#202B27]">
-            Removed Species ({removedSpeciesCards.length})
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-bold text-[#202B27]">
+              Removed Species ({removedSpeciesCards.length})
+            </p>
+            <span className="text-[10px] text-[#68716B]">Casualty Register</span>
+          </div>
           {removedSpeciesCards.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+            <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 pt-1 max-h-52 overflow-y-auto pr-1">
               {removedSpeciesCards.map((sp) => (
                 <div
                   key={sp.id}
@@ -786,7 +1021,17 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
                   <span className="text-[11px] font-bold text-[#202B27] truncate w-full mt-1.5">
                     {sp.name}
                   </span>
-                  <span className="text-[9.5px] text-[#68716B]">{sp.roundLabel}</span>
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <span className="text-[9px] font-semibold px-1 rounded bg-[#FDEEEB] text-[#EF9A88]">
+                      {sp.roundLabel}
+                    </span>
+                    <span className="text-[9px] text-[#68716B]">
+                      {sp.role}
+                    </span>
+                  </div>
+                  <p className="text-[8.5px] text-[#899B78] mt-1 line-clamp-1 w-full" title={sp.reason}>
+                    {sp.reason}
+                  </p>
                 </div>
               ))}
             </div>

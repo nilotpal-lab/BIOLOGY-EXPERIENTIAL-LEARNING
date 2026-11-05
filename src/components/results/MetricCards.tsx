@@ -72,6 +72,7 @@ export function BaselineVsScenario({
             <span className="text-[13px] font-normal text-fg-faint"> of {baseline.nodeCount}</span>
           </div>
           <Delta before={baseline.nodeCount} after={scenario.nodeCount} />
+          <p className="mt-1 text-[10.5px] text-fg-faint">Surviving species in ecosystem</p>
         </div>
 
         <div className="rounded-xl border border-line-soft bg-surface-2 p-3">
@@ -84,6 +85,7 @@ export function BaselineVsScenario({
             <span className="text-[13px] font-normal text-fg-faint"> of {baseline.linkCount}</span>
           </div>
           <Delta before={baseline.linkCount} after={scenario.linkCount} />
+          <p className="mt-1 text-[10.5px] text-fg-faint">Active feeding relationships</p>
         </div>
 
         <MetricReadout

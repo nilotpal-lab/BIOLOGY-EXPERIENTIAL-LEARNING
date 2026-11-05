@@ -192,15 +192,26 @@ export function FoodWebGraph({
       // the published typings do not express.
       const renderedX = node.renderedPosition('x') as unknown as number
       const renderedY = node.renderedPosition('y') as unknown as number
+      let statusLine = 'Status: Present (Stable)'
+      if (node.hasClass('removed')) {
+        statusLine = selectedNodeId === node.id()
+          ? 'Status: 🎯 Direct Removal Target'
+          : 'Status: ✕ Starved in Cascade (0 food left)'
+      } else if (node.hasClass('depleted')) {
+        statusLine = 'Status: ⚠️ Food Depleted (100% Prey Lost)'
+      } else if (node.hasClass('affected')) {
+        statusLine = 'Status: 🍽️ Food Lost (Survives on Backup Diet)'
+      }
+
       setTooltip({
         x: renderedX,
         y: renderedY,
         label: String(node.data('label')),
         lines: [
           TROPHIC_ROLE_LABEL[role as keyof typeof TROPHIC_ROLE_LABEL] ?? role,
-          `Recorded food sources: ${node.data('foodSources')}`,
-          `Recorded consumers: ${node.data('consumers')}`,
-          node.hasClass('removed') ? 'Status: removed in this scenario' : 'Status: present',
+          `Prey (food): ${node.data('foodSources')}`,
+          `Predators: ${node.data('consumers')}`,
+          statusLine,
         ],
       })
       node.addClass('hovered')
@@ -526,6 +537,12 @@ export function FoodWebGraph({
           </p>
         ) : null}
 
+        {/* On-canvas energy flow badge so arrows are never confusing */}
+        <div className="pointer-events-none absolute top-2.5 right-2.5 z-10 flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[#E5E6DC]/90 bg-[#FCFBF7]/90 text-[10.5px] font-medium text-[#202B27] shadow-2xs backdrop-blur-xs select-none">
+          <Waypoints size={13} className="text-[#35563B]" />
+          <span>Arrows = Energy Flow (Prey ➔ Predator)</span>
+        </div>
+
         {/* Floating Bottom-Left Trophic Legend (Matching Image 1) */}
         {!hideLegend && (
           <div className="pointer-events-auto absolute bottom-3 left-3 z-10 rounded-xl border border-[#E5E6DC]/90 bg-[#FCFBF7]/95 p-2.5 sm:p-3 shadow-xs backdrop-blur-md space-y-1 sm:space-y-1.5 text-[10.5px] sm:text-[11px] max-h-[calc(100%-24px)] overflow-y-auto">
@@ -553,6 +570,24 @@ export function FoodWebGraph({
               <span className="h-2.5 w-2.5 rounded-full bg-[#C49A6C] border border-[#C49A6C]" />
               <span>Detritus</span>
             </div>
+
+            {(removedNodeIds.length > 0 || directlyAffectedIds.length > 0 || foodDepletedIds.length > 0) && (
+              <div className="pt-1.5 mt-1 border-t border-[#E5E6DC] space-y-1">
+                <span className="text-[9.5px] font-bold uppercase tracking-wider text-[#68716B] block">Simulation State</span>
+                <div className="flex items-center gap-2 font-medium text-[#C04938]">
+                  <span className="h-2.5 w-2.5 rounded-full border border-dashed border-[#EF9A88] bg-[#FDEEEB]" />
+                  <span>Removed / Starved</span>
+                </div>
+                <div className="flex items-center gap-2 font-medium text-[#C06918]">
+                  <span className="h-2.5 w-2.5 rounded-full border-2 border-[#FCD34D] bg-[#FEF9E7]" />
+                  <span>Food Depleted (100% Prey Lost)</span>
+                </div>
+                <div className="flex items-center gap-2 font-medium text-[#0F6B52]">
+                  <span className="h-2.5 w-2.5 rounded-full border-2 border-[#2DD4BF] bg-[#E8EDE0]" />
+                  <span>Food Lost (Backup Intact)</span>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

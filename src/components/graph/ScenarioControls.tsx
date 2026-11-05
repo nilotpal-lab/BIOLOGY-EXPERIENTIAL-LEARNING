@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Download, FileText, GitBranch, Play, RotateCcw, Target, Waves } from 'lucide-react'
+import { Download, FileText, GitBranch, Play, RotateCcw, Sparkles, Target, Waves } from 'lucide-react'
 import {
   cascadeRoundsExportCsv,
   downloadArtifact,
@@ -8,9 +8,12 @@ import {
   scenarioExportCsv,
   scenarioExportJson,
 } from '../../core/exportUtils'
+import { formatPercent } from '../../core/metrics'
+import { getEducationalPresets } from '../../core/plainEnglishExplanations'
 import { SpeciesIcon } from '../SpeciesIcon'
 import { Button, Callout, Card, CardHeading, cn } from '../ui/primitives'
-import type { FoodWebDataset, FoodWebNode, ScenarioMode, ScenarioResult } from '../../core/types'
+import type { FoodWebDataset, FoodWebGraph, FoodWebNode, ScenarioMode, ScenarioResult } from '../../core/types'
+import type { RouteId } from '../layout/routes'
 
 /* ============================================================================
  * ScenarioControls — configuration and execution of the two analyses.
@@ -43,6 +46,9 @@ export function ScenarioControls({
   onReset,
   result,
   onOpenReport,
+  graph,
+  onSelectSpecies,
+  onNavigate,
 }: {
   dataset: FoodWebDataset | null
   node: FoodWebNode | null
@@ -52,6 +58,9 @@ export function ScenarioControls({
   onReset: () => void
   result: ScenarioResult | null
   onOpenReport?: () => void
+  graph?: FoodWebGraph | null
+  onSelectSpecies?: (id: string) => void
+  onNavigate?: (route: RouteId) => void
 }) {
   const disabled = !dataset || dataset.nodes.length === 0 || !node
 
@@ -98,6 +107,43 @@ export function ScenarioControls({
         )}
       </div>
 
+      {/* 1-Click Educational Presets */}
+      {graph && onSelectSpecies && graph.nodes.length > 0 && (
+        <div className="mb-3 rounded-xl border border-line-soft bg-surface-2 p-2.5 space-y-1.5">
+          <div className="flex items-center gap-1.5 text-[11px] font-bold text-fg uppercase tracking-wide">
+            <Sparkles size={12} className="text-[#C06918]" />
+            <span>Try Guided Examples:</span>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            {getEducationalPresets(graph).map((preset) => (
+              <button
+                key={preset.id}
+                type="button"
+                onClick={() => {
+                  onSelectSpecies(preset.speciesId)
+                  onModeChange(preset.mode)
+                }}
+                className={cn(
+                  'w-full text-left p-2 rounded-lg border text-xs transition-all flex items-start gap-2',
+                  node?.id === preset.speciesId
+                    ? 'border-primary bg-primary/[0.08] text-fg font-semibold shadow-2xs'
+                    : 'border-line-soft bg-surface hover:bg-surface-2 text-fg-muted',
+                )}
+                title={preset.description}
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-fg">{preset.title}</span>
+                    <span className="text-[10px] text-fg-faint font-mono">({preset.speciesName})</span>
+                  </div>
+                  <span className="text-[10.5px] text-fg-muted block leading-tight">{preset.expectedOutcome}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <fieldset className="mb-3">
         <legend className="mb-1.5 text-[12px] font-medium text-fg-muted">Analysis mode</legend>
         <div className="grid gap-2">
@@ -138,6 +184,15 @@ export function ScenarioControls({
         </div>
       </fieldset>
 
+      <div className="mb-3 rounded-xl border border-line-soft bg-surface-2 p-2.5 text-[11px] text-fg-muted space-y-0.5">
+        <span className="font-semibold text-[#35563B] block">💡 Mode Guide for Students:</span>
+        <p className="leading-relaxed">
+          {mode === 'direct'
+            ? 'Direct removal measures broken feeding connections immediately. Surviving creatures stay alive.'
+            : 'Cascade mode triggers multi-round starvation: any predator that loses 100% of its recorded food will starve in the next round.'}
+        </p>
+      </div>
+
       <div className="flex flex-wrap gap-2">
         <Button
           variant="primary"
@@ -172,6 +227,72 @@ export function ScenarioControls({
           and every scenario is recalculated from it, so results stay repeatable.
         </p>
       )}
+
+      {result ? (
+        <div className="mt-3 rounded-xl border border-line-soft bg-surface-2 p-3 space-y-2">
+          <div className="flex items-center justify-between pb-1.5 border-b border-line-soft">
+            <span className="text-[11px] font-bold text-fg uppercase tracking-wider">Simulation Outcome</span>
+            <span
+              className={cn(
+                'text-[10px] font-bold px-2 py-0.5 rounded-full border',
+                result.scenario.secondaryRemovals > 0
+                  ? 'bg-rose-50 text-rose-700 border-rose-200'
+                  : 'bg-emerald-50 text-emerald-800 border-emerald-200',
+              )}
+            >
+              {result.scenario.secondaryRemovals > 0 ? 'Domino Collapse' : 'Ecosystem Resilient'}
+            </span>
+          </div>
+
+          <p className="text-xs font-semibold text-fg leading-snug">
+            {result.primaryNodeLabel} removed ({result.mode === 'cascade' ? 'Cascade Mode' : 'Direct Mode'})
+          </p>
+
+          <div className="grid grid-cols-2 gap-1.5 text-xs text-center">
+            <div className="p-1.5 rounded-lg border border-line-soft bg-surface">
+              <span className="text-[9.5px] text-fg-faint block">Species Remaining</span>
+              <span className="font-bold text-fg tabular-nums">
+                {result.scenario.nodeCount} / {result.baseline.nodeCount}
+              </span>
+            </div>
+            <div className="p-1.5 rounded-lg border border-line-soft bg-surface">
+              <span className="text-[9.5px] text-fg-faint block">Feeding Links Lost</span>
+              <span className="font-bold text-[#D96B50] tabular-nums">
+                -{result.scenario.linksLost} {result.scenario.linkLossPercent.value !== null ? `(-${formatPercent(result.scenario.linkLossPercent.value)})` : ''}
+              </span>
+            </div>
+          </div>
+
+          <p className="text-[11px] text-fg-muted leading-relaxed">
+            {result.mode === 'cascade' && result.scenario.secondaryRemovals > 0
+              ? `🚨 ${result.scenario.secondaryRemovals} dependent consumer(s) ran out of food and starved across ${result.rounds.length} round(s).`
+              : result.mode === 'cascade'
+              ? `🛡️ Surviving consumers possessed backup foods in their diet. Zero secondary starvations occurred.`
+              : `Immediate removal broke ${result.directlyRemovedLinks.length} connection(s). Surviving predators retain backup food.`}
+          </p>
+
+          {onNavigate && (
+            <div className="pt-1 flex flex-col gap-1.5">
+              <button
+                type="button"
+                onClick={() => onNavigate('simulation')}
+                className="w-full text-left flex items-center justify-between px-2.5 py-1.5 rounded-lg border border-primary/30 bg-primary/[0.08] text-primary text-[11px] font-semibold hover:bg-primary/[0.15] transition-colors"
+              >
+                <span>Open in Simulation Laboratory</span>
+                <span>→</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate('timeline')}
+                className="w-full text-left flex items-center justify-between px-2.5 py-1.5 rounded-lg border border-line-soft bg-surface text-fg text-[11px] font-semibold hover:bg-surface-2 transition-colors"
+              >
+                <span>View Step-by-Step Cascade Timeline</span>
+                <span>→</span>
+              </button>
+            </div>
+          )}
+        </div>
+      ) : null}
 
       {result ? (
         <div className="mt-4 border-t border-line-soft pt-3">

@@ -160,10 +160,36 @@ export function SpeciesInspector({
           />
         </div>
 
-        <div className="relative z-10 mt-2">
+        <div className="relative z-10 mt-2 flex flex-wrap items-center justify-center gap-1.5">
           <span className="inline-block rounded-full bg-[#FEF4E8] border border-[#F1B36F]/40 px-3 py-0.5 text-[11px] font-semibold text-[#C06918] shadow-2xs">
             {TROPHIC_ROLE_LABEL[node.trophicRole] || 'Consumer'}
           </span>
+          {result && (
+            <span
+              className={cn(
+                'inline-block rounded-full px-2.5 py-0.5 text-[10.5px] font-bold border shadow-2xs',
+                result.primaryNodeId === node.id
+                  ? 'bg-rose-50 text-rose-700 border-rose-300'
+                  : result.removedNodeIds.includes(node.id)
+                  ? 'bg-rose-50 text-rose-700 border-rose-300'
+                  : result.scenario.foodDepletedConsumerIds.includes(node.id)
+                  ? 'bg-amber-50 text-amber-800 border-amber-300'
+                  : result.scenario.directlyAffectedConsumerIds.includes(node.id)
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                  : 'bg-[#E8EDE0] text-[#35563B] border-[#35563B]/30',
+              )}
+            >
+              {result.primaryNodeId === node.id
+                ? '🎯 Target (Removed)'
+                : result.removedNodeIds.includes(node.id)
+                ? '✕ Starved (Extinct)'
+                : result.scenario.foodDepletedConsumerIds.includes(node.id)
+                ? '⚠️ Food Depleted'
+                : result.scenario.directlyAffectedConsumerIds.includes(node.id)
+                ? '🍽️ Food Lost (Surviving)'
+                : '✅ Intact'}
+            </span>
+          )}
         </div>
       </div>
 
@@ -247,15 +273,24 @@ export function SpeciesInspector({
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
                       {foodSources.map((id) => {
                         const target = graph.nodeById.get(id)
+                        const isLostPrey = result && result.removedNodeIds.includes(id)
                         return (
                           <div
                             key={id}
-                            className="flex flex-col items-center p-1.5 rounded-lg border border-[#E5E6DC] bg-[#F7F6EF] text-center"
+                            className={cn(
+                              'flex flex-col items-center p-1.5 rounded-lg border text-center transition-all',
+                              isLostPrey
+                                ? 'border-rose-300 bg-rose-50/70 text-rose-900'
+                                : 'border-[#E5E6DC] bg-[#F7F6EF]',
+                            )}
                           >
                             <SpeciesIcon iconKey={target?.iconKey} size={28} />
-                            <span className="text-[10px] font-medium text-[#202B27] truncate w-full mt-0.5">
+                            <span className={cn('text-[10px] font-medium truncate w-full mt-0.5', isLostPrey && 'line-through text-rose-800')}>
                               {target?.name ?? id}
                             </span>
+                            {isLostPrey && (
+                              <span className="text-[8.5px] font-bold text-rose-600">✕ Lost Prey</span>
+                            )}
                           </div>
                         )
                       })}
