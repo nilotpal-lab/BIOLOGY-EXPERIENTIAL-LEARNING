@@ -551,7 +551,7 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
 
         {/* Right Side: Species Inspector Panel (Matching 03_Explorer_Page.png) */}
         {rightPanelOpen && (
-          <div className="w-80 sm:w-[350px] xl:w-[380px] shrink-0 h-full overflow-y-auto space-y-3">
+          <div className="fixed inset-y-0 right-0 z-40 w-full sm:w-[360px] lg:static lg:z-auto lg:w-80 xl:w-[380px] shrink-0 h-full overflow-y-auto space-y-3 bg-[#FCFBF7] p-3 lg:p-0 shadow-2xl lg:shadow-none border-l lg:border-l-0 border-[#E5E6DC]">
             <SpeciesInspector
               graph={graph}
               node={selectedNode}
@@ -598,7 +598,7 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
       <div
         className={cn(
           leftPanelOpen
-            ? 'absolute top-16 left-4 z-30 w-80 max-h-[calc(100vh-120px)] overflow-y-auto rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-xl'
+            ? 'absolute top-16 left-4 z-30 w-80 max-w-[calc(100vw-32px)] max-h-[calc(100vh-120px)] overflow-y-auto rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-xl'
             : 'sr-only',
         )}
         aria-label="Species directory"
@@ -675,7 +675,7 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
                   <button
                     type="button"
                     onClick={() => selectNode(node.id)}
-                    className="w-full text-left rounded-lg border border-[#E5E6DC] bg-white hover:bg-[#F7F6EF] p-2 text-xs flex items-center justify-between"
+                    className="w-full text-left rounded-lg border border-[#E5E6DC] bg-white hover:bg-[#F7F6EF] p-2 min-h-[40px] text-xs flex items-center justify-between"
                   >
                     <span className="font-semibold text-[#202B27]">{node.name}</span>
                     <span className="text-[10px] text-[#68716B]">{TROPHIC_ROLE_LABEL[node.trophicRole]}</span>

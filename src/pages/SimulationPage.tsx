@@ -97,7 +97,7 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
   // (before the user has run anything). Three QA users read this pre-loaded
   // result as "stale data from a previous session", so it is labelled.
   const [hasUserResult, setHasUserResult] = useState(false)
-  const isAutoPreview = !hasUserResult && !userResetRef.current && activeResult !== null
+  const isAutoPreview = !result && !hasUserResult && !userResetRef.current && activeResult !== null
 
   // When activeResult updates, set timeline step to final round
   useEffect(() => {
@@ -377,12 +377,12 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
                 <span>Animation speed</span>
                 <span className="capitalize font-semibold text-[#202B27]">{animSpeed}</span>
               </div>
-              <div className="flex items-center justify-between text-[10px] text-[#899B78] pt-1">
+              <div className="flex items-center justify-between text-[10px] text-[#899B78] pt-1 gap-1">
                 <button
                   type="button"
                   onClick={() => setAnimSpeed('slow')}
                   className={cn(
-                    'px-2 py-0.5 rounded',
+                    'px-3 py-1 min-h-[32px] min-w-[44px] flex items-center justify-center rounded cursor-pointer transition-colors',
                     animSpeed === 'slow' ? 'bg-[#35563B] text-white font-bold' : 'hover:bg-[#F0F2E9]',
                   )}
                 >
@@ -392,7 +392,7 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
                   type="button"
                   onClick={() => setAnimSpeed('normal')}
                   className={cn(
-                    'px-2 py-0.5 rounded',
+                    'px-3 py-1 min-h-[32px] min-w-[44px] flex items-center justify-center rounded cursor-pointer transition-colors',
                     animSpeed === 'normal' ? 'bg-[#35563B] text-white font-bold' : 'hover:bg-[#F0F2E9]',
                   )}
                 >
@@ -402,7 +402,7 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
                   type="button"
                   onClick={() => setAnimSpeed('fast')}
                   className={cn(
-                    'px-2 py-0.5 rounded',
+                    'px-3 py-1 min-h-[32px] min-w-[44px] flex items-center justify-center rounded cursor-pointer transition-colors',
                     animSpeed === 'fast' ? 'bg-[#35563B] text-white font-bold' : 'hover:bg-[#F0F2E9]',
                   )}
                 >
@@ -516,13 +516,17 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
               )}
             </div>
 
-            {isAutoPreview && (
+            {isAutoPreview ? (
               <p className="rounded-lg border border-[#E5E6DC] bg-[#F0F2E9]/70 px-2.5 py-1.5 text-[10.5px] leading-relaxed text-[#4A544E]" aria-live="polite">
                 <strong className="font-semibold text-[#35563B]">Example preview</strong> — computed automatically so you can
                 see how results look. Choose your own species and press <strong className="font-semibold">Run Simulation</strong> to
                 replace it with your own scenario.
               </p>
-            )}
+            ) : activeResult ? (
+              <p className="rounded-lg border border-[#E8EDE0] bg-[#E8EDE0]/50 px-2.5 py-1.5 text-[10.5px] leading-relaxed text-[#263D2D]" aria-live="polite">
+                <strong className="font-semibold text-[#35563B]">Scenario active</strong> — showing simulation outcomes for <strong className="font-semibold">{selectedNode?.name ?? 'selected species'}</strong>.
+              </p>
+            ) : null}
 
             {/* 2x2 Quantitative Metrics Grid */}
             <div className="grid grid-cols-2 gap-2 text-center">

@@ -6,6 +6,7 @@ import {
   Compass,
   FlaskConical,
   GitCompareArrows,
+  Globe2,
   Leaf,
   Menu,
   Network,
@@ -133,9 +134,17 @@ export function Shell({
       id: 'compare',
       label: 'Comparison',
       icon: <GitCompareArrows size={18} />,
-      active: route === 'compare' || route === 'conservation',
+      active: route === 'compare',
       action: () => navigate('compare'),
       tooltip: 'Comparative ecosystem analysis & benchmarks',
+    },
+    {
+      id: 'conservation',
+      label: 'Conservation Atlas',
+      icon: <Globe2 size={18} />,
+      active: route === 'conservation',
+      action: () => navigate('conservation'),
+      tooltip: 'Trophic distributions, biomes & empirical profiles',
     },
     {
       id: 'library',
@@ -149,7 +158,7 @@ export function Shell({
       id: 'import',
       label: 'Dataset Import',
       icon: <Upload size={18} />,
-      active: false,
+      active: route === 'import',
       action: onOpenImport ? onOpenImport : () => navigate('import'),
       tooltip: 'Import custom CSV or JSON food webs',
     },
@@ -253,7 +262,7 @@ export function Shell({
                 onClick={() => setMobileMenuOpen((prev) => !prev)}
                 aria-expanded={mobileMenuOpen}
                 aria-label="Toggle navigation menu"
-                className="flex md:hidden h-8.5 w-8.5 items-center justify-center rounded-xl border border-[#E5E6DC] bg-white text-[#202B27] shadow-2xs"
+                className="flex md:hidden h-9 w-9 min-h-[40px] min-w-[40px] items-center justify-center rounded-xl border border-[#E5E6DC] bg-white text-[#202B27] shadow-2xs cursor-pointer"
               >
                 {mobileMenuOpen ? <X size={16} /> : <Menu size={16} />}
               </button>
@@ -266,9 +275,12 @@ export function Shell({
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={() => navigate('overview')}
+                  onClick={() => {
+                    navigate('overview')
+                    setMobileMenuOpen(false)
+                  }}
                   className={cn(
-                    'flex items-center px-3 py-2 rounded-xl text-xs font-semibold text-left',
+                    'flex items-center px-3 py-2.5 min-h-[40px] rounded-xl text-xs font-semibold text-left cursor-pointer',
                     route === 'overview' ? 'bg-[#E8EDE0] text-[#35563B]' : 'text-[#68716B] hover:bg-[#F0F2E9]',
                   )}
                 >
@@ -276,9 +288,12 @@ export function Shell({
                 </button>
                 <button
                   type="button"
-                  onClick={() => navigate('features')}
+                  onClick={() => {
+                    navigate('features')
+                    setMobileMenuOpen(false)
+                  }}
                   className={cn(
-                    'flex items-center px-3 py-2 rounded-xl text-xs font-semibold text-left',
+                    'flex items-center px-3 py-2.5 min-h-[40px] rounded-xl text-xs font-semibold text-left cursor-pointer',
                     route === 'features' ? 'bg-[#E8EDE0] text-[#35563B]' : 'text-[#68716B] hover:bg-[#F0F2E9]',
                   )}
                 >
@@ -286,15 +301,21 @@ export function Shell({
                 </button>
                 <button
                   type="button"
-                  onClick={() => navigate('library')}
-                  className="flex items-center px-3 py-2 rounded-xl text-xs font-semibold text-left text-[#68716B] hover:bg-[#F0F2E9]"
+                  onClick={() => {
+                    navigate('library')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="flex items-center px-3 py-2.5 min-h-[40px] rounded-xl text-xs font-semibold text-left text-[#68716B] hover:bg-[#F0F2E9] cursor-pointer"
                 >
                   Datasets
                 </button>
                 <button
                   type="button"
-                  onClick={() => navigate('methodology')}
-                  className="flex items-center px-3 py-2 rounded-xl text-xs font-semibold text-left text-[#68716B] hover:bg-[#F0F2E9]"
+                  onClick={() => {
+                    navigate('methodology')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="flex items-center px-3 py-2.5 min-h-[40px] rounded-xl text-xs font-semibold text-left text-[#68716B] hover:bg-[#F0F2E9] cursor-pointer"
                 >
                   About
                 </button>
@@ -412,7 +433,7 @@ export function Shell({
                 onClick={() => setMobileMenuOpen((prev) => !prev)}
                 aria-expanded={mobileMenuOpen}
                 aria-label="Toggle navigation menu"
-                className="flex lg:hidden h-8 w-8 items-center justify-center rounded-lg border border-[#E5E6DC] bg-white text-[#202B27] shadow-2xs"
+                className="flex lg:hidden h-9 w-9 min-h-[40px] min-w-[40px] items-center justify-center rounded-lg border border-[#E5E6DC] bg-white text-[#202B27] shadow-2xs cursor-pointer"
               >
                 {mobileMenuOpen ? <X size={15} /> : <Menu size={15} />}
               </button>
@@ -433,9 +454,12 @@ export function Shell({
                   <button
                     key={item.id}
                     type="button"
-                    onClick={item.action}
+                    onClick={() => {
+                      item.action()
+                      setMobileMenuOpen(false)
+                    }}
                     className={cn(
-                      'flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-left',
+                      'flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs font-medium text-left min-h-[40px] cursor-pointer',
                       item.active ? 'bg-[#E8EDE0] text-[#35563B] font-semibold' : 'text-[#68716B] hover:bg-[#F0F2E9]',
                     )}
                   >

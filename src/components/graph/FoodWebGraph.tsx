@@ -473,7 +473,7 @@ export function FoodWebGraph({
               <button
                 type="button"
                 onClick={() => zoomBy(0.8)}
-                className="p-1 text-[#68716B] hover:text-[#35563B] transition-colors"
+                className="p-1 min-h-[28px] min-w-[28px] flex items-center justify-center text-[#68716B] hover:text-[#35563B] transition-colors"
                 title="Zoom out"
                 aria-label="Zoom out"
               >
@@ -485,7 +485,7 @@ export function FoodWebGraph({
               <button
                 type="button"
                 onClick={() => zoomBy(1.25)}
-                className="p-1 text-[#68716B] hover:text-[#35563B] transition-colors"
+                className="p-1 min-h-[28px] min-w-[28px] flex items-center justify-center text-[#68716B] hover:text-[#35563B] transition-colors"
                 title="Zoom in"
                 aria-label="Zoom in"
               >
@@ -497,7 +497,7 @@ export function FoodWebGraph({
                   cyRef.current?.fit(undefined, 48)
                   if (cyRef.current) setZoomLevel(cyRef.current.zoom())
                 }}
-                className="ml-1 border-l border-[#E5E6DC] p-1 pl-1.5 text-[#68716B] hover:text-[#35563B] transition-colors"
+                className="ml-1 border-l border-[#E5E6DC] p-1 pl-1.5 min-h-[28px] min-w-[28px] flex items-center justify-center text-[#68716B] hover:text-[#35563B] transition-colors"
                 title="Fit to canvas"
                 aria-label="Fit to canvas"
               >

@@ -151,7 +151,7 @@ export function Overview({ onNavigate, onOpenImport: _onOpenImport }: OverviewPr
                 <button
                   type="button"
                   onClick={() => onNavigate('explore')}
-                  className="inline-flex items-center gap-2.5 rounded-[10px] bg-[#35563B] hover:bg-[#263D2D] text-white px-5 py-2.5 text-xs sm:text-[13.5px] font-semibold shadow-xs transition-colors"
+                  className="inline-flex items-center gap-2.5 rounded-[10px] bg-[#35563B] hover:bg-[#263D2D] text-white px-5 py-2.5 min-h-[44px] text-xs sm:text-[13.5px] font-semibold shadow-xs transition-colors cursor-pointer"
                 >
                   <Network size={16} />
                   <span>Open Explorer</span>
@@ -161,7 +161,7 @@ export function Overview({ onNavigate, onOpenImport: _onOpenImport }: OverviewPr
                 <button
                   type="button"
                   onClick={scrollToWhyFoodWebs}
-                  className="inline-flex items-center gap-2 rounded-[10px] border border-[#E5E6DC] bg-[#FCFBF7] hover:bg-[#F0F2E9] text-[#202B27] px-4 py-2.5 text-xs sm:text-[13.5px] font-medium shadow-2xs transition-colors"
+                  className="inline-flex items-center gap-2 rounded-[10px] border border-[#E5E6DC] bg-[#FCFBF7] hover:bg-[#F0F2E9] text-[#202B27] px-4 py-2.5 min-h-[44px] text-xs sm:text-[13.5px] font-medium shadow-2xs transition-colors cursor-pointer"
                 >
                   <Leaf size={15} className="text-[#35563B]" />
                   <span>Why Food Webs Matter</span>

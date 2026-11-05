@@ -50,27 +50,47 @@ export function ConservationAtlas({ onNavigate }: { onNavigate: (route: RouteId)
   ]
 
   return (
-    <div className="space-y-6 max-w-7xl">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#0F6B52]">
-            Ecosystem Biome Atlas
-          </span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0E1622] mt-0.5">
-            Conservation Atlas
-          </h1>
-          <p className="mt-1 text-xs sm:text-[13px] text-[#536960]">
-            Explore documented trophic structures, empirical research biomes, and data provenance.
-          </p>
+    <div className="space-y-6 max-w-7xl mx-auto pb-8">
+      {/* =====================================================================
+          1. EDITORIAL BANNER (Lora Typography + Botanical Artwork)
+          ===================================================================== */}
+      <div className="relative rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] overflow-hidden shadow-2xs">
+        <div className="grid grid-cols-1 lg:grid-cols-12 items-center">
+          <div className="lg:col-span-8 p-5 sm:p-6 lg:p-7 space-y-1.5 z-10">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#35563B]">
+              Ecosystem Biome Atlas
+            </span>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-normal text-[#202B27] tracking-tight">
+              Conservation Atlas
+            </h1>
+            <p className="text-xs sm:text-[13px] text-[#68716B] max-w-2xl leading-relaxed">
+              Explore documented trophic structures, empirical research biomes, and data provenance across marine, freshwater and terrestrial food webs.
+            </p>
+          </div>
+
+          <div className="lg:col-span-4 h-36 lg:h-full relative overflow-hidden flex items-center justify-end">
+            <div className="absolute inset-0 bg-gradient-to-r from-[#FCFBF7] via-[#FCFBF7]/50 to-transparent z-1 lg:w-32 pointer-events-none" />
+            <img
+              src="/hero-freshwater-artwork.png"
+              alt="Freshwater ecosystem botanical illustration"
+              className="h-full w-full object-cover object-[80%_25%] max-h-44"
+            />
+          </div>
         </div>
+      </div>
+
+      {/* Header Actions */}
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-[#68716B]">
+          Documented empirical research networks organized by ecological biome.
+        </p>
         <div className="flex items-center gap-2">
           <Button
             size="sm"
             variant="outline"
             icon={<BookOpenCheck size={14} />}
             onClick={() => onNavigate('library')}
-            className="text-xs h-8"
+            className="text-xs h-8 border-[#E5E6DC] text-[#202B27] hover:bg-[#F7F6EF]"
           >
             Data Library
           </Button>
@@ -79,7 +99,7 @@ export function ConservationAtlas({ onNavigate }: { onNavigate: (route: RouteId)
             variant="primary"
             icon={<ArrowRight size={14} />}
             onClick={() => onNavigate('explore')}
-            className="bg-[#0F6B52] hover:bg-[#0D5A45] text-xs h-8"
+            className="bg-[#35563B] hover:bg-[#263D2D] text-white text-xs h-8 font-semibold shadow-xs"
           >
             Explore Active Web
           </Button>
@@ -93,12 +113,12 @@ export function ConservationAtlas({ onNavigate }: { onNavigate: (route: RouteId)
           return (
             <div key={b.type} className={`rounded-2xl border p-4.5 shadow-2xs space-y-2 ${b.color}`}>
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#0E1622]">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#202B27]">
                   {b.title}
                 </span>
                 <Badge tone="neutral">{count} Networks</Badge>
               </div>
-              <p className="text-[11.5px] leading-relaxed text-[#536960]">{b.desc}</p>
+              <p className="text-[11.5px] leading-relaxed text-[#68716B]">{b.desc}</p>
             </div>
           )
         })}
@@ -118,30 +138,30 @@ export function ConservationAtlas({ onNavigate }: { onNavigate: (route: RouteId)
                 key={entry.id}
                 className={`rounded-2xl border p-4 flex flex-col justify-between transition-all ${
                   isCurrent
-                    ? 'border-[#0F6B52] bg-[#E8F5EE]/40 ring-1 ring-[#0F6B52] shadow-xs'
-                    : 'border-[#E2E8E4] bg-white hover:border-[#CBD5CE]'
+                    ? 'border-[#35563B] bg-[#E8EDE0]/50 ring-1 ring-[#35563B] shadow-xs'
+                    : 'border-[#E5E6DC] bg-white hover:border-[#899B78]'
                 }`}
               >
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
-                    <span className="font-bold text-sm text-[#0E1622]">{entry.name}</span>
+                    <span className="font-bold text-sm text-[#202B27]">{entry.name}</span>
                     <Badge tone="neutral">{ECOSYSTEM_LABEL[entry.ecosystem]}</Badge>
                   </div>
-                  <p className="text-[11px] text-[#536960] line-clamp-2 leading-relaxed">
+                  <p className="text-[11px] text-[#68716B] line-clamp-2 leading-relaxed">
                     {entry.summary}
                   </p>
-                  <div className="flex items-center gap-3 text-[11px] font-semibold text-[#0E1622] pt-1">
+                  <div className="flex items-center gap-3 text-[11px] font-semibold text-[#202B27] pt-1">
                     <span>{entry.nodes.length} Species</span>
-                    <span className="text-[#CBD5CE]">·</span>
+                    <span className="text-[#E5E6DC]">·</span>
                     <span>{entry.edges.length} Feeding Links</span>
                   </div>
-                  <div className="pt-2 border-t border-[#E5EAE7] text-[10.5px] text-[#71837B]">
+                  <div className="pt-2 border-t border-[#E5E6DC] text-[10.5px] text-[#68716B]">
                     <p className="truncate">Source: {entry.provenance.origin}</p>
                     <p className="truncate">License: {entry.provenance.license ?? 'CC0 1.0'}</p>
                   </div>
                 </div>
 
-                <div className="mt-4 pt-3 flex items-center justify-between border-t border-[#E5EAE7]">
+                <div className="mt-4 pt-3 flex items-center justify-between border-t border-[#E5E6DC]">
                   <StatusBadge status={entry.sourceStatus} />
                   <Button
                     size="sm"
@@ -151,7 +171,9 @@ export function ConservationAtlas({ onNavigate }: { onNavigate: (route: RouteId)
                       onNavigate('explore')
                     }}
                     className={`text-xs h-7 px-2.5 font-semibold ${
-                      isCurrent ? 'border-[#0F6B52] text-[#0F6B52]' : 'bg-[#0F6B52] text-white hover:bg-[#0D5A45]'
+                      isCurrent
+                        ? 'border-[#35563B] text-[#35563B] hover:bg-[#E8EDE0]'
+                        : 'bg-[#35563B] text-white hover:bg-[#263D2D]'
                     }`}
                   >
                     {isCurrent ? 'Loaded in Explorer' : 'Load in Explorer'}
