@@ -6,6 +6,7 @@ import {
   Compass,
   FlaskConical,
   GitCompareArrows,
+  Globe2,
   Leaf,
   Network,
   PawPrint,
@@ -80,6 +81,14 @@ export function Overview({ onNavigate, onOpenImport: _onOpenImport }: OverviewPr
       icon: <GitCompareArrows size={18} />,
       bg: 'bg-[#F4EFF9] text-[#865DAF]',
       action: () => onNavigate('compare'),
+    },
+    {
+      id: 'conservation',
+      title: 'Conservation Atlas',
+      description: 'Trophic level distributions, ecosystem biomes & research profiles',
+      icon: <Globe2 size={18} />,
+      bg: 'bg-[#E0F2F1] text-[#00796B]',
+      action: () => onNavigate('conservation'),
     },
     {
       id: 'library',
@@ -236,10 +245,10 @@ export function Overview({ onNavigate, onOpenImport: _onOpenImport }: OverviewPr
         </div>
 
         {/* =====================================================================
-            FEATURE CARDS GRID (All 8 Capabilities in 4-column layout matching 01_Landing_Page.png)
+            FEATURE CARDS GRID (All 9 Capabilities in 3-column layout)
             ===================================================================== */}
         <div className="space-y-3 pt-2">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
             {featureCards.map((card) => (
               <div
                 key={card.id}

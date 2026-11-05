@@ -6,6 +6,7 @@ import {
   FileText,
   FlaskConical,
   GitCompareArrows,
+  Globe2,
   Network,
   Settings2,
   ShieldCheck,
@@ -531,7 +532,63 @@ export function FeaturesPage({ onNavigate, onOpenImport: _onOpenImport }: Featur
           </div>
 
           {/* -------------------------------------------------------------------
-              6. Research Library
+              6. Conservation Atlas
+              ------------------------------------------------------------------- */}
+          <div className="group rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-5 sm:p-6 shadow-2xs hover:border-[#899B78] hover:shadow-xs transition-all flex flex-col justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#E0F2F1] text-[#00796B]">
+                    <Globe2 size={20} />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-serif text-[#202B27] group-hover:text-[#35563B] transition-colors">
+                    Conservation Atlas
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onNavigate('conservation')}
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F0F2E9] text-[#35563B] hover:bg-[#35563B] hover:text-white transition-colors cursor-pointer"
+                  title="Open Conservation Atlas"
+                  aria-label="Open Conservation Atlas"
+                >
+                  <ArrowRight size={15} />
+                </button>
+              </div>
+              <p className="text-xs sm:text-[13px] text-[#68716B] leading-relaxed">
+                Explore empirical biomes, documented trophic layer distributions and peer-reviewed research profiles across ecological domains.
+              </p>
+            </div>
+
+            {/* Visual Preview: 3 Biome Summary Badges & Research Cards */}
+            <div
+              onClick={() => onNavigate('conservation')}
+              className="mt-5 rounded-xl border border-[#E5E6DC] bg-[#F7F6EF] p-3.5 sm:p-4 cursor-pointer space-y-2.5"
+              title="Click to view Conservation Atlas"
+            >
+              <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                <div className="p-2 rounded-lg bg-cyan-50/70 border border-cyan-200">
+                  <p className="font-bold text-[#202B27] text-[11px]">Marine</p>
+                  <p className="text-[10px] text-cyan-800">High connectance</p>
+                </div>
+                <div className="p-2 rounded-lg bg-emerald-50/70 border border-emerald-200">
+                  <p className="font-bold text-[#202B27] text-[11px]">Freshwater</p>
+                  <p className="text-[10px] text-emerald-800">Trophic cascades</p>
+                </div>
+                <div className="p-2 rounded-lg bg-amber-50/70 border border-amber-200">
+                  <p className="font-bold text-[#202B27] text-[11px]">Terrestrial</p>
+                  <p className="text-[10px] text-amber-800">High richness</p>
+                </div>
+              </div>
+              <div className="p-2 rounded-lg bg-white border border-[#E5E6DC] flex items-center justify-between text-[11px]">
+                <span className="font-semibold text-[#202B27]">Dryad & Peer-Reviewed Sources</span>
+                <span className="text-[#35563B] font-bold text-[10px] uppercase tracking-wider">CC0 1.0 Verified</span>
+              </div>
+            </div>
+          </div>
+
+          {/* -------------------------------------------------------------------
+              7. Research Library
               ------------------------------------------------------------------- */}
           <div className="group rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-5 sm:p-6 shadow-2xs hover:border-[#899B78] hover:shadow-xs transition-all flex flex-col justify-between">
             <div className="space-y-2">
@@ -605,7 +662,7 @@ export function FeaturesPage({ onNavigate, onOpenImport: _onOpenImport }: Featur
           </div>
 
           {/* -------------------------------------------------------------------
-              7. Dataset Import
+              8. Dataset Import
               ------------------------------------------------------------------- */}
           <div className="group rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-5 sm:p-6 shadow-2xs hover:border-[#899B78] hover:shadow-xs transition-all flex flex-col justify-between">
             <div className="space-y-2">
@@ -678,9 +735,9 @@ export function FeaturesPage({ onNavigate, onOpenImport: _onOpenImport }: Featur
           </div>
 
           {/* -------------------------------------------------------------------
-              8. Methodology & Validation
+              9. Methodology & Validation
               ------------------------------------------------------------------- */}
-          <div className="group rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-5 sm:p-6 shadow-2xs hover:border-[#899B78] hover:shadow-xs transition-all flex flex-col justify-between">
+          <div className="md:col-span-2 group rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-5 sm:p-6 shadow-2xs hover:border-[#899B78] hover:shadow-xs transition-all flex flex-col justify-between">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">

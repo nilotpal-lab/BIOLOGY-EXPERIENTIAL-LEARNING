@@ -260,7 +260,7 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
           ===================================================================== */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-4">
         {/* Card 1: 1. Select a Species to Remove */}
-        <div className="xl:col-span-4 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-3">
+        <div className="xl:col-span-4 min-w-0 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-3">
           <p className="text-[11px] font-bold uppercase tracking-wider text-[#68716B]">
             1. Select a Species to Remove
           </p>
@@ -309,7 +309,7 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
         </div>
 
         {/* Card 2: 2. Simulation Mode */}
-        <div className="xl:col-span-5 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs flex flex-col justify-between space-y-3">
+        <div className="xl:col-span-5 min-w-0 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs flex flex-col justify-between space-y-3">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-wider text-[#68716B] mb-2.5">
               2. Simulation Mode
@@ -383,7 +383,7 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
         </div>
 
         {/* Card 3: Simulation Summary (2x2 Grid) */}
-        <div className="xl:col-span-3 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-3">
+        <div className="xl:col-span-3 min-w-0 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-3">
           <div className="flex items-center justify-between pb-2 border-b border-[#E5E6DC]">
             <span className="font-bold text-xs text-[#202B27]">Simulation Summary</span>
             {activeResult && (
@@ -448,7 +448,7 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
           ===================================================================== */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
         {/* Left Column: Food Web Graph at Round X (8 Columns) */}
-        <div className="lg:col-span-8 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-3">
+        <div className="lg:col-span-8 min-w-0 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-3">
           {/* Header Bar */}
           <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#E5E6DC]">
             <div className="flex items-center gap-2">
@@ -504,12 +504,12 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
         </div>
 
         {/* Right Column: Cascade Timeline Scrubber & Round Stack (4 Columns) */}
-        <div className="lg:col-span-4 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-3.5">
+        <div className="lg:col-span-4 min-w-0 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-3.5">
           {/* Header & Scrubber Controls */}
           <div>
-            <div className="flex items-center justify-between pb-2 border-b border-[#E5E6DC]">
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#E5E6DC]">
               <span className="font-bold text-xs text-[#202B27]">Cascade Timeline</span>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => setIsPlaying((prev) => !prev)}
@@ -524,7 +524,7 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
                   max={Math.max(1, totalRounds)}
                   value={currentStep}
                   onChange={(e) => setCurrentStep(Number(e.target.value))}
-                  className="w-24 sm:w-28 accent-[#35563B] cursor-pointer"
+                  className="w-16 sm:w-24 accent-[#35563B] cursor-pointer"
                   aria-label="Timeline round scrubber"
                 />
                 <span className="text-[11px] font-mono font-bold text-[#202B27] whitespace-nowrap">
@@ -688,7 +688,7 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
           ===================================================================== */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-4">
         {/* Chart 1: Species Remaining Over Rounds (4 Columns) */}
-        <div className="xl:col-span-4 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-2">
+        <div className="xl:col-span-4 min-w-0 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-2">
           <p className="text-xs font-bold text-[#202B27]">Species Remaining Over Rounds</p>
           <div className="h-40 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -727,7 +727,7 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
         </div>
 
         {/* Chart 2: Cumulative Link Loss (4 Columns) */}
-        <div className="xl:col-span-4 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-2">
+        <div className="xl:col-span-4 min-w-0 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-2">
           <p className="text-xs font-bold text-[#202B27]">Cumulative Link Loss</p>
           <div className="h-40 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -766,7 +766,7 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
         </div>
 
         {/* Panel 3: Removed Species Cards List (4 Columns) */}
-        <div className="xl:col-span-4 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-2">
+        <div className="xl:col-span-4 min-w-0 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-2">
           <p className="text-xs font-bold text-[#202B27]">
             Removed Species ({removedSpeciesCards.length})
           </p>

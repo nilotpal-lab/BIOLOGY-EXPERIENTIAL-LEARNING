@@ -7,6 +7,8 @@ import {
   FlaskConical,
   GitCompareArrows,
   Globe2,
+  Layers,
+  LayoutDashboard,
   Leaf,
   Menu,
   Network,
@@ -468,6 +470,32 @@ export function Shell({
                   </button>
                 ))}
               </div>
+
+              {/* Public Pages Quick Access */}
+              <div className="flex items-center gap-1.5 pt-2 border-t border-[#E5E6DC]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigate('overview')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-[#68716B] hover:bg-[#F0F2E9] min-h-[40px] cursor-pointer"
+                >
+                  <LayoutDashboard size={14} />
+                  <span>Home</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigate('features')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-[#68716B] hover:bg-[#F0F2E9] min-h-[40px] cursor-pointer"
+                >
+                  <Layers size={14} />
+                  <span>Features</span>
+                </button>
+              </div>
             </div>
           )}
         </header>
@@ -565,6 +593,36 @@ export function Shell({
                 Scenario analysis
               </button>
             </nav>
+
+            {/* Quick Links back to Public Pages */}
+            <div className="pt-2 mt-2 border-t border-[#E5E6DC] space-y-1">
+              <button
+                type="button"
+                onClick={() => navigate('overview')}
+                title={sidebarCollapsed ? 'Home Overview' : undefined}
+                className={cn(
+                  'flex w-full items-center rounded-xl text-xs font-medium text-left transition-colors cursor-pointer',
+                  sidebarCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2',
+                  'text-[#68716B] hover:bg-[#F0F2E9] hover:text-[#202B27]',
+                )}
+              >
+                <span className="text-[#899B78]"><LayoutDashboard size={17} /></span>
+                {!sidebarCollapsed && <span className="truncate">Home</span>}
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('features')}
+                title={sidebarCollapsed ? 'Features & Capabilities' : undefined}
+                className={cn(
+                  'flex w-full items-center rounded-xl text-xs font-medium text-left transition-colors cursor-pointer',
+                  sidebarCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2',
+                  'text-[#68716B] hover:bg-[#F0F2E9] hover:text-[#202B27]',
+                )}
+              >
+                <span className="text-[#899B78]"><Layers size={17} /></span>
+                {!sidebarCollapsed && <span className="truncate">Features</span>}
+              </button>
+            </div>
           </aside>
 
           {/* Main Flexible Content Workspace */}
