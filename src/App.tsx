@@ -35,7 +35,7 @@ function Routed() {
         {route === 'simulation' ? <SimulationPage onNavigate={navigate} /> : null}
         {route === 'timeline' ? <CascadeTimelinePage onNavigate={navigate} /> : null}
         {route === 'experiment' ? <ScenarioAnalysis onNavigate={navigate} /> : null}
-        {route === 'compare' ? <CompareResults /> : null}
+        {route === 'compare' ? <CompareResults onNavigate={navigate} /> : null}
         {route === 'conservation' ? <ConservationAtlas onNavigate={navigate} /> : null}
         {route === 'library' ? (
           <DatasetLibraryPage onNavigate={navigate} onOpenImport={() => setImportOpen(true)} />

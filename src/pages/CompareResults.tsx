@@ -26,6 +26,7 @@ import { ECOSYSTEM_LABEL, type FoodWebGraph as GraphType } from '../core/types'
 import { useAppState } from '../state/AppState'
 import { FoodWebGraph } from '../components/graph/FoodWebGraph'
 import { cn } from '../components/ui/primitives'
+import type { RouteId } from '../components/layout/routes'
 
 /* ============================================================================
  * Ecosystem Comparison (CompareResults) — Premium Scientific Multi-Web Studio
@@ -73,17 +74,35 @@ function estimateNodeTrophicLevel(role: string): number {
   }
 }
 
-export function CompareResults() {
+export interface CompareResultsProps {
+  onNavigate?: (route: RouteId) => void
+}
+
+export function CompareResults({ onNavigate }: CompareResultsProps = {}) {
   const { datasets, compareIds, toggleCompare, comparison, comparisonRunning, runComparison } = useAppState()
   const [expandedGraphId, setExpandedGraphId] = useState<string | null>(null)
 
+  // Filter out test fixtures and excluded research datasets
+  const comparableDatasets = useMemo(() => {
+    return datasets.filter(
+      (d) =>
+        !['validation-fixture', 'chain-fixture', 'RES-TER-C', 'RES-TER-D', 'MAR-TATOOSH-1', 'MAR-YTHAN-1'].includes(d.id),
+    )
+  }, [datasets])
+
   // Ensure default comparison datasets are selected if empty
-  const activeCompareIds = compareIds.length >= 2 ? compareIds : datasets.slice(0, 4).map((d) => d.id)
+  const activeCompareIds = useMemo(() => {
+    const validSelected = compareIds.filter((id) =>
+      comparableDatasets.some((d) => d.id === id),
+    )
+    if (validSelected.length >= 2) return validSelected
+    return comparableDatasets.slice(0, 4).map((d) => d.id)
+  }, [compareIds, comparableDatasets])
 
   // Selected dataset objects
   const selectedDatasets = useMemo(() => {
     return activeCompareIds
-      .map((id) => datasets.find((d) => d.id === id))
+      .map((id) => comparableDatasets.find((d) => d.id === id))
       .filter((d): d is NonNullable<typeof d> => Boolean(d))
   }, [activeCompareIds, datasets])
 
@@ -240,6 +259,23 @@ export function CompareResults() {
         </div>
       </div>
 
+      {/* Studio Tab Navigation */}
+      <div className="flex items-center gap-2 border-b border-[#E5E6DC] pb-1">
+        <button
+          type="button"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all border cursor-pointer bg-[#35563B] text-white border-[#35563B] shadow-xs"
+        >
+          <span>Multi-Ecosystem Comparison</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => onNavigate?.('conservation')}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all border cursor-pointer bg-white text-[#68716B] border-[#E5E6DC] hover:text-[#202B27] hover:bg-[#F7F6EF]"
+        >
+          <span>Conservation Biome Atlas</span>
+        </button>
+      </div>
+
       {/* =====================================================================
           2. SELECTION BAR: 1. SELECT ECOSYSTEMS TO COMPARE (2–4)
           ===================================================================== */}
@@ -282,7 +318,7 @@ export function CompareResults() {
 
         {/* Horizontal Ecosystem Selection Cards Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {datasets.slice(0, 6).map((d) => {
+          {comparableDatasets.map((d) => {
             const isChecked = activeCompareIds.includes(d.id)
             return (
               <label
