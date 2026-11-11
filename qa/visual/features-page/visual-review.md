@@ -1,12 +1,12 @@
 # Visual Review Gate 2: Features Page (Phase 2)
 
 ## Reference Image
-* File: `02_Features_Page.png`
-* Focal artwork: `hero-freshwater-artwork.png`
+* File: `02_Features_Page.webp`
+* Focal artwork: `hero-freshwater-artwork.webp`
 
 ## Viewports Audited
-* Desktop: 1440 × 900 at 100% browser zoom (`implementation-100-percent.png`)
-* Mobile: 390 × 844 (`implementation-mobile.png`)
+* Desktop: 1440 × 900 at 100% browser zoom (`implementation-100-percent.webp`)
+* Mobile: 390 × 844 (`implementation-mobile.webp`)
 
 ---
 
@@ -14,9 +14,9 @@
 
 | Category | Reference Expectation | Implementation Status | Notes |
 | :--- | :--- | :--- | :--- |
-| **Header Chrome** | Brand leaf + "FoodWebGuard" + "INTERACTIVE ECOSYSTEM LABORATORY". Center nav: Home, Features (active with dark green underline), Datasets, About. Right: "Open Explorer →" (Deep green button). | **MATCH (Pass)** | Matches `02_Features_Page.png` header layout and typography. |
+| **Header Chrome** | Brand leaf + "FoodWebGuard" + "INTERACTIVE ECOSYSTEM LABORATORY". Center nav: Home, Features (active with dark green underline), Datasets, About. Right: "Open Explorer →" (Deep green button). | **MATCH (Pass)** | Matches `02_Features_Page.webp` header layout and typography. |
 | **Hero Heading** | Lora serif: "All the tools you need to explore food webs" ("food webs" highlighted in dark botanical green #35563B). | **MATCH (Pass)** | Clean typography, size 46-50px with comfortable line-height 1.14. |
-| **Hero Artwork** | High-resolution freshwater illustration (`hero-freshwater-artwork.png`) with Grey Heron, Carp underwater, snails, plants. Soft organic fade into ivory background on left. | **MATCH (Pass)** | High-res artwork with horizontal gradient blend into `#F7F6EF`. |
+| **Hero Artwork** | High-resolution freshwater illustration (`hero-freshwater-artwork.webp`) with Grey Heron, Carp underwater, snails, plants. Soft organic fade into ivory background on left. | **MATCH (Pass)** | High-res artwork with horizontal gradient blend into `#F7F6EF`. |
 | **8 Capability Cards** | 8 cards in 2 columns on desktop (4 rows of 2): Explorer, Simulation, Timeline, Experiment Studio, Comparison, Research Library, Dataset Import, Methodology & Validation. | **MATCH (Pass)** | 2-column layout matching reference with consistent card heights, paddings, and borders. |
 | **Interactive Explorer Preview** | Food web node diagram with Heron (top coral), Carp (center green), Pike, Perch, Roach, and basal plants. | **MATCH (Pass)** | Multi-trophic nodes connected with directed arrows. |
 | **Simulation Laboratory Preview** | Central Carp node with red circular `✕` removal badge and red dashed cascading arrows. | **MATCH (Pass)** | Dynamic illustration of species disturbance. |
@@ -31,5 +31,5 @@
 ---
 
 ## Verdict
-**APPROVED**: Phase 2 Features Page matches `02_Features_Page.png` at 100% browser zoom and passes all visual and functional non-negotiables.
-Saved final approved image to `final-approved.png`.
+**APPROVED**: Phase 2 Features Page matches `02_Features_Page.webp` at 100% browser zoom and passes all visual and functional non-negotiables.
+Saved final approved image to `final-approved.webp`.

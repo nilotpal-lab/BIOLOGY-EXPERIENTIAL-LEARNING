@@ -15,27 +15,27 @@ Every trust/provenance claim I encountered, in the order I met it. Verdicts are 
 
 | Claim | Where | Verdict |
 |---|---|---|
-| "REAL ECOSYSTEMS. REAL INSIGHTS." | Hero, 01-home-top.png | Marketing; backed later by actual DOI-cited datasets on the Provenance tab. Partly supported. |
-| Stats: "6 Real Ecosystems / 200+ Species / 500+ Feeding Links / 9 Analysis Tools" | 01-home-top.png | Checkable and true in-app: the dataset selector lists 10 networks (6 research + 2 illustrative + 2 validation); 395+57+110+87+14+11 nodes ≫ 200; links ≈ 322+98+869+373+39+18+17 ≫ 500. Supported. |
-| "Research Library — Explore 6 real-world ecosystems from scientific literature" | 02-home-footer.png | Supported — each dataset has a citation (09, 10). |
-| "Methodology & Validation — Formulas, assumptions and live validation tests" | 02-home-footer.png | Supported — live self-test suite exists (04). |
-| "…across 6 verified research ecosystems" | 02-home-footer.png | "Verified" = curator self-attestation, but defined and evidenced (see 1.4). |
-| **No footer, no Terms / Privacy / Licence links anywhere** | whole site | **Gap.** There is no About page, no Terms, no Privacy policy, no contact. The nav "About" button silently routes to the Methodology page (`#/methodology`, 08-about.png). For a classroom tool this is the biggest trust gap — I could not find who made this or under what terms. |
+| "REAL ECOSYSTEMS. REAL INSIGHTS." | Hero, 01-home-top.webp | Marketing; backed later by actual DOI-cited datasets on the Provenance tab. Partly supported. |
+| Stats: "6 Real Ecosystems / 200+ Species / 500+ Feeding Links / 9 Analysis Tools" | 01-home-top.webp | Checkable and true in-app: the dataset selector lists 10 networks (6 research + 2 illustrative + 2 validation); 395+57+110+87+14+11 nodes ≫ 200; links ≈ 322+98+869+373+39+18+17 ≫ 500. Supported. |
+| "Research Library — Explore 6 real-world ecosystems from scientific literature" | 02-home-footer.webp | Supported — each dataset has a citation (09, 10). |
+| "Methodology & Validation — Formulas, assumptions and live validation tests" | 02-home-footer.webp | Supported — live self-test suite exists (04). |
+| "…across 6 verified research ecosystems" | 02-home-footer.webp | "Verified" = curator self-attestation, but defined and evidenced (see 1.4). |
+| **No footer, no Terms / Privacy / Licence links anywhere** | whole site | **Gap.** There is no About page, no Terms, no Privacy policy, no contact. The nav "About" button silently routes to the Methodology page (`#/methodology`, 08-about.webp). For a classroom tool this is the biggest trust gap — I could not find who made this or under what terms. |
 
 ### 1.2 Methodology & Validation page (`#/methodology`, screenshots 04, 05, 05b)
 
 | Claim | Where | Verdict |
 |---|---|---|
-| "SCIENTIFIC FOUNDATIONS & PROVENANCE" banner; "These are the same expectations the automated test suite asserts with Vitest. They are run live in the browser so the checks can be inspected rather than trusted." | 04-methodology-top.png | This is the single most trust-building sentence in the app: it explicitly asks NOT to be trusted. |
+| "SCIENTIFIC FOUNDATIONS & PROVENANCE" banner; "These are the same expectations the automated test suite asserts with Vitest. They are run live in the browser so the checks can be inspected rather than trusted." | 04-methodology-top.webp | This is the single most trust-building sentence in the app: it explicitly asks NOT to be trusted. |
 | "70 passed · 0 failed · 70 total" with a "Re-run checks" button | 04, 05 | Counter exists, but clicking "Re-run checks" produced **no visible feedback** on two attempts (no spinner, no change, no timestamp) — I cannot confirm the checks actually re-ran. Severity 2. |
 | Formula transparency: discrete Lotka-Volterra `N(t+1) = N + rN(1-N/K) − ΣαNN`, Connectance `C = L/(N(N−1))`, Link Loss %, Secondary Extirpation Criterion `Extinction(v) ⇔ deg⁺(v)=0` | 04 | Real formulas with guards ("Never divided by zero", "guard applies for N < 2"). Genuinely transparent. |
-| "Active Metric Verification (Zooplankton) … Standard Benchmark: Link Loss 17.6% (3 of 17), Direct Affected 2, Secondary 0, Cascade Depth 0" | 04 | **I reproduced this exact result myself** by running the same removal in the Simulation Lab (23-results-metrics.png: "3 out of 17 (17.6%)", Direct Effects 2, Secondary 0). The benchmark is reproducible by a user. Strongly supported. |
+| "Active Metric Verification (Zooplankton) … Standard Benchmark: Link Loss 17.6% (3 of 17), Direct Affected 2, Secondary 0, Cascade Depth 0" | 04 | **I reproduced this exact result myself** by running the same removal in the Simulation Lab (23-results-metrics.webp: "3 out of 17 (17.6%)", Direct Effects 2, Secondary 0). The benchmark is reproducible by a user. Strongly supported. |
 
 ### 1.3 Data Provenance & Scientific Literature (`#/methodology` → "Provenance & Literature" tab, screenshot 06)
 
 | Claim | Where | Verdict |
 |---|---|---|
-| Default dataset FW-POND-A labelled "Illustrative demo — simplified for software demonstration; not a verified empirical food-web dataset"; "Origin: Authored for this project… Not derived from a published dataset"; "Licence: Project-authored illustrative content." | 06-provenance-literature.png | Honest self-labelling of the demo data. Excellent. |
+| Default dataset FW-POND-A labelled "Illustrative demo — simplified for software demonstration; not a verified empirical food-web dataset"; "Origin: Authored for this project… Not derived from a published dataset"; "Licence: Project-authored illustrative content." | 06-provenance-literature.webp | Honest self-labelling of the demo data. Excellent. |
 | "Research source verified: provenance and cleaning checks verified by curator." | 06 | **Self-attested by the curator** — it is not an external certification. But the app defines exactly what the badge means and shows per-dataset evidence (see 1.4), which is more than most tools do. Trust with caution: appropriate for teaching, not for research claims. |
 | "What this does not claim: Not an extinction prediction / Not an energy biomass flow / Unrecorded links ≠ absent links" | 06 | Explicit limitations box. This is exactly the honesty a skeptic wants. |
 
@@ -43,17 +43,17 @@ Every trust/provenance claim I encountered, in the order I met it. Verdicts are 
 
 | Claim | Where | Verdict |
 |---|---|---|
-| "a slot is only marked 'Research source verified' when its source, conversion, citation and reuse terms have all been checked. No provenance is invented anywhere in this application." | 19-curation-status.png | Definition is clear and falsifiable. |
+| "a slot is only marked 'Research source verified' when its source, conversion, citation and reuse terms have all been checked. No provenance is invented anywhere in this application." | 19-curation-status.webp | Definition is clear and falsifiable. |
 | Status chips: "6 verified · 6 sourced · 0 source pending" | 19 | Consistent with the 6 datasets shown. |
 | Per-dataset "Verification record and sources" (RES-FW-A example): source files committed verbatim (Dryad doi:10.5061/dryad.866t1g1zj, Pond1/WI1); node/link counts "re-derived from those tables by the test suite: 11 nodes, 18 unique links"; link direction "confirmed from the archive README"; citation recorded; "Reuse terms confirmed on the Dryad record: CC0 1.0"; outbound link to the Dryad deposit | 21 (record content read from the page's own expandable row) | Detailed, specific, externally checkable (real DOIs, real licence terms). Still curator self-attestation — there is no third-party audit — but it is the checkable kind. |
 | All 6 datasets carry full citations + CC0 licence statements (Zhang 2024; Gripenberg 2019; Miller-ter Kuile 2022; Wootton 2016; Cirtwill 2019) | 06, 09 | Supported and verifiable via DOI. |
-| Download tab: CSV export of species dictionary and feeding links ("Export complete data matrices…") | 10-library-download-tab.png | Data portability — lets me check the data myself. Good. |
+| Download tab: CSV export of species dictionary and feeding links ("Export complete data matrices…") | 10-library-download-tab.webp | Data portability — lets me check the data myself. Good. |
 
 ### 1.5 Dataset Import modal ("Data Intake Studio", screenshots 12, 13)
 
 | Claim | Where | Verdict |
 |---|---|---|
-| "Files are parsed and validated strictly in this browser. Nothing is uploaded to any remote server." | 12-dataset-import.png | Consistent with a client-side app; nothing observed contradicting it (no accounts, no network-visible writes). |
+| "Files are parsed and validated strictly in this browser. Nothing is uploaded to any remote server." | 12-dataset-import.webp | Consistent with a client-side app; nothing observed contradicting it (no accounts, no network-visible writes). |
 | Citation field optional: "Without a citation, marked 'Research source pending'." | 13 (form text) | Confirms the "Research source verified/pending" system is metadata-driven and importer-supplied — i.e. self-attested by design, but honestly labelled. |
 
 ### 1.6 Deletion / destructive actions
@@ -88,9 +88,9 @@ No blockers (severity 4) encountered. No visible error text, blank areas, or stu
 
 ## 3. Task outcome
 
-Path to first success: home → Explore (dataset FW-POND-A already loaded; selected "Pond algae", inspector showed trophic level/degree/feeding relationships, 14-explore.png) → Simulation Lab → mode "Direct Removal + Cascade" → species "Zooplankton" → Run Simulation → results appeared: "Zooplankton Removed — Species Removed 1 (Direct), Links Lost 3 of 17 (17.6%), Secondary Removals 0, Total Removed 1 of 12", Affected Species: Tadpole & Minnow each "Lost food source ↓ -1 link", Cascade Timeline Round 1 → Round 3 "Stabilized state, 1 total removed" (22-run-simulation.png, 23-results-metrics.png). The metrics exactly reproduce the Methodology page's "Standard Benchmark" for the same scenario.
+Path to first success: home → Explore (dataset FW-POND-A already loaded; selected "Pond algae", inspector showed trophic level/degree/feeding relationships, 14-explore.webp) → Simulation Lab → mode "Direct Removal + Cascade" → species "Zooplankton" → Run Simulation → results appeared: "Zooplankton Removed — Species Removed 1 (Direct), Links Lost 3 of 17 (17.6%), Secondary Removals 0, Total Removed 1 of 12", Affected Species: Tadpole & Minnow each "Lost food source ↓ -1 link", Cascade Timeline Round 1 → Round 3 "Stabilized state, 1 total removed" (22-run-simulation.webp, 23-results-metrics.webp). The metrics exactly reproduce the Methodology page's "Standard Benchmark" for the same scenario.
 
-Screenshots: 01–24 in this folder (NN-slug.png naming).
+Screenshots: 01–24 in this folder (NN-slug.webp naming).
 
 reached first success: yes
 actions taken: 31

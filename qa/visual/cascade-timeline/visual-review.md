@@ -1,7 +1,7 @@
 # Visual Review & Verification: Cascade Timeline
 
 ## Phase 5: Cascade Timeline (`#/timeline`)
-- **Reference Image**: `05_Cascade_Timeline_Page.png`
+- **Reference Image**: `05_Cascade_Timeline_Page.webp`
 - **Implementation Status**: Complete and Verified
 - **Verification Date**: 2026-10-31
 

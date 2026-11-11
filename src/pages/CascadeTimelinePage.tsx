@@ -336,7 +336,7 @@ export function CascadeTimelinePage({ onNavigate: _onNavigate }: CascadeTimeline
           <div className="lg:col-span-4 h-36 lg:h-full relative overflow-hidden flex items-center justify-end">
             <div className="absolute inset-0 bg-gradient-to-r from-[#FCFBF7] via-[#FCFBF7]/50 to-transparent z-1 lg:w-32" />
             <img
-              src="/hero-freshwater-artwork.png"
+              src="/hero-freshwater-artwork.webp"
               alt="Freshwater ecosystem"
               className="w-full h-full object-cover object-[80%_25%] max-h-44"
             />

@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -246,7 +246,7 @@ async function runBrowserAudit() {
     await wait(600)
 
     // Select species
-    const clickSpecies = await cdp.evaluate(`(() => {
+    await cdp.evaluate(`(() => {
       const buttons = Array.from(document.querySelectorAll('button'));
       const targetBtn = buttons.find(b => b.textContent.includes('Pond snail') || b.textContent.includes('Minnow'));
       if (targetBtn) {
@@ -258,7 +258,7 @@ async function runBrowserAudit() {
     await wait(400)
 
     // Run direct removal
-    const clickRun = await cdp.evaluate(`(() => {
+    await cdp.evaluate(`(() => {
       const buttons = Array.from(document.querySelectorAll('button'));
       const removeBtn = buttons.find(b => b.textContent.includes('Run direct removal'));
       if (removeBtn) {
@@ -290,7 +290,7 @@ async function runBrowserAudit() {
     console.log(`Species Removal: ${removePassed ? 'PASS' : 'FAIL'} (${removalState.snippet})`)
 
     // Reset Simulation
-    const clickReset = await cdp.evaluate(`(() => {
+    await cdp.evaluate(`(() => {
       const buttons = Array.from(document.querySelectorAll('button'));
       const resetBtn = buttons.find(b => b.textContent.trim() === 'Reset simulation' || b.textContent.includes('Reset simulation'));
       if (resetBtn) {
@@ -511,7 +511,7 @@ async function runBrowserAudit() {
     })()`)
     await wait(300)
 
-    const compareRunRes = await cdp.evaluate(`(() => {
+    await cdp.evaluate(`(() => {
       const buttons = Array.from(document.querySelectorAll('button'));
       const runBtn = buttons.find(b => b.textContent.includes('Run comparison'));
       if (runBtn && !runBtn.disabled) {
@@ -564,7 +564,7 @@ async function runBrowserAudit() {
     await wait(600)
 
     // Open Report Modal
-    const openReportRes = await cdp.evaluate(`(() => {
+    await cdp.evaluate(`(() => {
       const buttons = Array.from(document.querySelectorAll('button'));
       const reportBtn = buttons.find(b => b.textContent.includes('Report') || b.textContent.includes('Print / Save PDF'));
       if (reportBtn) {

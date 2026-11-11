@@ -1,7 +1,7 @@
 # Visual Review & Verification: Dataset Import
 
 ## Dataset Import (`#/import`)
-- **Reference**: Features Page Reference Card 7 (`02_Features_Page.png` / `media_1793370498859_ed9523d9.jpg`)
+- **Reference**: Features Page Reference Card 7 (`02_Features_Page.webp` / `media_1793370498859_ed9523d9.jpg`)
 - **Implementation Status**: Complete and Verified
 - **Verification Date**: 2026-10-31
 

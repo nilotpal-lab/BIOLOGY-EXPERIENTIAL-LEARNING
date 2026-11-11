@@ -388,7 +388,7 @@ export function Shell({
                 {/* Dynamic Ecosystem Landscape Photo Thumbnail */}
                 <div className="hidden h-8 w-11 sm:block sm:h-9 sm:w-12 rounded-lg overflow-hidden shrink-0 border border-[#E5E6DC] bg-white">
                   <img
-                    src="/hero-ecosystem.jpg"
+                    src="/hero-ecosystem.webp"
                     alt="Ecosystem thumbnail"
                     className="h-full w-full object-cover object-[70%_30%]"
                   />

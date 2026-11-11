@@ -258,7 +258,7 @@ export function DatasetImportPage({ onNavigate }: { onNavigate: (route: RouteId)
       <div className="relative overflow-hidden rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-6 sm:p-8">
         <div className="absolute right-0 top-0 bottom-0 w-1/3 max-w-[420px] pointer-events-none opacity-25 sm:opacity-40 overflow-hidden">
           <img
-            src="/hero-ecosystem.jpg"
+            src="/hero-ecosystem.webp"
             alt="Freshwater ecosystem"
             className="h-full w-full object-cover object-right"
           />

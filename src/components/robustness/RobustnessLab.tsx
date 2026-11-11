@@ -268,7 +268,7 @@ export function RobustnessLab({ onNavigateToLibrary }: RobustnessLabProps) {
           <div className="flex items-center gap-2 rounded-xl border border-[#E5E6DC] bg-white p-2">
             <div className="h-10 w-14 rounded-lg overflow-hidden border border-[#E5E6DC] shrink-0 bg-[#F7F6EF]">
               <img
-                src="/hero-ecosystem.jpg"
+                src="/hero-ecosystem.webp"
                 alt="Ecosystem preview"
                 className="w-full h-full object-cover object-[70%_25%]"
               />

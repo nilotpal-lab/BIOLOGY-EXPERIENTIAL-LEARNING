@@ -14,7 +14,7 @@ Session: localStorage cleared, fresh reload, clean first visit.
 
 ## Action log (expectation → result)
 
-1. Open app clean → Overview loads, no stale imports, FW-POND-A default. [01-landing-clean-session.png]
+1. Open app clean → Overview loads, no stale imports, FW-POND-A default. [01-landing-clean-session.webp]
 2. First success: Experiment Studio → Interactive Removal Studio → select Perch → Run →
    "Scenario: Direct on Perch", 11/12 nodes, 29.4% link loss — exactly one result set. Reached.
 3. Species filter junk: `<script>alert(1)</script>`, `'; DROP TABLE nodes; --`, `😀🐍 شبكة غذائية`,

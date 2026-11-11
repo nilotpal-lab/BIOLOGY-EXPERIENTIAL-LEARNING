@@ -1,7 +1,7 @@
 # Visual Review & Verification: Methodology & Validation
 
 ## Methodology & Validation (`#/methodology`)
-- **Reference**: Features Page Reference Card 8 (`02_Features_Page.png` / `media_1793370498859_ed9523d9.jpg`)
+- **Reference**: Features Page Reference Card 8 (`02_Features_Page.webp` / `media_1793370498859_ed9523d9.jpg`)
 - **Implementation Status**: Complete and Verified
 - **Verification Date**: 2026-10-31
 

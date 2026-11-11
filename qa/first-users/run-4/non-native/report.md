@@ -9,7 +9,7 @@
 
 ## 1. Walkthrough narrative (what I thought vs what it did)
 
-### Screen 1 — Landing page (NN-01-landing.png)
+### Screen 1 — Landing page (NN-01-landing.webp)
 
 I see "FoodWebGuard — INTERACTIVE ECOSYSTEM LABORATORY". I thought "laboratory" meant a science lab website with articles. It is actually the app name.
 
@@ -19,7 +19,7 @@ I see "FoodWebGuard — INTERACTIVE ECOSYSTEM LABORATORY". I thought "laboratory
 - **"Cascade Timeline — Explore ecosystem collapse round by round"** — "collapse round by round" sounds like a game. I did not understand until later that a "round" is one step of the removal simulation.
 - Icons on the feature cards (flask, clock, bar chart, arrows) have no text labels — only the card titles explain them. The small arrow icons (↗) in the card corners made me think each card is an external link.
 
-### Screen 2 — Interactive Explorer (NN-03-explorer-pond.png, NN-05-lake-loaded.png)
+### Screen 2 — Interactive Explorer (NN-03-explorer-pond.webp, NN-05-lake-loaded.webp)
 
 After clicking Open Explorer, a food-web drawing appeared with animals connected by lines. A panel on the right opened by itself showing "Pond algae" — I never clicked it; I did not know why this species was already chosen. That confused me (nothing on screen said "selected automatically").
 
@@ -31,9 +31,9 @@ After clicking Open Explorer, a food-web drawing appeared with animals connected
 - Legend words: **"Apex Predator, Tertiary/Secondary/Primary Consumer, Primary Producer, Detritus"** — many unknown words at once. "Detritus" I thought was a species name; it seems to mean dead waste material.
 - **Dataset dropdown "FW-POND-A · Temperate pond"** — I thought "FW" is a typo. The codes (FW-, TER-, MAR-, RES-, VALIDATION-) are not explained anywhere. "Shallow-lake mesocosm (Pond1, heated + insecticide)" — "mesocosm" is a very hard scientific word with no explanation.
 
-I changed the dropdown to **"FW-LAKE-B · Cold-water lake"** and the whole diagram changed to lake animals (Otter, Osprey, Pike, Perch, Smelt...). This worked and was easy to understand — the picture updated immediately (NN-05-lake-loaded.png).
+I changed the dropdown to **"FW-LAKE-B · Cold-water lake"** and the whole diagram changed to lake animals (Otter, Osprey, Pike, Perch, Smelt...). This worked and was easy to understand — the picture updated immediately (NN-05-lake-loaded.webp).
 
-### Screen 3 — Simulation Laboratory (NN-06-simulation.png, NN-07-simulation-scrolled.png)
+### Screen 3 — Simulation Laboratory (NN-06-simulation.webp, NN-07-simulation-scrolled.webp)
 
 I clicked "Simulation" in the left "WORKSPACE" sidebar. "Workspace" — I thought it saves my files; it is just the menu.
 
@@ -43,7 +43,7 @@ Surprise: **results were already on screen before I ran anything** — "Simulati
 - **"3. SIMULATION SETTINGS — Show step-by-step animation / Animation speed Slow–Normal–Fast"** — understandable.
 - **"Run Simulation →"** — clear, and after running, a second button **"Reset simulation"** appeared below it. I understood "reset = undo the removal".
 
-### My run: Pike, Direct Removal + Cascade (NN-08-species-pike-selected.png, NN-09-cascade-mode.png, NN-10-run-simulation.png, NN-11-cascade-timeline.png, NN-12-round2-click.png)
+### My run: Pike, Direct Removal + Cascade (NN-08-species-pike-selected.webp, NN-09-cascade-mode.webp, NN-10-run-simulation.webp, NN-11-cascade-timeline.webp, NN-12-round2-click.webp)
 
 1. In "2. SELECT A SPECIES" I chose **Pike** in the dropdown. The card below updated ("Pike, pike sp., Apex predator") and — unexpectedly — the results panel instantly changed to "Pike Removed" with numbers, before I pressed Run. Selecting a species and running a simulation feel merged; the "Run Simulation" button seems redundant, or the auto-numbers should be hidden until Run.
 2. I clicked the **"Direct Removal + Cascade"** mode card. The results panel still showed the old numbers with no sign they were now outdated. I expected the panel to clear or update.

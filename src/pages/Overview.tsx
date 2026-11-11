@@ -231,7 +231,7 @@ export function Overview({ onNavigate, onOpenImport: _onOpenImport }: OverviewPr
             <div className="lg:col-span-6 xl:col-span-6 relative flex items-center justify-end">
               <div className="relative w-full h-[320px] sm:h-[380px] lg:h-[430px] overflow-hidden rounded-2xl">
                 <img
-                  src="/hero-freshwater-artwork.png"
+                  src="/hero-freshwater-artwork.webp"
                   alt="Natural freshwater ecosystem illustration with Grey Heron, Carp, water lilies, snails, and aquatic plants"
                   className="h-full w-full object-cover object-center"
                 />

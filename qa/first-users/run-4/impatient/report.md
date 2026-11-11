@@ -9,7 +9,7 @@
 
 ## 1. Walkthrough narrative (expected vs happened)
 
-### Step 1 — Landing page (01-homepage.png)
+### Step 1 — Landing page (01-homepage.webp)
 - **Expected:** a hero, a green "Open Explorer" button (the page even tells me: "New here? Start with the green Open Explorer button — then try the Simulation Lab"). Good — the app tells me where to click. Zero reading needed beyond one line.
 - **Happened:** Page loaded clean, big illustration, stats (6 ecosystems, 200+ species). Two "Open Explorer" buttons on the page (hero + bottom CTA) — fine.
 - **Action:** clicked the hero "Open Explorer" button.
@@ -17,24 +17,24 @@
 ### Step 2 — Open Explorer click, first attempt FAILED
 - **Quote:** "It's a big green button, why is nothing happening?"
 - Playwright locator click on "Open Explorer" timed out (page busy / unresponsive to the synthetic click). Retried once with a direct coordinate click — **worked**, URL changed to `#/explore`.
-- Screenshot: 02-explorer-loaded.png
+- Screenshot: 02-explorer-loaded.webp
 
-### Step 3 — Explorer view loads a dataset automatically (02-explorer-loaded.png)
+### Step 3 — Explorer view loads a dataset automatically (02-explorer-loaded.webp)
 - **Expected:** I'd have to hunt for a dataset picker first. 
 - **Happened (pleasant surprise):** a built-in dataset "FW-POND-A · Temperate pond" (12 nodes, 17 links) was ALREADY loaded and drawn as a trophic graph. Inspector on the right already showed "Pond algae" selected. This is exactly what an impatient user wants — the demo is one click deep.
 - **Friction:** my scripted click on "Heron" in the (hidden) species-list panel timed out — the list panel exists in the DOM but is not visibly open, so clicking DOM items blind fails.
 - **Workaround:** clicked the Heron node directly on the graph with coordinates — **worked**, inspector switched to Heron ("Selected species: Heron — Simulation will start from this node"). Note: clicking the node also zoomed the canvas from 93% to ~110%.
 
-### Step 4 — Run the removal (03-heron-selected-sim-panel.png)
+### Step 4 — Run the removal (03-heron-selected-sim-panel.webp)
 - **Quote:** "Heron's the top bird, let's delete it. Run direct removal — green button, go."
 - **Expected:** press "Run direct removal", get numbers.
 - **Happened:** The simulation panel in the right inspector had mode radios ("Direct removal" pre-checked) and the green "Run direct removal" button. Clicked it — **worked immediately**. "Reset simulation" became enabled and a "1 removed" chip appeared, plus export buttons (Academic PDF Report, CSVs, JSON).
 - **Friction:** the metrics/summary section appeared BELOW the fold in the inspector, behind export buttons and long paragraphs. Scrolling that panel with synthetic scroll timed out twice (30s each) and stopped moving. Impatient me gave up on scrolling the Explore inspector.
 
-### Step 5 — Find the results in the Simulation tab instead (07-simulation-lab-results.png)
+### Step 5 — Find the results in the Simulation tab instead (07-simulation-lab-results.webp)
 - **Quote:** "Forget scrolling — sidebar says 'Simulation'. That sounds like where results live."
 - **Expected:** maybe I'd have to re-select species and re-run.
-- **Happened:** the Simulation Laboratory page (URL `#/simulation`) REMEMBERED Heron as the selected species and the run state. "Simulation Results — Heron Removed" panel was visible immediately with: Species Removed 1 (Direct), Links Lost 2 out of 17 (11.8%), Secondary Removals 0, Total Removed 1 of 12, Affected Species tabs (Direct Effects 0 / Cascade Effects 0), and a Cascade Timeline (Round 1: Heron removed, Round 3: Stabilized state, 1 total removed). A full "Scenario Results Summary" with ~10 metric tiles and a "What changed?" narrative was also present in the DOM (06 screenshot attempt captured the export section at 05-results-metrics-scrolled.png).
+- **Happened:** the Simulation Laboratory page (URL `#/simulation`) REMEMBERED Heron as the selected species and the run state. "Simulation Results — Heron Removed" panel was visible immediately with: Species Removed 1 (Direct), Links Lost 2 out of 17 (11.8%), Secondary Removals 0, Total Removed 1 of 12, Affected Species tabs (Direct Effects 0 / Cascade Effects 0), and a Cascade Timeline (Round 1: Heron removed, Round 3: Stabilized state, 1 total removed). A full "Scenario Results Summary" with ~10 metric tiles and a "What changed?" narrative was also present in the DOM (06 screenshot attempt captured the export section at 05-results-metrics-scrolled.webp).
 
 ### FIRST SUCCESS
 Loaded built-in dataset (FW-POND-A), selected a species (Heron), ran a removal scenario, and saw simulation results/metrics — reached via Explorer "Run direct removal" + Simulation Lab results panel.

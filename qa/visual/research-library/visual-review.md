@@ -1,7 +1,7 @@
 # Visual Review & Verification: Research Library
 
 ## Phase 8: Research Library (`#/library`)
-- **Reference Image**: `08_Research_Library_Page.png` / `media_1793371741302_80953faf.jpg`
+- **Reference Image**: `08_Research_Library_Page.webp` / `media_1793371741302_80953faf.jpg`
 - **Implementation Status**: Complete and Verified
 - **Verification Date**: 2026-10-31
 
@@ -9,7 +9,7 @@
 1. **Header & Typography**:
    - Lora serif heading: `Research Library`.
    - Scientific editorial description: `Explore six real-world food-web datasets from published scientific research. Each dataset includes species information, feeding relationships and original research references.`
-   - Botanical landscape artwork (`hero-freshwater-artwork.png`) softly fading into warm ivory background (`#FCFBF7`).
+   - Botanical landscape artwork (`hero-freshwater-artwork.webp`) softly fading into warm ivory background (`#FCFBF7`).
 2. **Category Filter Tabs Row**:
    - Filter pill buttons: `All Datasets (6)`, `Freshwater (2)`, `Marine (2)`, `Terrestrial (2)`.
    - Distinct habitat color coding: sage green for freshwater, ocean blue for marine, warm amber for terrestrial.

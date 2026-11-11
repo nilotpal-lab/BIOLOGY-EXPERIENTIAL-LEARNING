@@ -5,12 +5,12 @@ Date: 2026-10-24. Console/network capture not available — not tested (runtime 
 
 ## Numbered action log (what I expected → what happened)
 
-1. Opened the app fresh (cleared browser storage, reloaded) → landing on Overview loaded fine, FW-POND-A pond dataset active by default. [01-landing.png]
+1. Opened the app fresh (cleared browser storage, reloaded) → landing on Overview loaded fine, FW-POND-A pond dataset active by default. [01-landing.webp]
 2. Expected: switching "Current Network" dropdown to TER-GRASS-A changes the loaded dataset → it did; stats updated to 14 species / 29 interactions.
 3. Expected: "Experiment Studio" nav button opens the studio → it did (`#/experiment`).
 4. Expected: "Interactive Removal Studio" button opens species selection → it did (species chips, Direct Removal / Structural Cascade rules, disabled "Run Experiment").
 5. Selected species "Snake" + rule "Direct Removal" → "Run Experiment" became enabled.
-6. Clicked "Run Experiment" (first attempt timed out in my automation layer; a direct click worked) → results appeared: 13/14 nodes remaining, +0 secondary removals, 10.3% link loss (-3 links), 1 directly affected, 0 food depleted, connectance 0.167. BASELINE SUCCESS. [02-baseline-success.png]
+6. Clicked "Run Experiment" (first attempt timed out in my automation layer; a direct click worked) → results appeared: 13/14 nodes remaining, +0 secondary removals, 10.3% link loss (-3 links), 1 directly affected, 0 food depleted, connectance 0.167. BASELINE SUCCESS. [02-baseline-success.webp]
 7. Pasted `<script>alert(1)</script>` into the species filter → accepted as literal text, 0 species matched, nothing executed, no crash.
 8. Pasted `'; DROP TABLE nodes; --` into species filter → accepted, 0 matches.
 9. Pasted `😀🐍 شبكة غذائية` into species filter → accepted, 0 matches.
@@ -24,11 +24,11 @@ Date: 2026-10-24. Console/network capture not available — not tested (runtime 
 17. Double-clicked "Run Experiment" → one result set ("Direct on Minnow"), no duplicates, no stuck spinner.
 18. Opened a SECOND TAB on the app → opened fine, started on default FW-POND-A.
 19. In tab 2 switched network to MAR-COAST-A and ran a "Direct on Bacteria" removal → worked; tab 1 kept its own FW-POND-A state (no cross-tab corruption); the shared "last analysis" record now shows tab 2's run.
-20. Opened Data Library, clicked "Import CSV or JSON" → dialog opened with file/paste import, metadata fields, Validate and preview. [03-import-dialog.png]
+20. Opened Data Library, clicked "Import CSV or JSON" → dialog opened with file/paste import, metadata fields, Validate and preview. [03-import-dialog.webp]
 21. Junk-filled every import metadata field (script tag, SQL string, emoji+Arabic, O'Brien, 5000 chars) → ALL accepted as plain text, no validation, no max length.
 22. Pasted pure junk into the node/link CSV paste boxes and validated → REJECTED "Import blocked, 4 errors" with a precise report (missing id/name columns, malformed CSV, empty network) that states exactly how to fix it and confirms the loaded dataset is untouched.
 23. Pasted a semi-valid CSV smuggling `<script>alert(1)</script>`, `O'Brien 😀🐍`, `شبكة غذائية` as species names plus a self-link, a dangling endpoint (n999) and a duplicate link → 1 blocking error (unknown endpoint, excludable), self-link excluded, duplicate deduped, role normalised — all itemised in a cleaning report.
-24. Ticked "Repair supported issues", re-validated, clicked "Import dataset" → junk dataset imported locally, dialog closed, app navigated to Explorer with it loaded. All junk names render as inert literal text (no alert dialog ever fired); emoji/Arabic/O'Brien render correctly. [04-imported-junk-dataset.png]
+24. Ticked "Repair supported issues", re-validated, clicked "Import dataset" → junk dataset imported locally, dialog closed, app navigated to Explorer with it loaded. All junk names render as inert literal text (no alert dialog ever fired); emoji/Arabic/O'Brien render correctly. [04-imported-junk-dataset.webp]
 25. Switched import to JSON tab, pasted `<script>alert(1)</script>这不是JSON شبكة` → REJECTED "MALFORMED_JSON … Unexpected token '<'".
 26. Pasted empty string into JSON paste box → REJECTED "EMPTY_FILE", but the message says "Both a node CSV file and a link CSV file are required" (wrong wording for the JSON tab).
 27. Clicked Cancel in the import dialog → dialog closed cleanly.

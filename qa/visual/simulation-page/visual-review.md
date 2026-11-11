@@ -1,7 +1,7 @@
 # Visual Review & Verification: Simulation Laboratory
 
 ## Phase 4: Simulation Laboratory (`#/simulation`)
-- **Reference Image**: `04_Simulation_Page.png`
+- **Reference Image**: `04_Simulation_Page.webp`
 - **Implementation Status**: Complete and Verified
 - **Verification Date**: 2026-10-30
 

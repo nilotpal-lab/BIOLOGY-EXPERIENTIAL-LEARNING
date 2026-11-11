@@ -18,19 +18,19 @@ Note: console/network capture not available in my browser tool — not tested.
 
 ## Friction points
 
-1. "Trophic Levels" (left panel) and "Apex / Intermediate / Basal" — quote: "what is trophic? I am not sure." UI said "Trophic Levels 5"; I understood it as some kind of feeding level only because the Overview page had a subtext "Species concentration across the energy hierarchy". Severity 2. 01-landing.png. http://localhost:4173/
-2. "Connectance (L / S(S-1)) 0.129" — quote: "a formula, but no words — is bigger better?" I understood "how connected", but L, S and the math were not explained in plain words. Severity 2. 01-landing.png.
-3. Two different dropdowns for what looks like the same thing: left panel "Current Network" and page "Loaded network" — quote: "which one is the real one?" I was afraid they would disagree; they stayed in sync, but nothing told me they are connected. Severity 2. 02-experiment-studio.png. http://localhost:4173/#/experiment
-4. Left panel label said "Terrestrial Forest" after I chose "Temperate grassland" — quote: "I chose grass, it says forest — did my choice fail?" I continued only because the species list clearly showed grassland species. Wrong label, wrong trust. Severity 2. 02-experiment-studio.png.
-5. "Deterministic Simulation Studio" / "No stochastic population assumptions" — quote: "deterministic? stochastic? these words I do not know." No plain explanation on the page. I ignored the sentence. Severity 2. 02-experiment-studio.png.
-6. "Systematic Sensitivity Scan" — quote: "sensitivity of what? scan how?" No explanation; I avoided this button completely. Severity 2. 02-experiment-studio.png.
-7. "Simulation Propagation Rule" — quote: "propagation is a technical word; and which option is already chosen?" Before clicking, neither option looked selected to me, so I did not know the default. The two option buttons themselves ("Immediate link loss only") were clear. Severity 2. 03-direct-removal-results.png.
-8. Dataset codes "FW-POND-A", "TER-GRASS-A", "RES-FW-A", "VALIDATION-CHAIN-4" and words "mesocosm", "Barro Colorado Island" in the dropdown — quote: "codes and science words with no expansion." I picked by the plain English part only. Severity 1. 02-experiment-studio.png.
-9. "Illustrative demo" small chip — meaning hidden (appears only as hover text). I saw the words but not what they promise. Severity 1. 02-experiment-studio.png.
-10. "Run Experiment" grey at first with no reason next to it (the explanation "Select a species..." sits in a different panel below). Severity 1. 03-direct-removal-results.png.
-11. "Documented taxa" on the Overview — "taxa" not explained. Severity 1. 01-landing.png.
+1. "Trophic Levels" (left panel) and "Apex / Intermediate / Basal" — quote: "what is trophic? I am not sure." UI said "Trophic Levels 5"; I understood it as some kind of feeding level only because the Overview page had a subtext "Species concentration across the energy hierarchy". Severity 2. 01-landing.webp. http://localhost:4173/
+2. "Connectance (L / S(S-1)) 0.129" — quote: "a formula, but no words — is bigger better?" I understood "how connected", but L, S and the math were not explained in plain words. Severity 2. 01-landing.webp.
+3. Two different dropdowns for what looks like the same thing: left panel "Current Network" and page "Loaded network" — quote: "which one is the real one?" I was afraid they would disagree; they stayed in sync, but nothing told me they are connected. Severity 2. 02-experiment-studio.webp. http://localhost:4173/#/experiment
+4. Left panel label said "Terrestrial Forest" after I chose "Temperate grassland" — quote: "I chose grass, it says forest — did my choice fail?" I continued only because the species list clearly showed grassland species. Wrong label, wrong trust. Severity 2. 02-experiment-studio.webp.
+5. "Deterministic Simulation Studio" / "No stochastic population assumptions" — quote: "deterministic? stochastic? these words I do not know." No plain explanation on the page. I ignored the sentence. Severity 2. 02-experiment-studio.webp.
+6. "Systematic Sensitivity Scan" — quote: "sensitivity of what? scan how?" No explanation; I avoided this button completely. Severity 2. 02-experiment-studio.webp.
+7. "Simulation Propagation Rule" — quote: "propagation is a technical word; and which option is already chosen?" Before clicking, neither option looked selected to me, so I did not know the default. The two option buttons themselves ("Immediate link loss only") were clear. Severity 2. 03-direct-removal-results.webp.
+8. Dataset codes "FW-POND-A", "TER-GRASS-A", "RES-FW-A", "VALIDATION-CHAIN-4" and words "mesocosm", "Barro Colorado Island" in the dropdown — quote: "codes and science words with no expansion." I picked by the plain English part only. Severity 1. 02-experiment-studio.webp.
+9. "Illustrative demo" small chip — meaning hidden (appears only as hover text). I saw the words but not what they promise. Severity 1. 02-experiment-studio.webp.
+10. "Run Experiment" grey at first with no reason next to it (the explanation "Select a species..." sits in a different panel below). Severity 1. 03-direct-removal-results.webp.
+11. "Documented taxa" on the Overview — "taxa" not explained. Severity 1. 01-landing.webp.
 12. "Link loss = 100 x (L0 - Ls) / L0" — math formula jargon; thankfully the plain question "how much of the recorded network disappears?" was next to it. Severity 1.
-13. Zoom/reset buttons on the network picture are icon-only (no visible text label). Severity 1. 03-direct-removal-results.png.
+13. Zoom/reset buttons on the network picture are icon-only (no visible text label). Severity 1. 03-direct-removal-results.webp.
 
 What the app DID explain well for me (worth keeping): the "How to read these results" and "What these outputs are — and are not" sections translate metrics into plain questions ("who lost a food source?", "how far did the rule travel?") and plainly warn that removal is not extinction. The result tiles also had small subtexts ("Lost ≥1 food source", "-6 links") that I could read slowly and understand.
 

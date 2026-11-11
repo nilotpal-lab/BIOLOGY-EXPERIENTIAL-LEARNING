@@ -62,7 +62,7 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
   const [expandedSpeciesId, setExpandedSpeciesId] = useState<string | null>(null)
   const [activeHelpMetric, setActiveHelpMetric] = useState<string | null>(null)
 
-  const userResetRef = useRef(false)
+  const [userReset, setUserReset] = useState(false)
   // Results panel anchor: on narrow viewports the results render below the fold,
   // so the run action scrolls them into view (desktop columns are side by side).
   const resultsRef = useRef<HTMLDivElement | null>(null)
@@ -99,7 +99,7 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
   )
 
   const activeResult = useMemo(() => {
-    if (userResetRef.current) return null
+    if (userReset) return null
     if (result) return result
     if (graph && selectedNode && dataset) {
       try {
@@ -109,13 +109,13 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
       }
     }
     return null
-  }, [result, graph, selectedNode, dataset, mode])
+  }, [result, graph, selectedNode, dataset, mode, userReset])
 
   // True while the results card shows the auto-computed example scenario
   // (before the user has run anything). Three QA users read this pre-loaded
   // result as "stale data from a previous session", so it is labelled.
   const [hasUserResult, setHasUserResult] = useState(false)
-  const isAutoPreview = !result && !hasUserResult && !userResetRef.current && activeResult !== null
+  const isAutoPreview = !result && !hasUserResult && !userReset && activeResult !== null
 
   // Educational Presets for beginner 1-click exploration
   const educationalPresets = useMemo(
@@ -131,7 +131,7 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
 
   // Apply educational preset
   const handleApplyPreset = (preset: EducationalPreset) => {
-    userResetRef.current = false
+    setUserReset(false)
     setHasUserResult(true)
     selectNode(preset.speciesId)
     setMode(preset.mode)
@@ -304,7 +304,7 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
           {/* Banner Ecosystem Art on Right softly fading to Warm Ivory */}
           <div className="lg:col-span-4 relative h-28 sm:h-32 lg:h-full min-h-[100px] w-full overflow-hidden">
             <img
-              src="/hero-ecosystem.jpg"
+              src="/hero-ecosystem.webp"
               alt="Freshwater ecosystem scenery"
               className="h-full w-full object-cover object-[70%_20%]"
             />
@@ -412,7 +412,7 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
               <button
                 type="button"
                 onClick={() => {
-                  userResetRef.current = false
+                  setUserReset(false)
                   setMode('direct')
                 }}
                 className={cn(
@@ -447,7 +447,7 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
               <button
                 type="button"
                 onClick={() => {
-                  userResetRef.current = false
+                  setUserReset(false)
                   setMode('cascade')
                 }}
                 className={cn(
@@ -492,7 +492,7 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
                 aria-label="Select species for simulation"
                 value={selectedNodeId ?? ''}
                 onChange={(e) => {
-                  userResetRef.current = false
+                  setUserReset(false)
                   selectNode(e.target.value)
                 }}
                 className="w-full text-xs font-semibold text-[#202B27] rounded-xl border border-[#E5E6DC] bg-white py-2 pl-3 pr-8 shadow-2xs cursor-pointer"
@@ -608,7 +608,7 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
                 block
                 icon={<Play size={15} className="fill-white" />}
                 onClick={() => {
-                  userResetRef.current = false
+                  setUserReset(false)
                   setHasUserResult(true)
                   runSelectedScenario()
                   scrollToResultsOnMobile()
@@ -627,7 +627,7 @@ export function SimulationPage({ onNavigate: _onNavigate }: SimulationPageProps 
                   block
                   icon={<RotateCcw size={13} />}
                   onClick={() => {
-                    userResetRef.current = true
+                    setUserReset(true)
                     setHasUserResult(false)
                     resetScenario()
                   }}

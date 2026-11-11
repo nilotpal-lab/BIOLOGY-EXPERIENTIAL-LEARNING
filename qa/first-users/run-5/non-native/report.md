@@ -9,7 +9,7 @@
 
 ## Walkthrough narrative
 
-### 1. Landing page (NN-01-landing.png, NN-02-home-middle.png)
+### 1. Landing page (NN-01-landing.webp, NN-02-home-middle.webp)
 
 **Expected:** a science website about food webs. **Happened:** yes.
 
@@ -18,7 +18,7 @@
 - "Cascade Timeline — Explore ecosystem collapse round by round": "cascade" is not a word I knew. I guessed "waterfall", then later understood it means "chain reaction". The page never explains the word on first use.
 - Feature cards have only small arrow icons (→) in the corner — I guessed the whole card is clickable. It worked but was not labeled.
 
-### 2. Wrong turn — I landed on "Methodology & Validation" (NN-03-methodology.png)
+### 2. Wrong turn — I landed on "Methodology & Validation" (NN-03-methodology.webp)
 
 **Expected:** clicking the green "Open Explorer" button goes to the explorer. **Happened:** my click (a coordinate fallback after the page scrolled under me) landed on the "Methodology & Validation" page instead. This was my navigation miss, but I stayed and read, because this page has wording problems for a non-native reader:
 
@@ -26,7 +26,7 @@
 - "70 passed · 0 failed · 70 total" — checks of what? I guessed the website testing its own math. The "·" separator is used a lot in this app.
 - The dataset list shows codes: "FW-POND-A", "RES-FW-A · Shallow-lake mesocosm (Pond1, heated + insecticide)". The code "FW-POND-A" alone would mean nothing to me; luckily a human-readable name sits next to it.
 
-### 3. Explore (NN-04-explore.png)
+### 3. Explore (NN-04-explore.webp)
 
 I clicked "Explore" in the left WORKSPACE sidebar (the label is literal and easy). The temperate pond food web was already loaded with "FW-POND-A · Temperate pond" in the top-right selector — good, I did not need to "load" anything myself.
 
@@ -37,11 +37,11 @@ I clicked "Explore" in the left WORKSPACE sidebar (the label is literal and easy
 - "**Basal organism** (no incoming food sources recorded in dataset)" — jargon "basal", but the parenthesis explains it. Good.
 - Search box placeholder "Search species (**e.g.** Carp, **Macrobrachium**, Heron ...)" — "e.g." is an abbreviation I had to learn in school; and "Macrobrachium" is a Latin name with no common name next to it.
 
-### 4. Selecting a species (NN-05-perch-selected.png)
+### 4. Selecting a species (NN-05-perch-selected.webp)
 
 I clicked the "Perch" fish node in the web. The node highlighted, teal links lit up, a floating card said "Perch — Apex predator — Recorded food sources: 4 — Status: present", and the right panel changed to Perch (Trophic Level 4.2, Degree 5 (4 in · 1 out)). Clear and satisfying. "Status: present" I understood as "still alive".
 
-### 5. Simulation Laboratory (NN-06-simulation-page.png, NN-07-cascade-mode.png)
+### 5. Simulation Laboratory (NN-06-simulation-page.webp, NN-07-cascade-mode.webp)
 
 I clicked "Simulation" in the sidebar. The page is numbered "1. SELECT SIMULATION MODE / 2. SELECT A SPECIES / 3. SIMULATION SETTINGS" — excellent for me; literal steps in order.
 
@@ -53,7 +53,7 @@ I clicked "Simulation" in the sidebar. The page is numbered "1. SELECT SIMULATIO
 
 I pressed the green "**Run Simulation →**" button.
 
-### 6. Results — FIRST SUCCESS (NN-08-simulation-results.png)
+### 6. Results — FIRST SUCCESS (NN-08-simulation-results.webp)
 
 **Expected:** metrics appear after pressing Run. **Happened:** yes.
 

@@ -1,7 +1,7 @@
 # Visual Review & Verification: Ecosystem Comparison
 
 ## Phase 7: Ecosystem Comparison (`#/compare`)
-- **Reference Image**: `07_Ecosystem_Comparison_Page.png`
+- **Reference Image**: `07_Ecosystem_Comparison_Page.webp`
 - **Implementation Status**: Complete and Verified
 - **Verification Date**: 2026-10-31
 

@@ -235,7 +235,7 @@ export function DatasetBrowser({
                   {/* Card Artwork Banner with Floating Habitat Tag */}
                   <div className="h-36 relative overflow-hidden bg-[#F0F2E9]">
                     <img
-                      src="/hero-ecosystem.jpg"
+                      src="/hero-ecosystem.webp"
                       alt={d.name}
                       className="w-full h-full object-cover object-[70%_25%]"
                     />
@@ -363,7 +363,7 @@ export function DatasetBrowser({
             {/* Panoramic Landscape Header Image */}
             <div className="h-32 w-full rounded-xl overflow-hidden border border-[#E5E6DC]">
               <img
-                src="/hero-ecosystem.jpg"
+                src="/hero-ecosystem.webp"
                 alt={inspectedDataset.name}
                 className="w-full h-full object-cover object-[70%_30%]"
               />

@@ -237,7 +237,7 @@ export function ScenarioAnalysis({ onNavigate }: ScenarioAnalysisProps) {
           <div className="lg:col-span-4 h-36 lg:h-full relative overflow-hidden flex items-center justify-end">
             <div className="absolute inset-0 bg-gradient-to-r from-[#FCFBF7] via-[#FCFBF7]/50 to-transparent z-1 lg:w-32" />
             <img
-              src="/hero-freshwater-artwork.png"
+              src="/hero-freshwater-artwork.webp"
               alt="Freshwater ecosystem"
               className="w-full h-full object-cover object-[80%_25%] max-h-44"
             />
@@ -292,7 +292,7 @@ export function ScenarioAnalysis({ onNavigate }: ScenarioAnalysisProps) {
           <div className="flex items-center gap-2 rounded-xl border border-[#E5E6DC] bg-white p-2">
             <div className="h-10 w-14 rounded-lg overflow-hidden border border-[#E5E6DC] shrink-0 bg-[#F7F6EF]">
               <img
-                src="/hero-ecosystem.jpg"
+                src="/hero-ecosystem.webp"
                 alt="Ecosystem preview"
                 className="w-full h-full object-cover object-[70%_25%]"
               />

@@ -1,14 +1,14 @@
 # QA First-User Walkthrough — persona "breaker"
 App: https://foodwebguard.vercel.app/ (no login; all state in the browser)
-Date: 2026-11-03. Viewport 1366x850. Screenshots: `NN-slug.png` in this folder.
+Date: 2026-11-03. Viewport 1366x850. Screenshots: `NN-slug.webp` in this folder.
 
 ## 1. Walkthrough narrative (what I did, what I expected, what happened)
 
-**Environment prep.** Cleared localStorage, reloaded. Landing page (01-landing.png) loaded clean with "No scenario has been saved in this browser yet."
+**Environment prep.** Cleared localStorage, reloaded. Landing page (01-landing.webp) loaded clean with "No scenario has been saved in this browser yet."
 
-**Attempt 1 — the obvious CTA.** I scrolled to the bottom status widget and double-clicked **"Open the first demo network"** (02-landing-bottom-status.png, 03-status-widget.png). Expected: the demo pond network loads. Happened: the click never registered (actionability timeout) even though the DOM said the button was visible; the widget never appeared in my viewport no matter how I scrolled. I tried twice (double-click + single click), then gave up and used the top-nav **Datasets** instead. Friction F1.
+**Attempt 1 — the obvious CTA.** I scrolled to the bottom status widget and double-clicked **"Open the first demo network"** (02-landing-bottom-status.webp, 03-status-widget.webp). Expected: the demo pond network loads. Happened: the click never registered (actionability timeout) even though the DOM said the button was visible; the widget never appeared in my viewport no matter how I scrolled. I tried twice (double-click + single click), then gave up and used the top-nav **Datasets** instead. Friction F1.
 
-**Datasets → Research Library** (05-datasets-page.png). Before loading anything I junked the **global species search** box with `'; DROP TABLE users; -- 🐟🐟<script>alert(1)</script>` (06-search-junk.png). Expected: crash or a weird dropdown. Happened: accepted silently, rendered as plain text, no dropdown, no crash. Good.
+**Datasets → Research Library** (05-datasets-page.webp). Before loading anything I junked the **global species search** box with `'; DROP TABLE users; -- 🐟🐟<script>alert(1)</script>` (06-search-junk.webp). Expected: crash or a weird dropdown. Happened: accepted silently, rendered as plain text, no dropdown, no crash. Good.
 
 **Loaded a real research dataset.** Clicked View Dataset → "Explore RES-FW-A in Workspace" (07, 08). RES-FW-A (11 species / 18 links) loaded into the workspace header. Cosmetic: the Explore graph renders with a large blank band above it (08).
 
@@ -16,9 +16,9 @@ Date: 2026-11-03. Viewport 1366x850. Screenshots: `NN-slug.png` in this folder.
 
 **Junk at the selector, then run.** The species picker is a dropdown, so no free-text junk possible there; I switched it to *Phytoplankton* and **double-clicked Run Simulation** (09, 10). Expected: double-submit, duplicated run, or freeze. Happened: single clean run — SPECIES REMOVED 1, LINKS LOST 3/18 (16.7%), SECONDARY 0, TOTAL 1/11, Affected species: Rotifer/Cladocera "Food depleted", Bellamya "Lost food source". **FIRST SUCCESS: dataset loaded, species selected, removal run, metrics visible.** A stray empty white rectangle overlapped the graph in 09 (cosmetic).
 
-**Refresh mid-session.** Reloaded (11-after-refresh.png). Expected: everything gone (state is "in the browser"). Happened: dataset choice RES-FW-A **survived**, but my Phytoplankton scenario **reverted to the default "Carp Removed"** and the search-box junk was wiped. Friction F4.
+**Refresh mid-session.** Reloaded (11-after-refresh.webp). Expected: everything gone (state is "in the browser"). Happened: dataset choice RES-FW-A **survived**, but my Phytoplankton scenario **reverted to the default "Carp Removed"** and the search-box junk was wiped. Friction F4.
 
-**Dataset Import abuse.** Sidebar → Dataset Import opens the "Data Intake Studio" modal (12-dataset-import.png). I filled every metadata field with junk (13):
+**Dataset Import abuse.** Sidebar → Dataset Import opens the "Data Intake Studio" modal (12-dataset-import.webp). I filled every metadata field with junk (13):
 - Dataset Name: `O'Brien 🐟🐉 صيد السمك <script>alert(1)</script>`
 - Source Citation: `<script>alert('citation')</script> ; DROP TABLE users; --`
 - Origin/Repository: 5,000 chars of `JUNK...`
@@ -28,15 +28,15 @@ All accepted as plain text, nothing executed.
 
 **Validate with NO data file** (14). Expected: silent success or crash. Happened: proper block — "Import blocked / 1 errors / 1 warnings", `EMPTY_FILE: Both a node CSV file and a link CSV file are required.` and `METADATA_URL_UNUSUAL` flagging my fake URL; **Import dataset button correctly disabled**.
 
-**Hostile CSV paste** (15, 16, 17). Node CSV rows named `O'Brien <b>bold</b>`, `🐟 crab سلطعون`, `'; DROP TABLE users; --`; link CSV `p1→c1, p2→c1`. Validate → **"Ready to import"** with soft warnings only (`ROLE_NORMALISED`: "predator" stored as "other"; `ICON_KEY_MISSING`; `METADATA_URL_UNUSUAL`). Preview table renders every hostile name **as escaped text** — `<b>bold</b>` shows literally, no bolding, no script execution. **Double-clicked Import dataset** → imported exactly once (18-after-import.png): banner "…imported with 3 node(s) and 2 link(s)… now the active network". No duplicate import. My junk dataset is now in the library / active network — noted, left in place (my junk, per rules).
+**Hostile CSV paste** (15, 16, 17). Node CSV rows named `O'Brien <b>bold</b>`, `🐟 crab سلطعون`, `'; DROP TABLE users; --`; link CSV `p1→c1, p2→c1`. Validate → **"Ready to import"** with soft warnings only (`ROLE_NORMALISED`: "predator" stored as "other"; `ICON_KEY_MISSING`; `METADATA_URL_UNUSUAL`). Preview table renders every hostile name **as escaped text** — `<b>bold</b>` shows literally, no bolding, no script execution. **Double-clicked Import dataset** → imported exactly once (18-after-import.webp): banner "…imported with 3 node(s) and 2 link(s)… now the active network". No duplicate import. My junk dataset is now in the library / active network — noted, left in place (my junk, per rules).
 
 **Refresh again** (19): junk dataset **survived** refresh and stayed the active network. Import persistence is solid.
 
-**Two tabs.** Opened a second tab on the same app (20-tab2-landing.png; its status widget said "No scenario has been saved"). Clicked Open Explorer → **my junk dataset appears in tab 2's network dropdown AND is selected as the active network** (21-tab2-junk-network.png). The graph renders node labels `'; DROP TABLE users; --`, `O'Brien <b>bold</b>`, `…سلطعون` — all plain text, inspector heading escaped too. State is fully shared across tabs (localStorage).
+**Two tabs.** Opened a second tab on the same app (20-tab2-landing.webp; its status widget said "No scenario has been saved"). Clicked Open Explorer → **my junk dataset appears in tab 2's network dropdown AND is selected as the active network** (21-tab2-junk-network.webp). The graph renders node labels `'; DROP TABLE users; --`, `O'Brien <b>bold</b>`, `…سلطعون` — all plain text, inspector heading escaped too. State is fully shared across tabs (localStorage).
 
 **Malformed JSON** (23, 24). Reopened the import dialog (my earlier junk metadata was **gone** — dialog state not preserved, F5), switched to JSON mode, pasted `{not json ;; ; DROP TABLE users; -- 🐟 <script>alert(1)</script>` → clean block: `MALFORMED_JSON: The file is not valid JSON. Expected property name or '}' in JSON at position 1 (line 1 column 2)`. No crash, no stack trace.
 
-**Methodology filter.** Junked "Filter test checks…" with emoji + SQLi + script tag (25-filter-junk.png). Renders as text, the check list filters to empty without crashing.
+**Methodology filter.** Junked "Filter test checks…" with emoji + SQLi + script tag (25-filter-junk.webp). Renders as text, the check list filters to empty without crashing.
 
 ## 2. Friction log
 

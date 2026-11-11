@@ -1,7 +1,7 @@
 # Visual Review & Verification: Experiment Studio
 
 ## Phase 6: Experiment Studio (`#/experiment`)
-- **Reference Image**: `06_Experiment_Studio_Page.png`
+- **Reference Image**: `06_Experiment_Studio_Page.webp`
 - **Implementation Status**: Complete and Verified
 - **Verification Date**: 2026-10-31
 

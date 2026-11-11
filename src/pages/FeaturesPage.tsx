@@ -58,7 +58,7 @@ export function FeaturesPage({ onNavigate, onOpenImport: _onOpenImport }: Featur
             {/* Right Hero Banner Artwork with Smooth Fade */}
             <div className="lg:col-span-5 xl:col-span-5 relative h-36 sm:h-44 lg:h-48 w-full rounded-2xl overflow-hidden shadow-2xs">
               <img
-                src="/hero-freshwater-artwork.png"
+                src="/hero-freshwater-artwork.webp"
                 alt="Freshwater ecosystem with heron, carp fish, pond snails and water lilies"
                 className="h-full w-full object-cover object-center"
               />
@@ -499,7 +499,7 @@ export function FeaturesPage({ onNavigate, onOpenImport: _onOpenImport }: Featur
               {/* Freshwater */}
               <div className="space-y-2 p-2 rounded-lg bg-white border border-[#E5E6DC] shadow-2xs">
                 <div className="h-12 w-full rounded overflow-hidden">
-                  <img src="/hero-freshwater-artwork.png" alt="Freshwater" className="h-full w-full object-cover" />
+                  <img src="/hero-freshwater-artwork.webp" alt="Freshwater" className="h-full w-full object-cover" />
                 </div>
                 <p className="text-[10.5px] font-bold text-[#202B27]">Freshwater</p>
                 <div className="flex justify-center items-center gap-1 text-[9.5px] text-[#35563B] font-medium">

@@ -104,7 +104,7 @@ export function CompareResults({ onNavigate }: CompareResultsProps = {}) {
     return activeCompareIds
       .map((id) => comparableDatasets.find((d) => d.id === id))
       .filter((d): d is NonNullable<typeof d> => Boolean(d))
-  }, [activeCompareIds, datasets])
+  }, [activeCompareIds, comparableDatasets])
 
   // Built graphs for the selected datasets
   const graphsById = useMemo(() => {
@@ -251,7 +251,7 @@ export function CompareResults({ onNavigate }: CompareResultsProps = {}) {
           <div className="lg:col-span-4 h-36 lg:h-full relative overflow-hidden flex items-center justify-end">
             <div className="absolute inset-0 bg-gradient-to-r from-[#FCFBF7] via-[#FCFBF7]/50 to-transparent z-1 lg:w-32 pointer-events-none" />
             <img
-              src="/hero-freshwater-artwork.png"
+              src="/hero-freshwater-artwork.webp"
               alt="Freshwater ecosystem botanical illustration"
               className="h-full w-full object-cover object-[80%_25%] max-h-44"
             />
@@ -340,7 +340,7 @@ export function CompareResults({ onNavigate }: CompareResultsProps = {}) {
                 {/* Ecosystem Photo Thumbnail */}
                 <div className="h-10 w-12 rounded-lg overflow-hidden border border-[#E5E6DC] shrink-0 bg-[#F7F6EF]">
                   <img
-                    src="/hero-ecosystem.jpg"
+                    src="/hero-ecosystem.webp"
                     alt={d.name}
                     className="w-full h-full object-cover object-[70%_25%]"
                   />
