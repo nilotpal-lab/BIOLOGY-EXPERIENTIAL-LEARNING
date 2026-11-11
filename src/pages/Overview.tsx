@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   ArrowRight,
   BarChart3,
@@ -7,6 +8,7 @@ import {
   FlaskConical,
   GitCompareArrows,
   Globe2,
+  HelpCircle,
   Leaf,
   Network,
   PawPrint,
@@ -17,6 +19,7 @@ import { RESEARCH_SLOT_SUMMARY } from '../data/datasetRegistry'
 import { useAppState } from '../state/AppState'
 import type { RouteId } from '../components/layout/routes'
 import { formatPercent } from '../core/metrics'
+import { FeatureGuideModal } from '../components/layout/FeatureGuideModal'
 
 interface OverviewProps {
   onNavigate: (route: RouteId) => void
@@ -24,6 +27,7 @@ interface OverviewProps {
 }
 
 export function Overview({ onNavigate, onOpenImport: _onOpenImport }: OverviewProps) {
+  const [showGuideModal, setShowGuideModal] = useState(false)
   const {
     datasets,
     demoDatasets,
@@ -155,7 +159,7 @@ export function Overview({ onNavigate, onOpenImport: _onOpenImport }: OverviewPr
                 FoodWebGuard is an interactive platform to explore real ecological networks, simulate species removal, and analyse how ecosystems respond to change.
               </p>
 
-              {/* CTA Buttons: Open Explorer + Why Food Webs Matter side-by-side */}
+              {/* CTA Buttons: Open Explorer + Why Food Webs Matter + Help & Feature Guide */}
               <div className="flex flex-wrap items-center gap-3 pt-1">
                 <button
                   type="button"
@@ -165,6 +169,16 @@ export function Overview({ onNavigate, onOpenImport: _onOpenImport }: OverviewPr
                   <Network size={16} />
                   <span>Open Explorer</span>
                   <ArrowRight size={14} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowGuideModal(true)}
+                  className="inline-flex items-center gap-2 rounded-[10px] border border-[#899B78]/70 bg-[#E8EDE0] hover:bg-[#DDE5D3] text-[#263D2D] px-4 py-2.5 min-h-[44px] text-xs sm:text-[13.5px] font-semibold shadow-2xs transition-colors cursor-pointer"
+                  aria-haspopup="dialog"
+                >
+                  <HelpCircle size={15} className="text-[#35563B]" />
+                  <span>Help & Feature Guide</span>
                 </button>
 
                 <button
@@ -180,7 +194,15 @@ export function Overview({ onNavigate, onOpenImport: _onOpenImport }: OverviewPr
 
               {/* Beginner tip — restored after the landing redesign dropped it (finding F11) */}
               <p className="text-xs text-[#68716B] pt-0.5">
-                New here? Start with the green <strong className="font-semibold text-[#35563B]">Open Explorer</strong> button — then try the Simulation Lab.
+                New here? Start with the green <strong className="font-semibold text-[#35563B]">Open Explorer</strong> button, or click{' '}
+                <button
+                  type="button"
+                  onClick={() => setShowGuideModal(true)}
+                  className="font-semibold text-[#35563B] underline hover:text-[#263D2D] cursor-pointer"
+                >
+                  Help & Feature Guide
+                </button>{' '}
+                to see which window helps doing what.
               </p>
 
               {/* Statistics Row: 6 Real Ecosystems · 200+ Species · 500+ Feeding Links · 9 Analysis Tools */}
@@ -247,7 +269,32 @@ export function Overview({ onNavigate, onOpenImport: _onOpenImport }: OverviewPr
         {/* =====================================================================
             FEATURE CARDS GRID (All 9 Capabilities in 3-column layout)
             ===================================================================== */}
-        <div className="space-y-3 pt-2">
+        <div className="space-y-4 pt-2">
+          {/* Interactive Tutorial & Feature Guide Banner */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3.5 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 sm:p-5 shadow-2xs">
+            <div className="flex items-center gap-3.5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#E8EDE0] text-[#35563B]">
+                <HelpCircle size={20} />
+              </div>
+              <div className="space-y-0.5">
+                <h2 className="text-sm sm:text-base font-serif font-medium text-[#202B27]">
+                  Which window helps doing what?
+                </h2>
+                <p className="text-xs text-[#68716B]">
+                  Open our interactive tutorial to match your research goal to the right tool or follow the recommended 5-step ecological workflow.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowGuideModal(true)}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#35563B] hover:bg-[#263D2D] text-white px-4 py-2.5 min-h-[40px] text-xs font-semibold shadow-xs transition-colors shrink-0 self-start sm:self-auto cursor-pointer"
+            >
+              <HelpCircle size={14} />
+              <span>Open Feature Guide & Tutorial</span>
+            </button>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
             {featureCards.map((card) => (
               <div
@@ -405,6 +452,17 @@ export function Overview({ onNavigate, onOpenImport: _onOpenImport }: OverviewPr
           </p>
         </div>
       </div>
+
+      {/* =====================================================================
+          FEATURE GUIDE & TUTORIAL MODAL
+          Guides users through all 9 windows and helps them choose based on objective
+          ===================================================================== */}
+      <FeatureGuideModal
+        isOpen={showGuideModal}
+        onClose={() => setShowGuideModal(false)}
+        onNavigate={onNavigate}
+        onOpenImport={_onOpenImport}
+      />
     </div>
   )
 }

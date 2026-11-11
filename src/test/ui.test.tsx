@@ -49,6 +49,47 @@ describe('Overview', () => {
     expect(screen.getByRole('button', { name: /Open the first demo network/ })).toBeTruthy()
     expect(screen.getAllByText(/Structural disruption, not extinction/).length).toBeGreaterThan(0)
   })
+
+  it('opens and interacts with the Help & Feature Guide tutorial modal', async () => {
+    await renderApp('overview')
+
+    // Find Help & Feature Guide buttons on landing page
+    const guideButtons = screen.getAllByRole('button', { name: /Help & Feature Guide|Open Feature Guide & Tutorial/ })
+    expect(guideButtons.length).toBeGreaterThan(0)
+
+    // Open guide modal
+    await user().click(guideButtons[0])
+
+    const dialog = screen.getByRole('dialog')
+    expect(dialog).toBeTruthy()
+    expect(screen.getByText('FoodWebGuard Navigation & Feature Guide')).toBeTruthy()
+
+    // Tab 1: Goal Finder is active by default
+    expect(screen.getByText(/Goal Finder \("I want to\.\.\."\)/)).toBeTruthy()
+    expect(screen.getByText('Visualize species feeding links and trophic levels')).toBeTruthy()
+
+    // Switch to Tab 2: Step-by-Step Research Tutorial
+    const tutorialTab = screen.getByRole('button', { name: /Step-by-Step Research Tutorial/ })
+    await user().click(tutorialTab)
+    expect(screen.getByText('Recommended Research Workflow:')).toBeTruthy()
+    expect(screen.getByText('Step 1')).toBeTruthy()
+    expect(screen.getByText('Select an Ecosystem')).toBeTruthy()
+    expect(screen.getByText('Step 5')).toBeTruthy()
+    expect(screen.getByText('Rank Keystones & Test Network Robustness')).toBeTruthy()
+
+    // Switch to Tab 3: Complete Window Directory
+    const directoryTab = screen.getByRole('button', { name: /Complete Window Directory/ })
+    await user().click(directoryTab)
+    expect(screen.getByText('Full Feature Reference:')).toBeTruthy()
+    expect(screen.getAllByText('Interactive Explorer').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Simulation Laboratory').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Experiment Studio').length).toBeGreaterThan(0)
+
+    // Close modal
+    const closeBtn = screen.getByRole('button', { name: 'Close guide modal' })
+    await user().click(closeBtn)
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
 })
 
 describe('Explore workspace', () => {
@@ -289,8 +330,8 @@ describe('Scenario analysis', () => {
     const robustnessTab = screen.getByRole('button', { name: /Network Robustness Lab/ })
     await user().click(robustnessTab)
 
-    expect(await screen.findByText(/Extinction Curves & Biodiversity Collapse/)).toBeTruthy()
-    expect(screen.getByText(/Dunne Connectance/)).toBeTruthy()
+    expect(await screen.findByText(/Dunne Connectance/)).toBeTruthy()
+    expect(screen.getByText(/Extinction Curves & Biodiversity Collapse/)).toBeTruthy()
     expect(screen.getByText(/Step-by-Step Removal Replay/)).toBeTruthy()
     expect(screen.getAllByText(/Strategy A/).length).toBeGreaterThan(0)
     expect(screen.getAllByText(/Strategy D/).length).toBeGreaterThan(0)
