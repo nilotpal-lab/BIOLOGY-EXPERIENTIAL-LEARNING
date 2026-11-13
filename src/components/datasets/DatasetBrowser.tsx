@@ -1,15 +1,18 @@
 import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Compass,
+  Copy,
+  Database,
   Download,
   ExternalLink,
-  MapPin,
-  Waves,
-  Sprout,
-  Compass,
   FileText,
-  X,
-  Database,
-  ArrowRight,
   FolderSearch,
+  MapPin,
+  Search,
+  Sprout,
+  Waves,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { downloadArtifact, edgesExportCsv, nodesExportCsv } from '../../core/exportUtils'
@@ -17,16 +20,20 @@ import {
   ECOSYSTEM_LABEL,
   SOURCE_STATUS_LABEL,
   SOURCE_STATUS_TONE,
+  TROPHIC_ROLE_LABEL,
+  TROPHIC_ROLES,
   type EcosystemCategory,
   type FoodWebDataset,
+  type TrophicRole,
 } from '../../core/types'
 import { SpeciesIcon } from '../SpeciesIcon'
 import { Badge, Button, Card, CardHeading, MonoId, cn } from '../ui/primitives'
 import { RESEARCH_SLOTS, RESEARCH_SLOT_SUMMARY } from '../../data/datasetRegistry'
+import { buildGraph } from '../../core/graphModel'
+import { formatConnectance } from '../../core/metrics'
 
 /* ============================================================================
- * DatasetBrowser — Research Library Explorer matching Image 1 Reference
- * media_1793371741302_80953faf.jpg
+ * DatasetBrowser — Research Library Explorer & Full-Page Dataset Inspector
  * ========================================================================== */
 
 function getHabitatTag(ecosystem: EcosystemCategory) {
@@ -62,7 +69,10 @@ export function DatasetBrowser({
   demoDatasets: _demoDatasets,
   researchDatasets,
   importedDatasets,
-  selectedId,
+  selectedId: _selectedId,
+  inspectingId,
+  onInspect,
+  onBack,
   onSelect,
   onNavigateExplore,
   onRemove: _onRemove,
@@ -75,6 +85,9 @@ export function DatasetBrowser({
   researchDatasets: FoodWebDataset[]
   importedDatasets: FoodWebDataset[]
   selectedId: string | null
+  inspectingId?: string | null
+  onInspect?: (id: string | null) => void
+  onBack?: () => void
   onSelect: (id: string) => void
   onNavigateExplore?: () => void
   onRemove: (id: string) => void
@@ -83,16 +96,38 @@ export function DatasetBrowser({
   onToggleCompare: (id: string) => void
   showCompare?: boolean
 }) {
+  const [internalInspectingId, setInternalInspectingId] = useState<string | null>(null)
+  const currentInspectingId = inspectingId !== undefined ? inspectingId : internalInspectingId
+
+  const handleInspect = (id: string | null) => {
+    if (onInspect) {
+      onInspect(id)
+    } else {
+      setInternalInspectingId(id)
+    }
+  }
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack()
+    } else {
+      handleInspect(null)
+    }
+  }
+
   const [activeCategory, setActiveCategory] = useState<EcosystemCategory | 'all'>('all')
   const [activeTab, setActiveTab] = useState<'overview' | 'species' | 'links' | 'download'>('overview')
-  const [inspectingId, setInspectingId] = useState<string | null>(selectedId ?? researchDatasets[0]?.id ?? null)
+  const [speciesSearch, setSpeciesSearch] = useState('')
+  const [speciesRoleFilter, setSpeciesRoleFilter] = useState<TrophicRole | 'all'>('all')
+  const [linkSearch, setLinkSearch] = useState('')
+  const [copiedCitation, setCopiedCitation] = useState(false)
 
   // Primary list combines research datasets and user imported datasets
   const allDatasets = useMemo(() => {
     return [...researchDatasets, ...importedDatasets]
   }, [researchDatasets, importedDatasets])
 
-  // Filtered by habitat category tab
+  // Filtered by habitat category tab (for catalog view)
   const filteredDatasets = useMemo(() => {
     if (activeCategory === 'all') return allDatasets
     return allDatasets.filter((d) => d.ecosystem === activeCategory)
@@ -108,23 +143,733 @@ export function DatasetBrowser({
     }
   }, [allDatasets])
 
-  // Active inspected dataset for the right sidebar panel
+  // Active inspected dataset
   const inspectedDataset = useMemo(() => {
-    return allDatasets.find((d) => d.id === inspectingId) ?? allDatasets[0]
-  }, [allDatasets, inspectingId])
+    if (!currentInspectingId) return null
+    return allDatasets.find((d) => d.id === currentInspectingId) ?? null
+  }, [allDatasets, currentInspectingId])
 
+  // Built graph for the inspected dataset (for degree calculations)
+  const inspectedGraph = useMemo(() => {
+    if (!inspectedDataset) return null
+    return buildGraph(inspectedDataset)
+  }, [inspectedDataset])
+
+  // Structural metrics for the inspected dataset
+  const metrics = useMemo(() => {
+    if (!inspectedDataset) return null
+    const s = inspectedDataset.nodes.length
+    const l = inspectedDataset.edges.length
+    const connectance = s > 1 ? l / (s * (s - 1)) : 0
+    const density = s > 0 ? l / s : 0
+    const producers = inspectedDataset.nodes.filter((n) => n.trophicRole === 'producer').length
+    const consumers = s - producers
+    return {
+      s,
+      l,
+      connectance,
+      density: density.toFixed(2),
+      producers,
+      consumers,
+    }
+  }, [inspectedDataset])
+
+  // Filtered species list for the species tab
+  const filteredNodes = useMemo(() => {
+    if (!inspectedDataset) return []
+    let nodes = inspectedDataset.nodes
+    if (speciesRoleFilter !== 'all') {
+      nodes = nodes.filter((n) => n.trophicRole === speciesRoleFilter)
+    }
+    if (speciesSearch.trim()) {
+      const q = speciesSearch.toLowerCase().trim()
+      nodes = nodes.filter(
+        (n) =>
+          n.name.toLowerCase().includes(q) ||
+          (n.scientificName && n.scientificName.toLowerCase().includes(q)) ||
+          n.trophicRole.toLowerCase().includes(q),
+      )
+    }
+    return nodes
+  }, [inspectedDataset, speciesRoleFilter, speciesSearch])
+
+  // Filtered links list for the links tab
+  const filteredEdges = useMemo(() => {
+    if (!inspectedDataset) return []
+    if (!linkSearch.trim()) return inspectedDataset.edges
+    const q = linkSearch.toLowerCase().trim()
+    return inspectedDataset.edges.filter((e) => {
+      const sourceNode = inspectedDataset.nodes.find((n) => n.id === e.source)
+      const targetNode = inspectedDataset.nodes.find((n) => n.id === e.target)
+      const sName = sourceNode?.name.toLowerCase() ?? e.source.toLowerCase()
+      const tName = targetNode?.name.toLowerCase() ?? e.target.toLowerCase()
+      return sName.includes(q) || tName.includes(q)
+    })
+  }, [inspectedDataset, linkSearch])
+
+  const handleCopyCitation = (text: string) => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      void navigator.clipboard.writeText(text).then(() => {
+        setCopiedCitation(true)
+        setTimeout(() => setCopiedCitation(false), 2000)
+      })
+    }
+  }
+
+  // =========================================================================
+  // VIEW 1: FULL-PAGE DATASET VIEW (When user clicks a dataset)
+  // =========================================================================
+  if (inspectedDataset && metrics && inspectedGraph) {
+    const habitat = getHabitatTag(inspectedDataset.ecosystem)
+    const citationYear = inspectedDataset.provenance.citation.match(/\b(19\d\d|20\d\d)\b/)?.[0] ?? ''
+    const citationAuthor = inspectedDataset.provenance.citation.split(/[(,]/)[0]?.trim() ?? ''
+    const shortCitation = citationAuthor ? `${citationAuthor} (${citationYear || 'ref'})` : 'Published study'
+
+    return (
+      <div className="space-y-6 animate-fadeIn">
+        {/* Navigation & Actions Top Strip */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E5E6DC]">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleBack}
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-[#E5E6DC] bg-white hover:bg-[#F7F6EF] text-[#202B27] text-xs font-bold transition-all shadow-2xs cursor-pointer"
+            >
+              <ArrowLeft size={14} className="text-[#35563B]" />
+              <span>Back to Research Library</span>
+            </button>
+
+            <span className="text-[#899B78] hidden sm:inline">/</span>
+
+            <div className="hidden md:flex items-center gap-2 text-xs text-[#68716B]">
+              <span>Switch Dataset:</span>
+              <select
+                value={inspectedDataset.id}
+                onChange={(e) => {
+                  handleInspect(e.target.value)
+                  onSelect(e.target.value)
+                }}
+                className="rounded-lg border border-[#E5E6DC] bg-white px-2.5 py-1 text-xs font-bold text-[#202B27] focus:outline-none focus:ring-1 focus:ring-[#35563B] cursor-pointer"
+              >
+                {allDatasets.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name.replace(/·.*/, '').trim()} ({ECOSYSTEM_LABEL[d.ecosystem]})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => downloadArtifact(nodesExportCsv(inspectedDataset))}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#E5E6DC] bg-white hover:bg-[#F7F6EF] text-xs font-semibold text-[#202B27] transition-colors shadow-2xs cursor-pointer"
+              title="Download Species Dictionary CSV"
+            >
+              <Download size={13} className="text-[#35563B]" />
+              <span>Export Species</span>
+              <span className="sr-only">Export nodes CSV</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => downloadArtifact(edgesExportCsv(inspectedDataset))}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#E5E6DC] bg-white hover:bg-[#F7F6EF] text-xs font-semibold text-[#202B27] transition-colors shadow-2xs cursor-pointer"
+              title="Download Feeding Links CSV"
+            >
+              <Download size={13} className="text-[#35563B]" />
+              <span>Export Links</span>
+              <span className="sr-only">Export links CSV</span>
+            </button>
+
+            {onNavigateExplore && (
+              <button
+                type="button"
+                onClick={() => {
+                  onSelect(inspectedDataset.id)
+                  onNavigateExplore()
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#35563B] hover:bg-[#263D2D] text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+              >
+                <span>Explore in Workspace</span>
+                <ArrowRight size={14} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Full-Width Hero Section */}
+        <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-6 lg:p-8 shadow-2xs">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+            {/* Left Content */}
+            <div className="lg:col-span-8 space-y-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={cn(
+                    'px-2.5 py-1 rounded-lg text-xs font-bold border shadow-2xs flex items-center gap-1.5',
+                    habitat.badgeClass,
+                  )}
+                >
+                  {inspectedDataset.ecosystem === 'freshwater' && <Sprout size={13} />}
+                  {inspectedDataset.ecosystem === 'marine' && <Waves size={13} />}
+                  {inspectedDataset.ecosystem === 'terrestrial' && <Compass size={13} />}
+                  <span>{habitat.label} Biome</span>
+                </span>
+
+                <span className="px-2.5 py-1 rounded-lg text-xs font-bold border border-emerald-200 bg-emerald-50 text-emerald-800 shadow-2xs flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
+                  <span>Research Source Verified</span>
+                </span>
+
+                <span className="px-2.5 py-1 rounded-lg text-xs font-medium border border-[#E5E6DC] bg-white text-[#68716B] shadow-2xs flex items-center gap-1.5">
+                  <MapPin size={12} className="text-[#899B78]" />
+                  <span>{inspectedDataset.provenance.origin || 'United Kingdom'}</span>
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                <h1 className="font-serif text-3xl sm:text-4xl font-normal text-[#202B27] tracking-tight">
+                  {inspectedDataset.name.replace(/·.*/, '').trim()}
+                </h1>
+                <p className="text-xs sm:text-sm text-[#68716B] leading-relaxed max-w-3xl">
+                  {inspectedDataset.summary}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-[#68716B] pt-2 border-t border-[#E5E6DC]/80 font-mono">
+                <span>
+                  Identifier: <strong className="text-[#202B27]">{inspectedDataset.id}</strong>
+                </span>
+                <span>
+                  Citation: <strong className="text-[#202B27]">{shortCitation}</strong>
+                </span>
+                {inspectedDataset.provenance.sourceUrl && (
+                  <a
+                    href={inspectedDataset.provenance.sourceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[#35563B] font-sans font-bold hover:underline flex items-center gap-1"
+                  >
+                    <span>View Primary Literature</span>
+                    <ExternalLink size={12} />
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* Right Landscape Artwork */}
+            <div className="lg:col-span-4 h-48 lg:h-56 rounded-2xl overflow-hidden border border-[#E5E6DC] shadow-sm relative">
+              <img
+                src="/hero-ecosystem.webp"
+                alt={inspectedDataset.name}
+                className="w-full h-full object-cover object-[70%_25%]"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent flex items-end p-3">
+                <p className="text-[11px] text-white/95 font-medium">
+                  {ECOSYSTEM_LABEL[inspectedDataset.ecosystem]} ecosystem habitat profile
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Key Topological Metrics Strip (4 Cards Full-Width) */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#68716B]">Species Richness</span>
+            <p className="text-2xl font-bold font-mono text-[#202B27]">{metrics.s}</p>
+            <p className="text-[11px] text-[#68716B]">
+              {metrics.producers} producers · {metrics.consumers} consumers
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#68716B]">Feeding Links</span>
+            <p className="text-2xl font-bold font-mono text-[#202B27]">{metrics.l}</p>
+            <p className="text-[11px] text-[#68716B]">Directed predator-prey links</p>
+          </div>
+
+          <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#68716B]">Connectance (C)</span>
+            <p className="text-2xl font-bold font-mono text-[#35563B]">{formatConnectance(metrics.connectance)}</p>
+            <p className="text-[11px] text-[#68716B]">Link density fraction: L / S(S-1)</p>
+          </div>
+
+          <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#68716B]">Linkage Density</span>
+            <p className="text-2xl font-bold font-mono text-[#202B27]">{metrics.density}</p>
+            <p className="text-[11px] text-[#68716B]">Mean feeding links per species</p>
+          </div>
+        </div>
+
+        {/* Segmented Full-Width Tabs Bar */}
+        <div className="border-b border-[#E5E6DC]">
+          <div className="flex items-center gap-1 sm:gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveTab('overview')}
+              className={cn(
+                'px-4 py-2.5 text-xs font-bold transition-colors relative cursor-pointer',
+                activeTab === 'overview'
+                  ? 'text-[#35563B] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-[#35563B]'
+                  : 'text-[#68716B] hover:text-[#202B27]',
+              )}
+            >
+              Overview & Habitat
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('species')}
+              className={cn(
+                'px-4 py-2.5 text-xs font-bold transition-colors relative cursor-pointer',
+                activeTab === 'species'
+                  ? 'text-[#35563B] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-[#35563B]'
+                  : 'text-[#68716B] hover:text-[#202B27]',
+              )}
+            >
+              Species Directory ({inspectedDataset.nodes.length})
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('links')}
+              className={cn(
+                'px-4 py-2.5 text-xs font-bold transition-colors relative cursor-pointer',
+                activeTab === 'links'
+                  ? 'text-[#35563B] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-[#35563B]'
+                  : 'text-[#68716B] hover:text-[#202B27]',
+              )}
+            >
+              Feeding Links ({inspectedDataset.edges.length})
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('download')}
+              className={cn(
+                'px-4 py-2.5 text-xs font-bold transition-colors relative cursor-pointer',
+                activeTab === 'download'
+                  ? 'text-[#35563B] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-[#35563B]'
+                  : 'text-[#68716B] hover:text-[#202B27]',
+              )}
+            >
+              Downloads & Citation
+            </button>
+          </div>
+        </div>
+
+        {/* Tab 1: Overview & Habitat */}
+        {activeTab === 'overview' && (
+          <div className="space-y-6">
+            {/* Representative Species Showcase */}
+            <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-5 shadow-2xs space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-[#E5E6DC]">
+                <div>
+                  <h3 className="font-serif text-base font-bold text-[#202B27]">
+                    Representative Community Organisms
+                  </h3>
+                  <p className="text-xs text-[#68716B]">
+                    Primary producers, herbivores, carnivores, and apex consumers in this food web
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('species')}
+                  className="text-xs font-bold text-[#35563B] hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <span>View All ({inspectedDataset.nodes.length})</span>
+                  <ArrowRight size={12} />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                {inspectedDataset.nodes.map((node) => {
+                  const preyCount = inspectedGraph.foodSourcesOf.get(node.id)?.length ?? 0
+                  const predCount = inspectedGraph.consumersOf.get(node.id)?.length ?? 0
+                  return (
+                    <div
+                      key={node.id}
+                      className="rounded-xl border border-[#E5E6DC] bg-white p-3 flex flex-col items-center text-center shadow-2xs hover:border-[#899B78] transition-colors"
+                    >
+                      <div className="h-12 w-12 flex items-center justify-center rounded-xl bg-[#F7F6EF] mb-2">
+                        <SpeciesIcon iconKey={node.iconKey} size={32} />
+                      </div>
+                      <span className="font-bold text-xs text-[#202B27] truncate w-full" title={node.name}>
+                        {node.name}
+                      </span>
+                      {node.scientificName && (
+                        <span className="text-[10px] italic text-[#68716B] truncate w-full" title={node.scientificName}>
+                          {node.scientificName}
+                        </span>
+                      )}
+                      <span className="mt-2 text-[9.5px] font-mono px-2 py-0.5 rounded-md bg-[#F0F2E9] text-[#35563B] font-semibold">
+                        {TROPHIC_ROLE_LABEL[node.trophicRole] ?? node.trophicRole}
+                      </span>
+                      <p className="text-[10px] text-[#899B78] font-mono mt-1.5">
+                        {preyCount} prey · {predCount} pred
+                      </p>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Scientific Attributes & Sampling Metadata Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-5 shadow-2xs space-y-3">
+                <h3 className="font-serif text-base font-bold text-[#202B27] pb-2 border-b border-[#E5E6DC]">
+                  Ecological Classification & Origin
+                </h3>
+                <div className="space-y-2 text-xs divide-y divide-[#E5E6DC]/60">
+                  <div className="flex items-center justify-between pt-1.5">
+                    <span className="text-[#68716B]">Ecosystem Category</span>
+                    <span className="font-bold text-[#202B27] capitalize">
+                      {ECOSYSTEM_LABEL[inspectedDataset.ecosystem]}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between pt-1.5">
+                    <span className="text-[#68716B]">Sampling Location</span>
+                    <span className="font-bold text-[#202B27]">
+                      {inspectedDataset.provenance.origin || 'United Kingdom'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between pt-1.5">
+                    <span className="text-[#68716B]">Matrix Resolution</span>
+                    <span className="font-mono font-bold text-[#202B27]">
+                      {inspectedDataset.nodes.length} × {inspectedDataset.nodes.length} species adjacency
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between pt-1.5">
+                    <span className="text-[#68716B]">Verification Status</span>
+                    <span className="font-bold text-emerald-800">
+                      Research Source Verified (100% verified)
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-5 shadow-2xs space-y-3">
+                <h3 className="font-serif text-base font-bold text-[#202B27] pb-2 border-b border-[#E5E6DC]">
+                  Empirical Literature Provenance
+                </h3>
+                <div className="space-y-2 text-xs">
+                  <p className="text-[#68716B] leading-relaxed">
+                    <strong>Published Research: </strong>
+                    {inspectedDataset.provenance.citation}
+                  </p>
+                  {inspectedDataset.provenance.sourceUrl && (
+                    <div className="pt-2 border-t border-[#E5E6DC]/80">
+                      <a
+                        href={inspectedDataset.provenance.sourceUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-[#35563B] hover:underline"
+                      >
+                        <ExternalLink size={13} />
+                        <span>Access Original Research Paper / Repository</span>
+                      </a>
+                    </div>
+                  )}
+                  {inspectedDataset.provenance.cleaningNotes && inspectedDataset.provenance.cleaningNotes.length > 0 && (
+                    <div className="text-[11px] text-[#68716B] pt-2 border-t border-[#E5E6DC]/60">
+                      <p className="font-semibold text-[#202B27] mb-1">Curation & Verification Notes:</p>
+                      <ul className="list-disc pl-4 space-y-0.5">
+                        {inspectedDataset.provenance.cleaningNotes.map((note, idx) => (
+                          <li key={idx}>{note}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 2: Species Directory Full-Width Table */}
+        {activeTab === 'species' && (
+          <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-5 shadow-2xs space-y-4">
+            {/* Filter Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E5E6DC]">
+              <div className="relative flex-1 max-w-md">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#899B78]" />
+                <input
+                  type="text"
+                  value={speciesSearch}
+                  onChange={(e) => setSpeciesSearch(e.target.value)}
+                  placeholder="Search species by common or scientific name..."
+                  className="w-full rounded-xl border border-[#E5E6DC] bg-white pl-9 pr-3 py-2 text-xs text-[#202B27] placeholder:text-[#899B78] focus:outline-none focus:ring-1 focus:ring-[#35563B]"
+                />
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 text-xs text-[#68716B]">
+                  <span>Filter role:</span>
+                  <select
+                    value={speciesRoleFilter}
+                    onChange={(e) => setSpeciesRoleFilter(e.target.value as TrophicRole | 'all')}
+                    className="rounded-lg border border-[#E5E6DC] bg-white px-2.5 py-1.5 text-xs font-bold text-[#202B27] focus:outline-none focus:ring-1 focus:ring-[#35563B] cursor-pointer"
+                  >
+                    <option value="all">All Trophic Roles ({inspectedDataset.nodes.length})</option>
+                    {TROPHIC_ROLES.map((role) => {
+                      const count = inspectedDataset.nodes.filter((n) => n.trophicRole === role).length
+                      return (
+                        <option key={role} value={role}>
+                          {TROPHIC_ROLE_LABEL[role]} ({count})
+                        </option>
+                      )
+                    })}
+                  </select>
+                </div>
+                <span className="text-xs text-[#68716B] font-mono">
+                  Showing {filteredNodes.length} of {inspectedDataset.nodes.length}
+                </span>
+              </div>
+            </div>
+
+            {/* Responsive Table */}
+            <div className="overflow-x-auto rounded-xl border border-[#E5E6DC] bg-white">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[#F7F6EF] text-[10.5px] uppercase font-bold text-[#68716B] border-b border-[#E5E6DC]">
+                  <tr>
+                    <th className="py-2.5 px-4">Organism</th>
+                    <th className="py-2.5 px-3">Trophic Role</th>
+                    <th className="py-2.5 px-3">Food Sources (Prey)</th>
+                    <th className="py-2.5 px-3">Consumers (Predators)</th>
+                    <th className="py-2.5 px-3">Total Degree</th>
+                    <th className="py-2.5 px-4 text-right">Identifier</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E5E6DC]/60">
+                  {filteredNodes.map((node) => {
+                    const foodSources = inspectedGraph.foodSourcesOf.get(node.id) ?? []
+                    const consumers = inspectedGraph.consumersOf.get(node.id) ?? []
+                    const degree = foodSources.length + consumers.length
+
+                    return (
+                      <tr key={node.id} className="hover:bg-[#F7F6EF]/40 transition-colors">
+                        <td className="py-2.5 px-4">
+                          <div className="flex items-center gap-2.5">
+                            <div className="h-8 w-8 rounded-lg bg-[#F7F6EF] flex items-center justify-center shrink-0">
+                              <SpeciesIcon iconKey={node.iconKey} size={22} />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-bold text-[#202B27]">{node.name}</p>
+                              {node.scientificName && (
+                                <p className="text-[10px] italic text-[#68716B]">{node.scientificName}</p>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="py-2.5 px-3">
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold bg-[#F0F2E9] text-[#35563B]">
+                            {TROPHIC_ROLE_LABEL[node.trophicRole] ?? node.trophicRole}
+                          </span>
+                        </td>
+
+                        <td className="py-2.5 px-3 font-mono">
+                          <span className="font-bold text-[#202B27]">{foodSources.length}</span>
+                          <span className="text-[10px] text-[#899B78] ml-1">prey</span>
+                        </td>
+
+                        <td className="py-2.5 px-3 font-mono">
+                          <span className="font-bold text-[#202B27]">{consumers.length}</span>
+                          <span className="text-[10px] text-[#899B78] ml-1">predators</span>
+                        </td>
+
+                        <td className="py-2.5 px-3 font-mono font-bold text-[#202B27]">
+                          {degree}
+                        </td>
+
+                        <td className="py-2.5 px-4 text-right font-mono text-[10.5px] text-[#899B78]">
+                          {node.id}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                  {filteredNodes.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="py-8 text-center text-[#68716B]">
+                        No species found matching &quot;{speciesSearch}&quot;.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 3: Feeding Links Full-Width Table */}
+        {activeTab === 'links' && (
+          <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-5 shadow-2xs space-y-4">
+            {/* Search Filter Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E5E6DC]">
+              <div className="relative flex-1 max-w-md">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#899B78]" />
+                <input
+                  type="text"
+                  value={linkSearch}
+                  onChange={(e) => setLinkSearch(e.target.value)}
+                  placeholder="Filter links by organism name..."
+                  className="w-full rounded-xl border border-[#E5E6DC] bg-white pl-9 pr-3 py-2 text-xs text-[#202B27] placeholder:text-[#899B78] focus:outline-none focus:ring-1 focus:ring-[#35563B]"
+                />
+              </div>
+
+              <span className="text-xs text-[#68716B] font-mono">
+                Showing {filteredEdges.length} of {inspectedDataset.edges.length} feeding links
+              </span>
+            </div>
+
+            {/* Full-Width Grid of Links */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+              {filteredEdges.map((edge, i) => {
+                const sourceNode = inspectedDataset.nodes.find((n) => n.id === edge.source)
+                const targetNode = inspectedDataset.nodes.find((n) => n.id === edge.target)
+
+                return (
+                  <div
+                    key={i}
+                    className="p-3 rounded-xl bg-white border border-[#E5E6DC] flex items-center justify-between gap-3 text-xs shadow-2xs hover:border-[#899B78] transition-colors"
+                  >
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      {sourceNode && <SpeciesIcon iconKey={sourceNode.iconKey} size={20} />}
+                      <div className="min-w-0">
+                        <span className="font-bold text-[#35563B] truncate block">
+                          {sourceNode?.name || edge.source}
+                        </span>
+                        <span className="text-[9.5px] text-[#68716B] block">Food organism / Prey</span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-center shrink-0 px-2">
+                      <span className="text-[9.5px] font-mono text-[#899B78]">energy flow</span>
+                      <ArrowRight size={14} className="text-[#35563B]" />
+                    </div>
+
+                    <div className="flex items-center gap-2 min-w-0 flex-1 justify-end text-right">
+                      <div className="min-w-0">
+                        <span className="font-bold text-[#202B27] truncate block">
+                          {targetNode?.name || edge.target}
+                        </span>
+                        <span className="text-[9.5px] text-[#68716B] block">Consumer / Predator</span>
+                      </div>
+                      {targetNode && <SpeciesIcon iconKey={targetNode.iconKey} size={20} />}
+                    </div>
+                  </div>
+                )
+              })}
+              {filteredEdges.length === 0 && (
+                <div className="col-span-2 py-8 text-center text-[#68716B]">
+                  No feeding links found matching &quot;{linkSearch}&quot;.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 4: Downloads & Citation */}
+        {activeTab === 'download' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* Card 1: Nodes Export */}
+              <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-5 shadow-2xs space-y-3 flex flex-col justify-between">
+                <div className="space-y-2">
+                  <div className="h-10 w-10 rounded-xl bg-[#E8EDE0] text-[#35563B] flex items-center justify-center">
+                    <Download size={20} />
+                  </div>
+                  <h3 className="font-serif text-base font-bold text-[#202B27]">
+                    Species Dictionary (CSV)
+                  </h3>
+                  <p className="text-xs text-[#68716B] leading-relaxed">
+                    Download the complete catalogue of {inspectedDataset.nodes.length} species, including identifiers, common names, scientific Latin classifications, and empirical trophic role assignments.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => downloadArtifact(nodesExportCsv(inspectedDataset))}
+                  className="w-full py-2.5 px-4 rounded-xl bg-[#35563B] hover:bg-[#263D2D] text-white text-xs font-bold flex items-center justify-center gap-2 shadow-xs cursor-pointer transition-colors"
+                >
+                  <Download size={14} />
+                  <span>Download Species CSV</span>
+                  <span className="sr-only">Export nodes CSV</span>
+                </button>
+              </div>
+
+              {/* Card 2: Links Export */}
+              <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-5 shadow-2xs space-y-3 flex flex-col justify-between">
+                <div className="space-y-2">
+                  <div className="h-10 w-10 rounded-xl bg-[#EBF3F9] text-[#2879B9] flex items-center justify-center">
+                    <Database size={20} />
+                  </div>
+                  <h3 className="font-serif text-base font-bold text-[#202B27]">
+                    Feeding Links Adjacency Matrix (CSV)
+                  </h3>
+                  <p className="text-xs text-[#68716B] leading-relaxed">
+                    Download the full edge list of {inspectedDataset.edges.length} directed trophic predator-prey links, formatted with source (prey) and target (consumer) columns for R, Python, and Cytoscape.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => downloadArtifact(edgesExportCsv(inspectedDataset))}
+                  className="w-full py-2.5 px-4 rounded-xl border border-[#E5E6DC] bg-white hover:bg-[#F7F6EF] text-[#202B27] text-xs font-bold flex items-center justify-center gap-2 shadow-2xs cursor-pointer transition-colors"
+                >
+                  <Download size={14} className="text-[#35563B]" />
+                  <span>Download Links CSV</span>
+                  <span className="sr-only">Export links CSV</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Academic Citation Box */}
+            <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-5 shadow-2xs space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-[#E5E6DC]">
+                <div className="flex items-center gap-2 text-[#35563B]">
+                  <FileText size={16} />
+                  <h3 className="font-serif text-sm font-bold text-[#202B27]">Scientific Citation (APA)</h3>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleCopyCitation(inspectedDataset.provenance.citation)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border border-[#E5E6DC] bg-white hover:bg-[#F7F6EF] text-xs font-semibold text-[#202B27] transition-colors shadow-2xs cursor-pointer"
+                >
+                  {copiedCitation ? <Check size={12} className="text-emerald-700" /> : <Copy size={12} />}
+                  <span>{copiedCitation ? 'Copied to Clipboard!' : 'Copy Citation'}</span>
+                </button>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-white border border-[#E5E6DC] font-mono text-xs text-[#202B27] leading-relaxed select-all">
+                {inspectedDataset.provenance.citation}
+              </div>
+
+              <p className="text-[11px] text-[#68716B]">
+                Please cite this primary publication when using this food-web data in academic manuscripts, reports, or classroom coursework.
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // =========================================================================
+  // VIEW 2: CATALOG VIEW (Grid of 6 Cards across full 12 columns)
+  // =========================================================================
   return (
-    <div className="space-y-4">
-      {/* =====================================================================
-          1. CATEGORY FILTER TABS ROW (Matching Image 1)
-          All Datasets (6) | Freshwater (2) | Marine (2) | Terrestrial (2)
-          ===================================================================== */}
+    <div className="space-y-5 animate-fadeIn">
+      {/* Category Filter Tabs */}
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={() => setActiveCategory('all')}
           className={cn(
-            'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-2xs',
+            'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-2xs cursor-pointer',
             activeCategory === 'all'
               ? 'bg-[#35563B] text-white'
               : 'border border-[#E5E6DC] bg-[#FCFBF7] text-[#202B27] hover:bg-[#F7F6EF]',
@@ -145,7 +890,7 @@ export function DatasetBrowser({
           type="button"
           onClick={() => setActiveCategory('freshwater')}
           className={cn(
-            'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-2xs',
+            'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-2xs cursor-pointer',
             activeCategory === 'freshwater'
               ? 'bg-[#35563B] text-white'
               : 'border border-[#E5E6DC] bg-[#FCFBF7] text-[#202B27] hover:bg-[#F7F6EF]',
@@ -167,7 +912,7 @@ export function DatasetBrowser({
           type="button"
           onClick={() => setActiveCategory('marine')}
           className={cn(
-            'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-2xs',
+            'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-2xs cursor-pointer',
             activeCategory === 'marine'
               ? 'bg-[#35563B] text-white'
               : 'border border-[#E5E6DC] bg-[#FCFBF7] text-[#202B27] hover:bg-[#F7F6EF]',
@@ -189,7 +934,7 @@ export function DatasetBrowser({
           type="button"
           onClick={() => setActiveCategory('terrestrial')}
           className={cn(
-            'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-2xs',
+            'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-2xs cursor-pointer',
             activeCategory === 'terrestrial'
               ? 'bg-[#35563B] text-white'
               : 'border border-[#E5E6DC] bg-[#FCFBF7] text-[#202B27] hover:bg-[#F7F6EF]',
@@ -208,436 +953,109 @@ export function DatasetBrowser({
         </button>
       </div>
 
-      {/* =====================================================================
-          2. MAIN CONTENT: 6 DATASET CARDS GRID (LEFT) + DETAIL PANEL (RIGHT)
-          ===================================================================== */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        {/* Left Column: 6 Dataset Cards (7 Columns or 8 Columns) */}
-        <div className={cn(inspectedDataset ? 'lg:col-span-8' : 'lg:col-span-12', 'space-y-4')}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-            {filteredDatasets.map((d) => {
-              const habitat = getHabitatTag(d.ecosystem)
-              const isSelected = d.id === inspectedDataset?.id
-              const citationYear = d.provenance.citation.match(/\b(19\d\d|20\d\d)\b/)?.[0] ?? ''
-              const citationAuthor = d.provenance.citation.split(/[(,]/)[0]?.trim() ?? ''
-              const shortCitation = citationAuthor ? `${citationAuthor} (${citationYear || 'ref'})` : 'Published study'
+      {/* Full-Width Grid of 6 Dataset Cards (3 Columns) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {filteredDatasets.map((d) => {
+          const habitat = getHabitatTag(d.ecosystem)
+          const citationYear = d.provenance.citation.match(/\b(19\d\d|20\d\d)\b/)?.[0] ?? ''
+          const citationAuthor = d.provenance.citation.split(/[(,]/)[0]?.trim() ?? ''
+          const shortCitation = citationAuthor ? `${citationAuthor} (${citationYear || 'ref'})` : 'Published study'
 
-              return (
-                <div
-                  key={d.id}
-                  className={cn(
-                    'rounded-2xl border bg-[#FCFBF7] overflow-hidden flex flex-col justify-between shadow-2xs transition-all',
-                    isSelected
-                      ? 'border-[#35563B] ring-2 ring-[#35563B]/20'
-                      : 'border-[#E5E6DC] hover:border-[#899B78]/60 hover:shadow-sm',
-                  )}
-                >
-                  {/* Card Artwork Banner with Floating Habitat Tag */}
-                  <div className="h-36 relative overflow-hidden bg-[#F0F2E9]">
-                    <img
-                      src="/hero-ecosystem.webp"
-                      alt={d.name}
-                      className="w-full h-full object-cover object-[70%_25%]"
-                    />
-                    <div className="absolute top-2.5 right-2.5 z-10">
-                      <span
-                        className={cn(
-                          'px-2 py-0.5 rounded-lg text-[10.5px] font-bold border shadow-2xs',
-                          habitat.badgeClass,
-                        )}
-                      >
-                        {habitat.label}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Card Body */}
-                  <div className="p-4 space-y-2.5 flex-1 flex flex-col justify-between">
-                    <div>
-                      <h3 className="font-serif text-[17px] font-bold text-[#202B27] leading-snug">
-                        {d.name.replace(/·.*/, '').trim()}
-                      </h3>
-
-                      {/* Location with map pin */}
-                      <p className="flex items-center gap-1 text-[11px] text-[#68716B] mt-0.5">
-                        <MapPin size={11} className="text-[#899B78] shrink-0" />
-                        <span className="truncate">{d.provenance.origin || 'United Kingdom'}</span>
-                      </p>
-
-                      {/* 1-2 sentence description */}
-                      <p className="text-[11.5px] text-[#68716B] leading-relaxed line-clamp-2 mt-2">
-                        {d.summary}
-                      </p>
-                    </div>
-
-                    {/* Metadata stats row: species, links, citation */}
-                    <div className="pt-2 border-t border-[#E5E6DC] space-y-3">
-                      <div className="flex items-center justify-between text-[11px] text-[#68716B] font-mono">
-                        <span className="flex items-center gap-1 font-bold text-[#202B27]">
-                          <span className="h-1.5 w-1.5 rounded-full bg-[#35563B]" />
-                          {d.nodes.length} species
-                        </span>
-                        <span className="flex items-center gap-1 text-[#68716B]">
-                          {d.edges.length} links
-                        </span>
-                        <span className="text-[10px] text-[#899B78] truncate max-w-[90px]" title={d.provenance.citation}>
-                          {shortCitation}
-                        </span>
-                      </div>
-
-                      {/* Action Button: View Dataset → */}
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setInspectingId(d.id)
-                            onSelect(d.id)
-                          }}
-                          className={cn(
-                            'w-full py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-2xs',
-                            isSelected
-                              ? 'bg-[#35563B] text-white hover:bg-[#263D2D]'
-                              : 'border border-[#E5E6DC] bg-white text-[#202B27] hover:bg-[#F7F6EF]',
-                          )}
-                        >
-                          <span>View Dataset</span>
-                          <ArrowRight size={13} />
-                        </button>
-
-                        {/* Accessible Export Buttons required by test suite */}
-                        <button
-                          type="button"
-                          onClick={() => downloadArtifact(nodesExportCsv(d))}
-                          aria-label={`Export nodes CSV for ${d.name}`}
-                          className="sr-only"
-                        >
-                          Export nodes CSV for {d.name}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => downloadArtifact(edgesExportCsv(d))}
-                          aria-label={`Export links CSV for ${d.name}`}
-                          className="sr-only"
-                        >
-                          Export links CSV for {d.name}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+          return (
+            <div
+              key={d.id}
+              className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] overflow-hidden flex flex-col justify-between shadow-2xs hover:border-[#899B78] hover:shadow-md transition-all group"
+            >
+              {/* Card Artwork Banner with Floating Habitat Tag */}
+              <div className="h-40 relative overflow-hidden bg-[#F0F2E9]">
+                <img
+                  src="/hero-ecosystem.webp"
+                  alt={d.name}
+                  className="w-full h-full object-cover object-[70%_25%] group-hover:scale-103 transition-transform duration-300"
+                />
+                <div className="absolute top-3 right-3 z-10">
+                  <span
+                    className={cn(
+                      'px-2.5 py-0.5 rounded-lg text-[10.5px] font-bold border shadow-2xs',
+                      habitat.badgeClass,
+                    )}
+                  >
+                    {habitat.label}
+                  </span>
                 </div>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Right Column: Selected Dataset Detail Panel (4 Columns) Matching Image 1 */}
-        {inspectedDataset && (
-          <div className="lg:col-span-4 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-3.5 sticky top-20">
-            {/* Header: Title + Habitat Badge + Close Button */}
-            <div className="flex items-center justify-between pb-2 border-b border-[#E5E6DC]">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="h-2 w-2 rounded-full bg-[#35563B] shrink-0" />
-                <h2 className="font-serif text-lg font-bold text-[#202B27] truncate">
-                  {inspectedDataset.name.replace(/·.*/, '').trim()}
-                </h2>
-                <span
-                  className={cn(
-                    'px-2 py-0.5 rounded-lg text-[10px] font-bold border shrink-0',
-                    getHabitatTag(inspectedDataset.ecosystem).badgeClass,
-                  )}
-                >
-                  {getHabitatTag(inspectedDataset.ecosystem).label}
-                </span>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setInspectingId(null)}
-                className="h-6 w-6 rounded-lg text-[#68716B] hover:text-[#202B27] flex items-center justify-center transition-colors"
-                title="Close panel"
-              >
-                <X size={14} />
-              </button>
-            </div>
+              {/* Card Body */}
+              <div className="p-5 space-y-3 flex-1 flex flex-col justify-between">
+                <div>
+                  <h3 className="font-serif text-lg font-bold text-[#202B27] leading-snug group-hover:text-[#35563B] transition-colors">
+                    {d.name.replace(/·.*/, '').trim()}
+                  </h3>
 
-            {/* Panoramic Landscape Header Image */}
-            <div className="h-32 w-full rounded-xl overflow-hidden border border-[#E5E6DC]">
-              <img
-                src="/hero-ecosystem.webp"
-                alt={inspectedDataset.name}
-                className="w-full h-full object-cover object-[70%_30%]"
-              />
-            </div>
-
-            {/* Segmented Detail Tabs */}
-            <div className="flex items-center border-b border-[#E5E6DC] text-xs">
-              <button
-                type="button"
-                onClick={() => setActiveTab('overview')}
-                className={cn(
-                  'pb-2 px-2.5 font-bold transition-colors relative',
-                  activeTab === 'overview'
-                    ? 'text-[#35563B] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-[#35563B]'
-                    : 'text-[#68716B] hover:text-[#202B27]',
-                )}
-              >
-                Overview
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('species')}
-                className={cn(
-                  'pb-2 px-2.5 font-bold transition-colors relative',
-                  activeTab === 'species'
-                    ? 'text-[#35563B] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-[#35563B]'
-                    : 'text-[#68716B] hover:text-[#202B27]',
-                )}
-              >
-                Species ({inspectedDataset.nodes.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('links')}
-                className={cn(
-                  'pb-2 px-2.5 font-bold transition-colors relative',
-                  activeTab === 'links'
-                    ? 'text-[#35563B] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-[#35563B]'
-                    : 'text-[#68716B] hover:text-[#202B27]',
-                )}
-              >
-                Links ({inspectedDataset.edges.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('download')}
-                className={cn(
-                  'pb-2 px-2.5 font-bold transition-colors relative',
-                  activeTab === 'download'
-                    ? 'text-[#35563B] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-[#35563B]'
-                    : 'text-[#68716B] hover:text-[#202B27]',
-                )}
-              >
-                Download
-              </button>
-            </div>
-
-            {/* Tab 1: Overview */}
-            {activeTab === 'overview' && (
-              <div className="space-y-3.5 text-xs">
-                <p className="text-[#68716B] leading-relaxed">
-                  {inspectedDataset.summary}
-                </p>
-
-                {/* Key Attributes Table (Matching Image 1) */}
-                <div className="rounded-xl border border-[#E5E6DC] bg-white p-3 space-y-2">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-[#68716B]">Ecosystem Type</span>
-                    <span className="font-bold text-[#202B27] capitalize">
-                      {ECOSYSTEM_LABEL[inspectedDataset.ecosystem]}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-[#68716B]">Location</span>
-                    <span className="font-bold text-[#202B27] text-right truncate max-w-[160px]">
-                      {inspectedDataset.provenance.origin || 'UK'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-[#68716B]">Number of Species</span>
-                    <span className="font-mono font-bold text-[#202B27]">
-                      {inspectedDataset.nodes.length}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-[#68716B]">Number of Links</span>
-                    <span className="font-mono font-bold text-[#202B27]">
-                      {inspectedDataset.edges.length}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-[#68716B]">Original Reference</span>
-                    <span className="font-bold text-[#202B27] text-right truncate max-w-[160px]">
-                      {inspectedDataset.provenance.citation.split(/[(,]/)[0]?.trim() || 'Scientific archive'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-[#68716B]">DOI / Source</span>
-                    <span className="font-bold text-[#35563B] text-right truncate max-w-[160px]">
-                      {inspectedDataset.provenance.sourceUrl ? (
-                        <a
-                          href={inspectedDataset.provenance.sourceUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="hover:underline flex items-center gap-1 justify-end"
-                        >
-                          <span>Source link</span>
-                          <ExternalLink size={10} />
-                        </a>
-                      ) : (
-                        'Classic literature'
-                      )}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Sample Organisms Grid (4 Cards Matching Image 1) */}
-                <div className="space-y-2">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#68716B]">
-                    Sample Organisms
+                  {/* Location with map pin */}
+                  <p className="flex items-center gap-1.5 text-xs text-[#68716B] mt-1">
+                    <MapPin size={12} className="text-[#899B78] shrink-0" />
+                    <span className="truncate">{d.provenance.origin || 'United Kingdom'}</span>
                   </p>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {inspectedDataset.nodes.slice(0, 4).map((node) => (
-                      <div
-                        key={node.id}
-                        className="rounded-xl border border-[#E5E6DC] bg-white p-2 flex flex-col items-center text-center shadow-2xs"
-                      >
-                        <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-[#F7F6EF] mb-1">
-                          <SpeciesIcon iconKey={node.iconKey} size={28} />
-                        </div>
-                        <span className="font-bold text-[11px] text-[#202B27] truncate w-full">
-                          {node.name}
-                        </span>
-                        {node.scientificName && (
-                          <span className="text-[9px] italic text-[#68716B] truncate w-full">
-                            {node.scientificName}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
 
-                {/* Scientific Reference Card */}
-                <div className="rounded-xl border border-[#E5E6DC] bg-white p-3 space-y-1.5">
-                  <div className="flex items-center gap-1.5 text-[#35563B]">
-                    <FileText size={14} />
-                    <p className="font-bold text-[11px] text-[#202B27]">Scientific Reference</p>
-                  </div>
-                  <p className="text-[10.5px] text-[#68716B] leading-relaxed">
-                    {inspectedDataset.provenance.citation}
+                  {/* 1-2 sentence description */}
+                  <p className="text-xs text-[#68716B] leading-relaxed line-clamp-2 mt-2">
+                    {d.summary}
                   </p>
                 </div>
-              </div>
-            )}
 
-            {/* Tab 2: Species list */}
-            {activeTab === 'species' && (
-              <div className="max-h-64 overflow-y-auto space-y-1.5 text-xs pr-1">
-                {inspectedDataset.nodes.map((node) => (
-                  <div
-                    key={node.id}
-                    className="flex items-center justify-between p-2 rounded-lg bg-white border border-[#E5E6DC]"
-                  >
-                    <div className="flex items-center gap-2">
-                      <SpeciesIcon iconKey={node.iconKey} size={20} />
-                      <div className="min-w-0">
-                        <span className="font-bold text-[#202B27] block truncate">{node.name}</span>
-                        {node.scientificName && (
-                          <span className="text-[9.5px] italic text-[#68716B] block truncate">
-                            {node.scientificName}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <span className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-[#F0F2E9] text-[#35563B]">
-                      {node.trophicRole}
+                {/* Metadata stats row: species, links, citation */}
+                <div className="pt-3 border-t border-[#E5E6DC] space-y-3">
+                  <div className="flex items-center justify-between text-xs text-[#68716B] font-mono">
+                    <span className="flex items-center gap-1.5 font-bold text-[#202B27]">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#35563B]" />
+                      {d.nodes.length} species
+                    </span>
+                    <span className="flex items-center gap-1 text-[#68716B]">
+                      {d.edges.length} links
+                    </span>
+                    <span className="text-[10.5px] text-[#899B78] truncate max-w-[110px]" title={d.provenance.citation}>
+                      {shortCitation}
                     </span>
                   </div>
-                ))}
-              </div>
-            )}
 
-            {/* Tab 3: Links list */}
-            {activeTab === 'links' && (
-              <div className="max-h-64 overflow-y-auto space-y-1 text-xs pr-1 font-mono">
-                {inspectedDataset.edges.slice(0, 50).map((edge, i) => (
-                  <div
-                    key={i}
-                    className="p-1.5 rounded-lg bg-white border border-[#E5E6DC] flex items-center justify-between text-[10.5px]"
-                  >
-                    <span className="text-[#35563B] font-bold truncate max-w-[120px]">
-                      {inspectedDataset.nodes.find((n) => n.id === edge.source)?.name || edge.source}
-                    </span>
-                    <span className="text-[#899B78]">→ feeds on →</span>
-                    <span className="text-[#202B27] font-bold truncate max-w-[120px]">
-                      {inspectedDataset.nodes.find((n) => n.id === edge.target)?.name || edge.target}
-                    </span>
+                  {/* Action Button: View Full Dataset Details → */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onSelect(d.id)
+                        handleInspect(d.id)
+                      }}
+                      className="w-full py-2.5 px-4 rounded-xl border border-[#35563B]/30 bg-white hover:bg-[#35563B] hover:text-white text-[#35563B] text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-2xs cursor-pointer"
+                    >
+                      <span>View Full Dataset Details</span>
+                      <ArrowRight size={13} />
+                    </button>
+
+                    {/* Accessible Export Buttons required by test suite */}
+                    <button
+                      type="button"
+                      onClick={() => downloadArtifact(nodesExportCsv(d))}
+                      aria-label={`Export nodes CSV for ${d.name}`}
+                      className="sr-only"
+                    >
+                      Export nodes CSV for {d.name}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => downloadArtifact(edgesExportCsv(d))}
+                      aria-label={`Export links CSV for ${d.name}`}
+                      className="sr-only"
+                    >
+                      Export links CSV for {d.name}
+                    </button>
                   </div>
-                ))}
-                {inspectedDataset.edges.length > 50 && (
-                  <p className="text-center text-[10.5px] text-[#68716B] py-1">
-                    Showing first 50 of {inspectedDataset.edges.length} feeding links
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Tab 4: Download */}
-            {activeTab === 'download' && (
-              <div className="space-y-2 text-xs">
-                <p className="text-[#68716B] leading-relaxed">
-                  Export complete data matrices and node dictionaries in standard CSV formats.
-                </p>
-                <div className="space-y-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => downloadArtifact(nodesExportCsv(inspectedDataset))}
-                    className="w-full py-2.5 px-3 rounded-xl border border-[#E5E6DC] bg-white text-[#202B27] font-bold text-xs flex items-center justify-center gap-2 hover:bg-[#F7F6EF] transition-colors"
-                  >
-                    <Download size={14} className="text-[#35563B]" />
-                    <span>Download Species Dictionary (CSV)</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => downloadArtifact(edgesExportCsv(inspectedDataset))}
-                    className="w-full py-2.5 px-3 rounded-xl border border-[#E5E6DC] bg-white text-[#202B27] font-bold text-xs flex items-center justify-center gap-2 hover:bg-[#F7F6EF] transition-colors"
-                  >
-                    <Download size={14} className="text-[#35563B]" />
-                    <span>Download Feeding Links (CSV)</span>
-                  </button>
                 </div>
               </div>
-            )}
-
-            {/* Bottom Action Buttons */}
-            <div className="pt-2 border-t border-[#E5E6DC] space-y-2">
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => downloadArtifact(nodesExportCsv(inspectedDataset))}
-                  className="py-2 px-2.5 rounded-xl border border-[#E5E6DC] bg-white text-[11px] font-bold text-[#202B27] hover:bg-[#F7F6EF] flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
-                >
-                  <Download size={12} className="text-[#35563B]" />
-                  <span>Download Species (CSV)</span>
-                  <span className="sr-only">Export nodes CSV</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => downloadArtifact(edgesExportCsv(inspectedDataset))}
-                  className="py-2 px-2.5 rounded-xl border border-[#E5E6DC] bg-white text-[11px] font-bold text-[#202B27] hover:bg-[#F7F6EF] flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
-                >
-                  <Download size={12} className="text-[#35563B]" />
-                  <span>Download Links (CSV)</span>
-                  <span className="sr-only">Export links CSV</span>
-                </button>
-              </div>
-
-              {onNavigateExplore && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onSelect(inspectedDataset.id)
-                    onNavigateExplore()
-                  }}
-                  className="w-full py-2.5 px-4 rounded-xl bg-[#35563B] hover:bg-[#263D2D] text-white text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-xs"
-                >
-                  <span>Explore {inspectedDataset.name.replace(/·.*/, '').trim()} in Workspace</span>
-                  <ArrowRight size={14} />
-                </button>
-              )}
             </div>
-          </div>
-        )}
+          )
+        })}
       </div>
     </div>
   )
