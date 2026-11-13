@@ -90,13 +90,11 @@ export function CompareResults({ onNavigate: _onNavigate }: CompareResultsProps 
     )
   }, [datasets])
 
-  // Ensure default comparison datasets are selected if empty
+  // User-selected comparison datasets (no artificial preselection)
   const activeCompareIds = useMemo(() => {
-    const validSelected = compareIds.filter((id) =>
+    return compareIds.filter((id) =>
       comparableDatasets.some((d) => d.id === id),
     )
-    if (validSelected.length >= 2) return validSelected
-    return comparableDatasets.slice(0, 4).map((d) => d.id)
   }, [compareIds, comparableDatasets])
 
   // Selected dataset objects
@@ -354,13 +352,29 @@ export function CompareResults({ onNavigate: _onNavigate }: CompareResultsProps 
       </div>
 
       {/* =====================================================================
-          3. MULTI-NETWORK FOOD WEB VISUAL COMPARISON (2–4 Side-by-Side Panels)
+          3. MULTI-NETWORK FOOD WEB VISUAL COMPARISON OR GUIDANCE PROMPT
           ===================================================================== */}
-      <div>
-        <div className="flex items-center justify-between pb-2">
-          <p className="text-xs font-bold text-[#202B27]">Food Web Architecture Comparison</p>
-          <span className="text-[11px] text-[#68716B]">Interactive Cytoscape views</span>
+      {selectedDatasets.length < 2 ? (
+        <div className="rounded-2xl border border-dashed border-[#E5E6DC] bg-[#FCFBF7] p-8 sm:p-12 text-center space-y-3 shadow-2xs">
+          <div className="h-12 w-12 rounded-2xl bg-[#E8EDE0] text-[#35563B] flex items-center justify-center mx-auto shadow-2xs">
+            <Scale size={24} />
+          </div>
+          <div className="space-y-1">
+            <h3 className="font-serif font-medium text-base text-[#202B27]">
+              Select 2 to 4 Ecosystems to Compare
+            </h3>
+            <p className="text-xs text-[#68716B] max-w-md mx-auto leading-relaxed">
+              Check between 2 and 4 ecosystems from the selection cards above to view their side-by-side food web topologies, structural metrics, and cross-biome analytics.
+            </p>
+          </div>
         </div>
+      ) : (
+        <>
+          <div>
+            <div className="flex items-center justify-between pb-2">
+              <p className="text-xs font-bold text-[#202B27]">Food Web Architecture Comparison</p>
+              <span className="text-[11px] text-[#68716B]">Interactive Cytoscape views</span>
+            </div>
 
         <div className={cn(
           'grid gap-3.5',
@@ -815,6 +829,8 @@ export function CompareResults({ onNavigate: _onNavigate }: CompareResultsProps 
           </div>
         </div>
       </div>
+      </>
+      )}
 
       {/* Scientific Limitation Callout (Maintains Academic Integrity) */}
       <div className="rounded-xl border border-[#E5E6DC] bg-[#FCFBF7] p-3 text-xs text-[#68716B] flex items-start gap-2.5">

@@ -7,19 +7,18 @@ import {
   Compass,
   FlaskConical,
   GitCompareArrows,
-  Globe2,
   HelpCircle,
   Leaf,
   Network,
   PawPrint,
   ShieldCheck,
-  Upload,
 } from 'lucide-react'
 import { RESEARCH_SLOT_SUMMARY } from '../data/datasetRegistry'
 import { useAppState } from '../state/AppState'
 import type { RouteId } from '../components/layout/routes'
 import { formatPercent } from '../core/metrics'
 import { FeatureGuideModal } from '../components/layout/FeatureGuideModal'
+import { cn } from '../components/ui/primitives'
 
 interface OverviewProps {
   onNavigate: (route: RouteId) => void
@@ -48,75 +47,63 @@ export function Overview({ onNavigate, onOpenImport: _onOpenImport }: OverviewPr
   const featureCards = [
     {
       id: 'explore',
-      title: 'Interactive Explorer',
-      description: 'Visualize real food webs with beautiful organism illustrations',
-      icon: <Network size={18} />,
+      title: 'Food Web Explorer & Simulation',
+      tag: 'Flagship Topology & Cascade Engine',
+      description:
+        'Visualize complete ecological networks with high-resolution species illustrations, simulate direct species disturbance, and trace round-by-round extinction cascades.',
+      icon: <Network size={20} />,
       bg: 'bg-[#E8EDE0] text-[#35563B]',
+      borderHover: 'hover:border-[#35563B]',
       action: () => onNavigate('explore'),
-    },
-    {
-      id: 'simulation',
-      title: 'Simulation Laboratory',
-      description: 'Remove species and observe cascading effects',
-      icon: <FlaskConical size={18} />,
-      bg: 'bg-[#FDEEEB] text-[#D96B50]',
-      action: () => onNavigate('explore'),
-    },
-    {
-      id: 'timeline',
-      title: 'Cascade Timeline',
-      description: 'Explore ecosystem collapse round by round',
-      icon: <Clock size={18} />,
-      bg: 'bg-[#FEF9E7] text-[#D8933B]',
-      action: () => onNavigate('explore'),
+      featured: true,
     },
     {
       id: 'experiment',
       title: 'Experiment Studio',
-      description: 'Analyse all species and identify critical organisms',
-      icon: <BarChart3 size={18} />,
+      tag: 'Sensitivity Lab',
+      description:
+        'Automated all-species sensitivity ranking, keystone detection, and Dunne et al. R50 network robustness curves.',
+      icon: <BarChart3 size={20} />,
       bg: 'bg-[#EBF4FA] text-[#4288B8]',
+      borderHover: 'hover:border-[#4288B8]',
       action: () => onNavigate('experiment'),
+      featured: false,
     },
     {
       id: 'compare',
       title: 'Ecosystem Comparison',
-      description: 'Compare structural properties across different ecosystems',
-      icon: <GitCompareArrows size={18} />,
+      tag: 'Cross-Biome Analytics',
+      description:
+        'Compare structural properties, connectance, linkage density, and vulnerability distributions across 2–4 ecosystems side-by-side.',
+      icon: <GitCompareArrows size={20} />,
       bg: 'bg-[#F4EFF9] text-[#865DAF]',
+      borderHover: 'hover:border-[#865DAF]',
       action: () => onNavigate('compare'),
-    },
-    {
-      id: 'conservation',
-      title: 'Conservation Atlas',
-      description: 'Trophic level distributions, ecosystem biomes & research profiles',
-      icon: <Globe2 size={18} />,
-      bg: 'bg-[#E0F2F1] text-[#00796B]',
-      action: () => onNavigate('compare'),
+      featured: false,
     },
     {
       id: 'library',
-      title: 'Research Library',
-      description: 'Explore 6 real-world ecosystems from scientific literature',
-      icon: <BookOpenCheck size={18} />,
+      title: 'Research Library & Data Intake',
+      tag: 'Verified Networks & CSV/JSON',
+      description:
+        'Explore 6 empirical ecosystems verified from peer-reviewed literature, download research matrices, or import custom datasets.',
+      icon: <BookOpenCheck size={20} />,
       bg: 'bg-[#EDF5E8] text-[#35563B]',
+      borderHover: 'hover:border-[#35563B]',
       action: () => onNavigate('library'),
-    },
-    {
-      id: 'import',
-      title: 'Dataset Import',
-      description: 'Use your own food web data (CSV / JSON)',
-      icon: <Upload size={18} />,
-      bg: 'bg-[#FDF2E7] text-[#D87D3B]',
-      action: () => (_onOpenImport ? _onOpenImport() : onNavigate('import')),
+      featured: false,
     },
     {
       id: 'methodology',
-      title: 'Methodology & Validation',
-      description: 'Formulas, assumptions and live validation tests',
-      icon: <ShieldCheck size={18} />,
+      title: 'Methodology & Scientific Validation',
+      tag: 'Formulas & In-Browser Tests',
+      description:
+        'Examine mathematical definitions, trophic level calculations, secondary extinction rules, and execute live in-browser validation tests.',
+      icon: <ShieldCheck size={20} />,
       bg: 'bg-[#E8EFEA] text-[#263D2D]',
+      borderHover: 'hover:border-[#263D2D]',
       action: () => onNavigate('methodology'),
+      featured: false,
     },
   ]
 
@@ -159,7 +146,7 @@ export function Overview({ onNavigate, onOpenImport: _onOpenImport }: OverviewPr
                 FoodWebGuard is an interactive platform to explore real ecological networks, simulate species removal, and analyse how ecosystems respond to change.
               </p>
 
-              {/* CTA Buttons: Open Explorer + Why Food Webs Matter + Help & Feature Guide */}
+              {/* CTA Buttons: Open Explorer + Why Food Webs Matter */}
               <div className="flex flex-wrap items-center gap-3 pt-1">
                 <button
                   type="button"
@@ -173,16 +160,6 @@ export function Overview({ onNavigate, onOpenImport: _onOpenImport }: OverviewPr
 
                 <button
                   type="button"
-                  onClick={() => setShowGuideModal(true)}
-                  className="inline-flex items-center gap-2 rounded-[10px] border border-[#899B78]/70 bg-[#E8EDE0] hover:bg-[#DDE5D3] text-[#263D2D] px-4 py-2.5 min-h-[44px] text-xs sm:text-[13.5px] font-semibold shadow-2xs transition-colors cursor-pointer"
-                  aria-haspopup="dialog"
-                >
-                  <HelpCircle size={15} className="text-[#35563B]" />
-                  <span>Help & Feature Guide</span>
-                </button>
-
-                <button
-                  type="button"
                   onClick={scrollToWhyFoodWebs}
                   className="inline-flex items-center gap-2 rounded-[10px] border border-[#E5E6DC] bg-[#FCFBF7] hover:bg-[#F0F2E9] text-[#202B27] px-4 py-2.5 min-h-[44px] text-xs sm:text-[13.5px] font-medium shadow-2xs transition-colors cursor-pointer"
                 >
@@ -192,20 +169,12 @@ export function Overview({ onNavigate, onOpenImport: _onOpenImport }: OverviewPr
                 </button>
               </div>
 
-              {/* Beginner tip — restored after the landing redesign dropped it (finding F11) */}
+              {/* Beginner tip */}
               <p className="text-xs text-[#68716B] pt-0.5">
-                New here? Start with the green <strong className="font-semibold text-[#35563B]">Open Explorer</strong> button, or click{' '}
-                <button
-                  type="button"
-                  onClick={() => setShowGuideModal(true)}
-                  className="font-semibold text-[#35563B] underline hover:text-[#263D2D] cursor-pointer"
-                >
-                  Help & Feature Guide
-                </button>{' '}
-                to see which window helps doing what.
+                New here? Start with the green <strong className="font-semibold text-[#35563B]">Open Explorer</strong> button, or explore the feature guide below to match your research goal.
               </p>
 
-              {/* Statistics Row: 6 Real Ecosystems · 200+ Species · 500+ Feeding Links · 9 Analysis Tools */}
+              {/* Statistics Row: 6 Real Ecosystems · 200+ Species · 500+ Feeding Links · 5 Analysis Tools */}
               <div className="pt-4 border-t border-[#E5E6DC]/80 grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#E8EDE0] text-[#35563B]">
@@ -242,7 +211,7 @@ export function Overview({ onNavigate, onOpenImport: _onOpenImport }: OverviewPr
                     <BarChart3 size={16} />
                   </div>
                   <div>
-                    <p className="text-base font-bold text-[#202B27] tabular-nums leading-none">9</p>
+                    <p className="text-base font-bold text-[#202B27] tabular-nums leading-none">5</p>
                     <p className="text-[11px] text-[#68716B] font-medium mt-1">Analysis Tools</p>
                   </div>
                 </div>
@@ -295,24 +264,37 @@ export function Overview({ onNavigate, onOpenImport: _onOpenImport }: OverviewPr
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {featureCards.map((card) => (
               <div
                 key={card.id}
                 onClick={card.action}
-                className="group cursor-pointer rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 sm:p-5 shadow-2xs hover:border-[#899B78] hover:shadow-xs hover:bg-white transition-all flex flex-col justify-between"
+                className={cn(
+                  'group cursor-pointer rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-5 shadow-2xs hover:shadow-xs hover:bg-white transition-all flex flex-col justify-between min-h-[175px]',
+                  card.borderHover,
+                  card.featured ? 'lg:col-span-2' : 'col-span-1',
+                )}
               >
-                <div className="flex items-start justify-between">
-                  <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${card.bg} group-hover:scale-105 transition-transform`}>
-                    {card.icon}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${card.bg} group-hover:scale-105 transition-transform shrink-0`}>
+                      {card.icon}
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#899B78] block">
+                        {card.tag}
+                      </span>
+                      <h3 className="text-base sm:text-[17px] font-serif font-medium text-[#202B27] group-hover:text-[#35563B] transition-colors leading-snug">
+                        {card.title}
+                      </h3>
+                    </div>
                   </div>
-                  <ArrowRight size={14} className="text-[#899B78] group-hover:translate-x-0.5 group-hover:text-[#35563B] transition-all" />
+                  <div className="h-7 w-7 rounded-lg border border-[#E5E6DC] flex items-center justify-center text-[#899B78] group-hover:text-[#35563B] group-hover:border-[#35563B]/30 group-hover:bg-[#E8EDE0]/50 transition-all shrink-0">
+                    <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                  </div>
                 </div>
-                <div className="mt-3.5 space-y-1">
-                  <h3 className="text-sm sm:text-[15px] font-serif font-medium text-[#202B27] group-hover:text-[#35563B] transition-colors leading-snug">
-                    {card.title}
-                  </h3>
-                  <p className="text-xs text-[#68716B] leading-relaxed">
+                <div className="mt-4 pt-3 border-t border-[#E5E6DC]/60">
+                  <p className="text-xs sm:text-[13px] text-[#68716B] leading-relaxed">
                     {card.description}
                   </p>
                 </div>
@@ -385,25 +367,18 @@ export function Overview({ onNavigate, onOpenImport: _onOpenImport }: OverviewPr
                 Ready to experiment with real ecological networks?
               </h4>
               <p className="text-xs text-[#68716B]">
-                Open the Interactive Explorer or test a species extinction cascade in the Simulation Laboratory.
+                Open the Food Web Explorer to inspect feeding interactions, simulate disturbance, and track cascading extinctions.
               </p>
             </div>
             <div className="flex items-center gap-2.5">
               <button
                 type="button"
                 onClick={() => onNavigate('explore')}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#35563B] hover:bg-[#263D2D] text-white px-4 py-2 text-xs font-semibold shadow-xs transition-colors"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#35563B] hover:bg-[#263D2D] text-white px-5 py-2.5 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
               >
-                <Compass size={14} />
+                <Compass size={15} />
                 <span>Open Explorer</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onNavigate('explore')}
-                className="inline-flex items-center gap-2 rounded-xl border border-[#E5E6DC] bg-white hover:bg-[#F0F2E9] text-[#202B27] px-4 py-2 text-xs font-medium shadow-2xs transition-colors"
-              >
-                <FlaskConical size={14} className="text-[#D96B50]" />
-                <span>Simulate Disturbance</span>
+                <ArrowRight size={14} />
               </button>
             </div>
           </div>

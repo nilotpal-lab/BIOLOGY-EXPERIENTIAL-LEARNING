@@ -146,7 +146,7 @@ export function Shell({
       {isPublicPage ? (
         <header className="sticky top-0 z-40 w-full border-b border-[#E5E6DC] bg-[#FCFBF7]/95 backdrop-blur-md">
           <div className="flex items-center justify-between h-17 px-4 sm:px-6 lg:px-10 max-w-[1520px] mx-auto">
-            {/* Left: Brand Logo + Leaf Icon + Subtitle */}
+            {/* Left: Brand Logo + Leaf Icon + Subtitle (Navbar removed, logo preserved) */}
             <button
               type="button"
               onClick={() => navigate('overview')}
@@ -166,110 +166,19 @@ export function Shell({
               </div>
             </button>
 
-            {/* Centre Navigation: Home · Datasets · About */}
-            <nav aria-label="Public navigation" className="hidden md:flex items-center space-x-1 h-full">
-              <button
-                type="button"
-                onClick={() => navigate('overview')}
-                className={cn(
-                  'h-full px-4 text-sm font-medium transition-colors relative flex items-center',
-                  route === 'overview'
-                    ? 'text-[#35563B] font-semibold border-b-2 border-[#35563B]'
-                    : 'text-[#68716B] hover:text-[#202B27] border-b-2 border-transparent',
-                )}
-              >
-                Home
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('library')}
-                className="h-full px-4 text-sm font-medium text-[#68716B] hover:text-[#202B27] transition-colors relative flex items-center border-b-2 border-transparent"
-              >
-                Datasets
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('methodology')}
-                className="h-full px-4 text-sm font-medium text-[#68716B] hover:text-[#202B27] transition-colors relative flex items-center border-b-2 border-transparent"
-              >
-                About
-              </button>
-            </nav>
-
-            {/* Right: Open Explorer CTA Button */}
+            {/* Right: Direct Open Explorer CTA Button */}
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={() => navigate('explore')}
-                className="hidden sm:inline-flex items-center gap-2 rounded-[10px] bg-[#35563B] hover:bg-[#263D2D] text-white px-4 py-2 text-xs sm:text-[13px] font-semibold shadow-xs transition-colors"
+                className="inline-flex items-center gap-2 rounded-[10px] bg-[#35563B] hover:bg-[#263D2D] text-white px-4 py-2 text-xs sm:text-[13px] font-semibold shadow-xs transition-colors cursor-pointer"
               >
                 <Network size={15} />
                 <span>Open Explorer</span>
                 <ArrowRight size={14} />
               </button>
-
-              <button
-                type="button"
-                onClick={() => setMobileMenuOpen((prev) => !prev)}
-                aria-expanded={mobileMenuOpen}
-                aria-label="Toggle navigation menu"
-                className="flex md:hidden h-9 w-9 min-h-[40px] min-w-[40px] items-center justify-center rounded-xl border border-[#E5E6DC] bg-white text-[#202B27] shadow-2xs cursor-pointer"
-              >
-                {mobileMenuOpen ? <X size={16} /> : <Menu size={16} />}
-              </button>
             </div>
           </div>
-
-          {/* Mobile Navigation Dropdown */}
-          {mobileMenuOpen && (
-            <div className="md:hidden border-t border-[#E5E6DC] bg-[#FCFBF7] p-4 space-y-2 shadow-lg">
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigate('overview')
-                    setMobileMenuOpen(false)
-                  }}
-                  className={cn(
-                    'flex items-center px-3 py-2.5 min-h-[40px] rounded-xl text-xs font-semibold text-left cursor-pointer',
-                    route === 'overview' ? 'bg-[#E8EDE0] text-[#35563B]' : 'text-[#68716B] hover:bg-[#F0F2E9]',
-                  )}
-                >
-                  Home
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigate('explore')
-                    setMobileMenuOpen(false)
-                  }}
-                  className="flex items-center px-3 py-2.5 min-h-[40px] rounded-xl text-xs font-semibold text-left text-[#35563B] bg-[#E8EDE0] hover:bg-[#DCE4D2] cursor-pointer"
-                >
-                  Open Explorer
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigate('library')
-                    setMobileMenuOpen(false)
-                  }}
-                  className="flex items-center px-3 py-2.5 min-h-[40px] rounded-xl text-xs font-semibold text-left text-[#68716B] hover:bg-[#F0F2E9] cursor-pointer"
-                >
-                  Datasets
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigate('methodology')
-                    setMobileMenuOpen(false)
-                  }}
-                  className="flex items-center px-3 py-2.5 min-h-[40px] rounded-xl text-xs font-semibold text-left text-[#68716B] hover:bg-[#F0F2E9] cursor-pointer"
-                >
-                  About
-                </button>
-              </div>
-            </div>
-          )}
         </header>
       ) : (
         /* =====================================================================
@@ -303,27 +212,31 @@ export function Shell({
               </button>
             </div>
 
-            {/* Center: Search species field (Matching Image 1 & 2) */}
-            <div className="hidden lg:block flex-1 max-w-2xl px-2">
-              <div className="relative w-full">
-                <Search
-                  size={15}
-                  className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#899B78]"
-                />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') submitSearch()
-                  }}
-                  placeholder="Search species (e.g. Carp, Macrobrachium, Heron ...)"
-                  aria-label="Global species search"
-                  maxLength={120}
-                  className="w-full rounded-xl border border-[#E5E6DC] bg-[#F7F6EF] pl-10 pr-4 py-2 text-xs sm:text-[13px] text-[#202B27] placeholder:text-[#899B78] focus:border-[#35563B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#35563B] transition-colors shadow-2xs"
-                />
+            {/* Center: Search species field (Hidden on compare tab per user request) */}
+            {route !== 'compare' ? (
+              <div className="hidden lg:block flex-1 max-w-2xl px-2">
+                <div className="relative w-full">
+                  <Search
+                    size={15}
+                    className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#899B78]"
+                  />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') submitSearch()
+                    }}
+                    placeholder="Search species (e.g. Carp, Macrobrachium, Heron ...)"
+                    aria-label="Global species search"
+                    maxLength={120}
+                    className="w-full rounded-xl border border-[#E5E6DC] bg-[#F7F6EF] pl-10 pr-4 py-2 text-xs sm:text-[13px] text-[#202B27] placeholder:text-[#899B78] focus:border-[#35563B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#35563B] transition-colors shadow-2xs"
+                  />
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="hidden lg:block flex-1" />
+            )}
 
             {/* Dataset selector with thumbnail photo (middle-right) */}
             {/* min-w-0 + shrink: on small viewports the picker shrinks (select text truncates)
@@ -456,8 +369,8 @@ export function Shell({
         </header>
       )}
 
-      {/* Notice Banner (if any) */}
-      {notice && (
+      {/* Notice Banner (if any) — dismissible with close button, hidden on public overview */}
+      {notice && !isPublicPage && (
         <div className="max-w-[1720px] w-full mx-auto px-4 lg:px-6 pt-3">
           <div
             role="status"
@@ -474,6 +387,14 @@ export function Shell({
               <p className="font-bold">{notice.title}</p>
               <p className="mt-0.5 text-[11.5px] leading-relaxed">{notice.message}</p>
             </div>
+            <button
+              type="button"
+              onClick={() => setNotice(null)}
+              className="text-current opacity-60 hover:opacity-100 p-0.5 rounded cursor-pointer transition-opacity"
+              aria-label="Dismiss notice"
+            >
+              <X size={14} />
+            </button>
           </div>
         </div>
       )}

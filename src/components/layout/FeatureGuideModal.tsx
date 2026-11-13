@@ -10,7 +10,6 @@ import {
   FileQuestion,
   FlaskConical,
   GitCompareArrows,
-  Globe2,
   HelpCircle,
   Layers,
   Network,
@@ -126,22 +125,6 @@ const WINDOW_REGISTRY: WindowInfo[] = [
     route: 'compare',
   },
   {
-    id: 'conservation',
-    title: 'Conservation Atlas',
-    subtitle: 'Biogeographical & Trophic Distributions',
-    icon: <Globe2 size={20} />,
-    bg: 'bg-[#E0F2F1]',
-    textColor: 'text-[#00796B]',
-    whatItDoes:
-      'Organizes ecological networks by geographic location, biome type, and trophic pyramid structures.',
-    whenToUse:
-      'Use for macro-ecological research, understanding geographic coverage, and analyzing basal-to-top predator trophic ratios.',
-    keyOutputs:
-      'Ecosystem biome classification, geographic distribution cards, trophic level biomass/species breakdowns, and field study provenance.',
-    targetQuestion: 'Where are these empirical ecosystems located, and what do their trophic pyramids look like?',
-    route: 'conservation',
-  },
-  {
     id: 'library',
     title: 'Research Library',
     subtitle: 'Verified Literature & Benchmark Networks',
@@ -240,14 +223,6 @@ const USER_GOALS: UserGoal[] = [
     route: 'compare',
     badge: 'Comparative Analytics',
     icon: <GitCompareArrows size={18} className="text-[#865DAF]" />,
-  },
-  {
-    goal: 'Explore geographic biomes & trophic pyramids',
-    description: 'Examine spatial biomes, basal-to-top predator ratios, and regional ecological profiles.',
-    bestWindow: 'Conservation Atlas',
-    route: 'conservation',
-    badge: 'Spatial Ecology',
-    icon: <Globe2 size={18} className="text-[#00796B]" />,
   },
   {
     goal: 'Browse verified research datasets & literature citations',

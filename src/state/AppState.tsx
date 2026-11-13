@@ -354,11 +354,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         setAnalysisRunning(false)
         analysisAbort.current = null
         if (next.cancelled) return
-        setNoticeState({
-          tone: 'success',
-          title: 'Analysis complete',
-          message: `${next.scenarios.size} independent removal scenario(s) were run for "${dataset.name}", each starting from the same unchanged baseline. Rankings are available for every metric.`,
-        })
       })
       .catch(() => {
         setAnalysisRunning(false)
