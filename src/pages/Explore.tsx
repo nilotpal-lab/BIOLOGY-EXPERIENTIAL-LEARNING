@@ -43,6 +43,8 @@ import type { RouteId } from '../components/layout/Shell'
 export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }) {
   const {
     dataset,
+    datasets,
+    selectDataset,
     graph,
     selectedNodeId,
     selectNode,
@@ -493,9 +495,75 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
       <div className="flex-1 flex overflow-hidden p-2 sm:p-3 gap-2.5 sm:gap-3">
         {/* Left Side: Food Web Canvas (Dominant Center Stage) */}
         <div className="flex-1 flex flex-col relative rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] overflow-hidden shadow-2xs">
-          {/* Top Bar for View Toggle Actions */}
-          <div className="flex items-center justify-between px-3 py-1.5 border-b border-[#E5E6DC]/80 bg-[#FCFBF7]">
-            <div className="flex items-center gap-2">
+          {/* Top Bar for View Toggle Actions & Ecosystem Network Selection */}
+          <div className="flex flex-wrap items-center justify-between px-3 py-1.5 border-b border-[#E5E6DC]/80 bg-[#FCFBF7] gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              {/* Ecosystem Network Selector */}
+              <div className="flex items-center gap-2 rounded-xl border border-[#E5E6DC] bg-[#F7F6EF] p-1 pr-2.5 shadow-2xs max-w-[260px] sm:max-w-[300px]">
+                <div className="hidden h-7 w-9 sm:block rounded-lg overflow-hidden shrink-0 border border-[#E5E6DC] bg-white">
+                  <img
+                    src="/hero-ecosystem.webp"
+                    alt="Ecosystem thumbnail"
+                    className="h-full w-full object-cover object-[70%_30%]"
+                  />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <SelectInput
+                    id="explore-network-select"
+                    aria-label="Loaded network"
+                    value={dataset?.id ?? ''}
+                    onChange={(e) => selectDataset(e.target.value)}
+                    className="border-none bg-transparent p-0 text-xs font-bold text-[#202B27] focus:ring-0 cursor-pointer w-full truncate"
+                  >
+                    <optgroup label="— Illustrative Demo Networks —">
+                      {datasets
+                        .filter((entry) => entry.isDemo && !entry.id.startsWith('VALIDATION-') && !entry.id.includes('fixture'))
+                        .map((entry) => (
+                          <option key={entry.id} value={entry.id}>
+                            {entry.name}
+                          </option>
+                        ))}
+                    </optgroup>
+                    <optgroup label="— Empirical Research Networks —">
+                      {datasets
+                        .filter((entry) => !entry.isDemo && entry.sourceStatus === 'research-verified' && !entry.userProvided && !entry.id.startsWith('VALIDATION-') && !entry.id.includes('fixture'))
+                        .map((entry) => (
+                          <option key={entry.id} value={entry.id}>
+                            {entry.name}
+                          </option>
+                        ))}
+                    </optgroup>
+                    {datasets.some((entry) => entry.userProvided) ? (
+                      <optgroup label="— Custom Uploaded Networks —">
+                        {datasets
+                          .filter((entry) => entry.userProvided)
+                          .map((entry) => (
+                            <option key={entry.id} value={entry.id}>
+                              {entry.name}
+                            </option>
+                          ))}
+                      </optgroup>
+                    ) : null}
+                    {datasets.some((entry) => entry.id.startsWith('VALIDATION-') || entry.id.includes('fixture')) ? (
+                      <optgroup label="— Internal test fixtures (used by automated tests) —">
+                        {datasets
+                          .filter((entry) => entry.id.startsWith('VALIDATION-') || entry.id.includes('fixture'))
+                          .map((entry) => (
+                            <option key={entry.id} value={entry.id}>
+                              {entry.name}
+                            </option>
+                          ))}
+                      </optgroup>
+                    ) : null}
+                  </SelectInput>
+                  <p className="text-[9.5px] text-[#68716B] truncate leading-tight">
+                    {dataset ? `${ECOSYSTEM_LABEL[dataset.ecosystem]} (UK)` : 'Ecosystem'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="h-5 w-px bg-[#E5E6DC] hidden sm:block mx-0.5" />
+
               <button
                 type="button"
                 onClick={() => setLeftPanelOpen((prev) => !prev)}

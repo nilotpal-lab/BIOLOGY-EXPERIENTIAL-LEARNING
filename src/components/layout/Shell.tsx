@@ -12,8 +12,7 @@ import {
   X,
 } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
-import { ECOSYSTEM_LABEL } from '../../core/types'
-import { SelectInput, cn } from '../ui/primitives'
+import { cn } from '../ui/primitives'
 import { useAppState } from '../../state/AppState'
 import { type RouteId } from './routes'
 
@@ -32,7 +31,7 @@ export function Shell({
   onOpenImport: _onOpenImport,
   children,
 }: ShellProps) {
-  const { dataset, datasets, selectDataset, notice, setNotice } = useAppState()
+  const { notice, setNotice } = useAppState()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
@@ -122,8 +121,7 @@ export function Shell({
       ) : (
         /* =====================================================================
             2. APPLICATION DASHBOARD TOP BAR
-            Left: Brand Logo & Subtitle
-            Right: Dataset selector with landscape photo thumbnail
+            Clean brand header: Site logo on the left, responsive toggle on the right
             ===================================================================== */
         <header className="sticky top-0 z-40 w-full border-b border-[#E5E6DC] bg-[#FCFBF7] shadow-2xs">
           <div className="flex items-center justify-between h-16 px-4 sm:px-6 max-w-[1780px] mx-auto gap-4">
@@ -149,90 +147,16 @@ export function Shell({
               </button>
             </div>
 
-            {/* Right: Dataset selector with thumbnail photo */}
-            {/* min-w-0 + shrink: on small viewports the picker shrinks (select text truncates)
-                instead of pushing the mobile menu button past the right edge (375px overflow).
-                Re-applied: commit f23efab restored shrink-0 and reintroduced the overflow. */}
-            <div className="relative flex min-w-0 items-center gap-2">
-              <div className="relative flex min-w-0 items-center gap-2 rounded-xl border border-[#E5E6DC] bg-[#F7F6EF] p-1.5 pr-2.5 shadow-2xs max-w-[200px] sm:max-w-[240px] md:max-w-[280px]">
-                {/* Dynamic Ecosystem Landscape Photo Thumbnail */}
-                <div className="hidden h-8 w-11 sm:block sm:h-9 sm:w-12 rounded-lg overflow-hidden shrink-0 border border-[#E5E6DC] bg-white">
-                  <img
-                    src="/hero-ecosystem.webp"
-                    alt="Ecosystem thumbnail"
-                    className="h-full w-full object-cover object-[70%_30%]"
-                  />
-                </div>
-
-                <div className="min-w-0 flex-1 pr-0.5">
-                  <SelectInput
-                    id="app-network-select"
-                    aria-label="Loaded network"
-                    value={dataset?.id ?? ''}
-                    onChange={(e) => selectDataset(e.target.value)}
-                    className="border-none bg-transparent p-0 text-xs font-bold text-[#202B27] focus:ring-0 cursor-pointer w-full truncate"
-                  >
-                    <optgroup label="— Illustrative Demo Networks —">
-                      {datasets
-                        .filter((entry) => entry.isDemo && !entry.id.startsWith('VALIDATION-') && !entry.id.includes('fixture'))
-                        .map((entry) => (
-                          <option key={entry.id} value={entry.id}>
-                            {entry.name}
-                          </option>
-                        ))}
-                    </optgroup>
-                    <optgroup label="— Empirical Research Networks —">
-                      {datasets
-                        .filter((entry) => !entry.isDemo && entry.sourceStatus === 'research-verified' && !entry.userProvided && !entry.id.startsWith('VALIDATION-') && !entry.id.includes('fixture'))
-                        .map((entry) => (
-                          <option key={entry.id} value={entry.id}>
-                            {entry.name}
-                          </option>
-                        ))}
-                    </optgroup>
-                    {datasets.some((entry) => entry.userProvided) ? (
-                      <optgroup label="— Custom Uploaded Networks —">
-                        {datasets
-                          .filter((entry) => entry.userProvided)
-                          .map((entry) => (
-                            <option key={entry.id} value={entry.id}>
-                              {entry.name}
-                            </option>
-                          ))}
-                      </optgroup>
-                    ) : null}
-                    {datasets.some((entry) => entry.id.startsWith('VALIDATION-') || entry.id.includes('fixture')) ? (
-                      <optgroup label="— Internal test fixtures (used by automated tests) —">
-                        {datasets
-                          .filter((entry) => entry.id.startsWith('VALIDATION-') || entry.id.includes('fixture'))
-                          .map((entry) => (
-                            <option key={entry.id} value={entry.id}>
-                              {entry.name}
-                            </option>
-                          ))}
-                      </optgroup>
-                    ) : null}
-                  </SelectInput>
-                  <p className="text-[10px] text-[#68716B] truncate">
-                    {dataset ? `${ECOSYSTEM_LABEL[dataset.ecosystem]} (UK)` : 'Ecosystem'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Mobile-only toggle for responsive viewports below 1024px */}
-              <button
-                type="button"
-                onClick={() => setMobileMenuOpen((prev) => !prev)}
-                aria-expanded={mobileMenuOpen}
-                aria-label="Toggle navigation menu"
-                className="flex lg:hidden h-9 w-9 min-h-[40px] min-w-[40px] items-center justify-center rounded-lg border border-[#E5E6DC] bg-white text-[#202B27] shadow-2xs cursor-pointer"
-              >
-                {mobileMenuOpen ? <X size={15} /> : <Menu size={15} />}
-              </button>
-            </div>
-
-            {/* TOP-RIGHT AREA REMAINS COMPLETELY BLANK AS SPECIFIED */}
-            <div className="hidden lg:block w-4 shrink-0" aria-hidden="true" />
+            {/* Mobile-only toggle for responsive viewports below 1024px */}
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen((prev) => !prev)}
+              aria-expanded={mobileMenuOpen}
+              aria-label="Toggle navigation menu"
+              className="flex lg:hidden h-9 w-9 min-h-[40px] min-w-[40px] items-center justify-center rounded-lg border border-[#E5E6DC] bg-white text-[#202B27] shadow-2xs cursor-pointer"
+            >
+              {mobileMenuOpen ? <X size={15} /> : <Menu size={15} />}
+            </button>
           </div>
 
           {/* Mobile App Navigation Dropdown */}
