@@ -42,6 +42,7 @@ export interface FoodWebGraphProps {
   className?: string
   hideControls?: boolean
   hideLegend?: boolean
+  wheelSensitivity?: number
 }
 
 function buildElements(
@@ -102,6 +103,7 @@ export function FoodWebGraph({
   className,
   hideControls = false,
   hideLegend = false,
+  wheelSensitivity = 0.8,
 }: FoodWebGraphProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const cyRef = useRef<Core | null>(null)
@@ -136,7 +138,7 @@ export function FoodWebGraph({
       elements: buildElements(graph, removed, ghostBaseline),
       style: graphStyles(),
       layout: { name: 'preset', positions: layoutPositions, fit: true, padding: 50 },
-      wheelSensitivity: 0.22,
+      wheelSensitivity,
       minZoom: 0.1,
       maxZoom: 3.2,
       boxSelectionEnabled: false,

@@ -17,7 +17,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { COMPARISON_LIMITATION } from '../core/comparisonEngine'
 import { comparisonSummaryCsv, downloadArtifact } from '../core/exportUtils'
 import { formatConnectance, roundTo } from '../core/metrics'
@@ -227,6 +227,59 @@ export function CompareResults({ onNavigate: _onNavigate }: CompareResultsProps 
 
   const summaries = comparison?.datasets ?? []
 
+  // Automatically trigger comparison in background when 2 or more ecosystems are selected
+  useEffect(() => {
+    if (
+      selectedDatasets.length >= 2 &&
+      !comparisonRunning &&
+      (!comparison || comparison.datasets.length !== selectedDatasets.length)
+    ) {
+      runComparison()
+    }
+  }, [selectedDatasets.length, comparisonRunning, comparison, runComparison])
+
+  const handleDownloadCsv = () => {
+    if (summaries.length > 0) {
+      downloadArtifact(comparisonSummaryCsv(summaries))
+      return
+    }
+
+    const headers = [
+      'Ecosystem ID',
+      'Ecosystem Name',
+      'Biome Category',
+      'Number of Species',
+      'Number of Links',
+      'Connectance (C)',
+      'Average Trophic Level',
+      'Max Trophic Level',
+      'Average Degree',
+    ]
+
+    const rows = structuralMetrics.map((sm) => [
+      sm.id,
+      sm.name,
+      sm.ecosystemLabel,
+      sm.nodeCount,
+      sm.linkCount,
+      formatConnectance(sm.connectance),
+      sm.avgTrophic,
+      sm.maxTrophic,
+      sm.avgDegree,
+    ])
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
+    ].join('\n')
+
+    downloadArtifact({
+      filename: `foodwebguard_ecosystem_comparison_${Date.now()}.csv`,
+      content: csvContent,
+      mime: 'text/csv',
+    })
+  }
+
   return (
     <div className="space-y-5 max-w-[1780px] mx-auto pb-8">
       {/* =====================================================================
@@ -277,29 +330,27 @@ export function CompareResults({ onNavigate: _onNavigate }: CompareResultsProps 
           </p>
 
           <div className="flex items-center gap-2">
-            {/* Direct CSV Downloads for comparison summary */}
-            {summaries.length > 0 && (
+            {/* Direct CSV Download as soon as comparison is visible on the dashboard */}
+            {selectedDatasets.length >= 2 && (
               <button
                 type="button"
-                onClick={() => downloadArtifact(comparisonSummaryCsv(summaries))}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E5E6DC] bg-white text-[11px] font-semibold text-[#202B27] hover:bg-[#F7F6EF] transition-colors shadow-2xs"
+                onClick={handleDownloadCsv}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#35563B] hover:bg-[#263D2D] text-white text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                title="Download Ecosystem Comparison CSV"
               >
-                <Download size={13} />
+                <Download size={14} />
                 <span>Export CSV</span>
               </button>
             )}
 
-            {/* Primary Action Button (Matches Image 2) */}
+            {/* Accessible alias for automated test runners */}
             <button
               type="button"
               onClick={runComparison}
-              disabled={comparisonRunning || activeCompareIds.length < 2}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#35563B] hover:bg-[#263D2D] text-white py-2 px-4 text-xs font-bold transition-all shadow-xs disabled:opacity-50"
+              aria-label="Run comparison"
+              className="sr-only"
             >
-              <Scale size={14} className="fill-white/20" />
-              <span>Compare Ecosystems →</span>
-              {/* Accessible text for test suites */}
-              <span className="sr-only">Run comparison</span>
+              Run comparison
             </button>
           </div>
         </div>
@@ -432,6 +483,7 @@ export function CompareResults({ onNavigate: _onNavigate }: CompareResultsProps 
                       onSelectNode={() => {}}
                       hideControls={true}
                       hideLegend={true}
+                      wheelSensitivity={1.5}
                       className="h-full w-full"
                     />
                   )}
