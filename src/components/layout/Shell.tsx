@@ -1,5 +1,4 @@
 import {
-  ArrowRight,
   BarChart3,
   BookOpenCheck,
   Compass,
@@ -7,7 +6,6 @@ import {
   LayoutDashboard,
   Leaf,
   Menu,
-  Network,
   PanelLeftClose,
   PanelLeftOpen,
   Search,
@@ -146,7 +144,7 @@ export function Shell({
       {isPublicPage ? (
         <header className="sticky top-0 z-40 w-full border-b border-[#E5E6DC] bg-[#FCFBF7]/95 backdrop-blur-md">
           <div className="flex items-center justify-between h-17 px-4 sm:px-6 lg:px-10 max-w-[1520px] mx-auto">
-            {/* Left: Brand Logo + Leaf Icon + Subtitle (Navbar removed, logo preserved) */}
+            {/* Left: Brand Logo + Leaf Icon + Subtitle */}
             <button
               type="button"
               onClick={() => navigate('overview')}
@@ -165,19 +163,6 @@ export function Shell({
                 </span>
               </div>
             </button>
-
-            {/* Right: Direct Open Explorer CTA Button */}
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => navigate('explore')}
-                className="inline-flex items-center gap-2 rounded-[10px] bg-[#35563B] hover:bg-[#263D2D] text-white px-4 py-2 text-xs sm:text-[13px] font-semibold shadow-xs transition-colors cursor-pointer"
-              >
-                <Network size={15} />
-                <span>Open Explorer</span>
-                <ArrowRight size={14} />
-              </button>
-            </div>
           </div>
         </header>
       ) : (

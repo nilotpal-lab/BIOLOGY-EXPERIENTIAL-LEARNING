@@ -4,7 +4,6 @@ import {
   BarChart3,
   BookOpenCheck,
   Clock,
-  Compass,
   FlaskConical,
   GitCompareArrows,
   HelpCircle,
@@ -358,28 +357,6 @@ export function Overview({ onNavigate, onOpenImport: _onOpenImport }: OverviewPr
               <p className="text-xs text-[#68716B] leading-relaxed">
                 Static species counts conceal systemic fragility. Our simulation engine executes multi-round cascade sweeps, tracking secondary link loss and community survival until equilibrium is reached.
               </p>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="space-y-1 text-center sm:text-left">
-              <h4 className="text-sm font-serif font-medium text-[#202B27]">
-                Ready to experiment with real ecological networks?
-              </h4>
-              <p className="text-xs text-[#68716B]">
-                Open the Food Web Explorer to inspect feeding interactions, simulate disturbance, and track cascading extinctions.
-              </p>
-            </div>
-            <div className="flex items-center gap-2.5">
-              <button
-                type="button"
-                onClick={() => onNavigate('explore')}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#35563B] hover:bg-[#263D2D] text-white px-5 py-2.5 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-              >
-                <Compass size={15} />
-                <span>Open Explorer</span>
-                <ArrowRight size={14} />
-              </button>
             </div>
           </div>
         </section>
