@@ -8,7 +8,6 @@ import {
   Menu,
   PanelLeftClose,
   PanelLeftOpen,
-  Search,
   ShieldCheck,
   X,
 } from 'lucide-react'
@@ -35,7 +34,6 @@ export function Shell({
 }: ShellProps) {
   const { dataset, datasets, selectDataset, notice, setNotice } = useAppState()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   const isPublicPage = route === 'overview'
@@ -43,50 +41,6 @@ export function Shell({
   const navigate = (next: RouteId) => {
     setMobileMenuOpen(false)
     onNavigate(next)
-  }
-
-  const submitSearch = () => {
-    const query = searchQuery.trim()
-    if (!query) {
-      setNotice({
-        tone: 'info',
-        title: 'Search is empty',
-        message: 'Type a network name, id or ecosystem (for example "Ythan", "pond" or "marine") and press Enter.',
-      })
-      return
-    }
-    const lower = query.toLowerCase()
-    const matches = datasets.filter(
-      (entry) =>
-        entry.name.toLowerCase().includes(lower) ||
-        entry.id.toLowerCase().includes(lower) ||
-        entry.ecosystem.toLowerCase().includes(lower) ||
-        entry.summary.toLowerCase().includes(lower),
-    )
-    if (matches.length === 1) {
-      const match = matches[0]
-      selectDataset(match.id)
-      navigate('explore')
-      setNotice({
-        tone: 'success',
-        title: 'Network loaded',
-        message: `Search "${query}" matched one network: ${match.name}. It is now loaded in the Explorer.`,
-      })
-    } else if (matches.length > 1) {
-      navigate('library')
-      setNotice({
-        tone: 'info',
-        title: `${matches.length} networks match "${query}"`,
-        message: 'Several loaded networks match the search. Use the library search to narrow them down.',
-      })
-    } else {
-      setNotice({
-        tone: 'warning',
-        title: `No network matches "${query}"`,
-        message:
-          'The global search looks at network names, ids, ecosystems and summaries. To find a species inside the loaded network, use the species search in the Explorer.',
-      })
-    }
   }
 
   /* -------------------------------------------------------------------------- */
@@ -167,11 +121,9 @@ export function Shell({
         </header>
       ) : (
         /* =====================================================================
-            2. APPLICATION DASHBOARD TOP BAR (Matching Image 1 & Image 2)
+            2. APPLICATION DASHBOARD TOP BAR
             Left: Brand Logo & Subtitle
-            Center: Search species field
             Right: Dataset selector with landscape photo thumbnail
-            TOP-RIGHT area: Completely blank without extra buttons or controls
             ===================================================================== */
         <header className="sticky top-0 z-40 w-full border-b border-[#E5E6DC] bg-[#FCFBF7] shadow-2xs">
           <div className="flex items-center justify-between h-16 px-4 sm:px-6 max-w-[1780px] mx-auto gap-4">
@@ -197,33 +149,7 @@ export function Shell({
               </button>
             </div>
 
-            {/* Center: Search species field (Hidden on compare tab per user request) */}
-            {route !== 'compare' ? (
-              <div className="hidden lg:block flex-1 max-w-2xl px-2">
-                <div className="relative w-full">
-                  <Search
-                    size={15}
-                    className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#899B78]"
-                  />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') submitSearch()
-                    }}
-                    placeholder="Search species (e.g. Carp, Macrobrachium, Heron ...)"
-                    aria-label="Global species search"
-                    maxLength={120}
-                    className="w-full rounded-xl border border-[#E5E6DC] bg-[#F7F6EF] pl-10 pr-4 py-2 text-xs sm:text-[13px] text-[#202B27] placeholder:text-[#899B78] focus:border-[#35563B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#35563B] transition-colors shadow-2xs"
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="hidden lg:block flex-1" />
-            )}
-
-            {/* Dataset selector with thumbnail photo (middle-right) */}
+            {/* Right: Dataset selector with thumbnail photo */}
             {/* min-w-0 + shrink: on small viewports the picker shrinks (select text truncates)
                 instead of pushing the mobile menu button past the right edge (375px overflow).
                 Re-applied: commit f23efab restored shrink-0 and reintroduced the overflow. */}
