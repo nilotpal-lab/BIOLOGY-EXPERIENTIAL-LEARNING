@@ -341,11 +341,12 @@ export function FeatureGuideModal({
     }
 
     document.addEventListener('keydown', handleKeyDown)
+    const originalOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
-      document.body.style.overflow = ''
+      document.body.style.overflow = originalOverflow
     }
   }, [isOpen, onClose])
 
@@ -365,14 +366,14 @@ export function FeatureGuideModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="feature-guide-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-6 bg-black/60 backdrop-blur-xs overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-6 bg-black/60 overflow-hidden"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}
     >
-      <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl bg-[#FCFBF7] text-[#202B27] border border-[#E5E6DC] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl bg-[#FCFBF7] text-[#202B27] border border-[#E5E6DC] shadow-2xl overflow-hidden [transform:translateZ(0)]">
         {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-[#E5E6DC] bg-[#F7F6EF] px-5 sm:px-6 py-4">
+        <div className="shrink-0 flex items-center justify-between border-b border-[#E5E6DC] bg-[#F7F6EF] px-5 sm:px-6 py-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#E8EDE0] text-[#35563B] shadow-2xs">
               <HelpCircle size={22} />
@@ -407,7 +408,7 @@ export function FeatureGuideModal({
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center border-b border-[#E5E6DC] bg-white px-5 sm:px-6 gap-2 sm:gap-6 overflow-x-auto">
+        <div className="shrink-0 flex items-center border-b border-[#E5E6DC] bg-white px-5 sm:px-6 gap-2 sm:gap-6 overflow-x-auto">
           <button
             type="button"
             onClick={() => setActiveTab('goals')}
@@ -448,8 +449,8 @@ export function FeatureGuideModal({
           </button>
         </div>
 
-        {/* Modal Scrollable Body */}
-        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
+        {/* Modal Scrollable Body with dedicated hardware-accelerated layer & isolated overscroll */}
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-5 sm:p-6 space-y-6 [transform:translateZ(0)] [will-change:scroll-position] [scroll-behavior:auto] [-webkit-overflow-scrolling:touch]">
           {/* TAB 1: GOAL FINDER */}
           {activeTab === 'goals' && (
             <div className="space-y-4">
@@ -463,7 +464,7 @@ export function FeatureGuideModal({
                 {USER_GOALS.map((item, idx) => (
                   <div
                     key={idx}
-                    className="flex flex-col justify-between rounded-xl border border-[#E5E6DC] bg-white p-4 shadow-2xs hover:border-[#899B78] hover:shadow-xs transition-all"
+                    className="flex flex-col justify-between rounded-xl border border-[#E5E6DC] bg-white p-4 shadow-2xs hover:border-[#899B78] transition-colors"
                   >
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
@@ -638,7 +639,7 @@ export function FeatureGuideModal({
         </div>
 
         {/* Modal Footer */}
-        <div className="border-t border-[#E5E6DC] bg-[#F7F6EF] px-5 sm:px-6 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#68716B]">
+        <div className="shrink-0 border-t border-[#E5E6DC] bg-[#F7F6EF] px-5 sm:px-6 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#68716B]">
           <div className="flex items-center gap-2 text-center sm:text-left">
             <Compass size={15} className="text-[#35563B] shrink-0" />
             <span>
