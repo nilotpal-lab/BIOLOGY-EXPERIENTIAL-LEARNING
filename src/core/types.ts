@@ -27,11 +27,6 @@ export type NodeType = 'species' | 'trophic-group'
 
 export const NODE_TYPES: readonly NodeType[] = ['species', 'trophic-group'] as const
 
-export const NODE_TYPE_LABEL: Record<NodeType, string> = {
-  'species': 'Species',
-  'trophic-group': 'Trophic group',
-}
-
 /** Documented functional role of a node. */
 export type TrophicRole =
   | 'producer'
@@ -79,10 +74,6 @@ export const CONSUMER_ROLES: readonly TrophicRole[] = [
   'decomposer',
   'other',
 ] as const
-
-export function isConsumerRole(role: TrophicRole): boolean {
-  return CONSUMER_ROLES.includes(role)
-}
 
 /** How a trophic role was established, so inferred values are never hidden. */
 export type RoleProvenance = 'documented' | 'inferred' | 'unknown'
@@ -210,11 +201,6 @@ export interface FoodWebGraph {
 /* -------------------------------------------------------------------------- */
 
 export type ScenarioMode = 'direct' | 'cascade'
-
-export const SCENARIO_MODE_LABEL: Record<ScenarioMode, string> = {
-  direct: 'Direct removal',
-  cascade: 'Direct removal + cascade',
-}
 
 /** A metric that may legitimately be "not applicable" instead of zero. */
 export interface MetricValue {

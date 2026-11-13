@@ -447,14 +447,8 @@ export function getSpeciesIcon(key: string | null | undefined): SpeciesIcon {
   return FALLBACK_ICON
 }
 
-export function hasSpeciesIcon(key: string): boolean {
-  return Boolean(SPECIES_ICONS[key])
-}
-
 /** Data URI suitable for a Cytoscape `background-image`, or any `<img>`. */
 export function speciesIconDataUri(key: string | null | undefined): string {
   const icon = getSpeciesIcon(key)
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(icon.svg)}`
 }
-
-export const SPECIES_ICON_KEYS: string[] = icons.map((icon) => icon.key)

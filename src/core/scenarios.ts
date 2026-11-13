@@ -2,7 +2,6 @@ import {
   baselineIncomingCount,
   labelOf,
   remainingFoodSourceIds,
-  survivingEdges,
   survivingNodes,
 } from './graphModel'
 import { analyzeDirectEffects, assembleScenarioMetrics, computeBaselineMetrics } from './metrics'
@@ -299,15 +298,6 @@ export function runScenario(
   return mode === 'cascade'
     ? runCascadeScenario(graph, datasetName, primaryNodeId)
     : runDirectRemovalScenario(graph, datasetName, primaryNodeId)
-}
-
-/** Nodes and links remaining in a scenario — used by the graph layer. */
-export function scenarioSurvivors(graph: FoodWebGraph, removedNodeIds: readonly string[]) {
-  const removed = new Set(removedNodeIds)
-  return {
-    nodes: survivingNodes(graph, removed),
-    edges: survivingEdges(graph, removed),
-  }
 }
 
 /**

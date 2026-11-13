@@ -1,15 +1,11 @@
 import { HelpCircle, Info } from 'lucide-react'
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, RefObject, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
 import {
-  ROLE_PROVENANCE_LABEL,
   SOURCE_STATUS_LABEL,
   SOURCE_STATUS_TONE,
-  TROPHIC_ROLE_LABEL,
   type MetricValue,
-  type RoleProvenance,
   type SourceStatus,
   type StatusTone,
-  type TrophicRole,
 } from '../../core/types'
 import { formatConnectance, formatPercent } from '../../core/metrics'
 import { cn } from './cn'
@@ -207,21 +203,6 @@ export function StatusBadge({ status }: { status: SourceStatus }) {
       }
     >
       {SOURCE_STATUS_LABEL[status]}
-    </Badge>
-  )
-}
-
-export function RoleBadge({
-  role,
-  evidence,
-}: {
-  role: TrophicRole
-  evidence?: RoleProvenance
-}) {
-  return (
-    <Badge tone="neutral" title={evidence ? `Trophic role ${ROLE_PROVENANCE_LABEL[evidence].toLowerCase()}` : undefined}>
-      {TROPHIC_ROLE_LABEL[role]}
-      {evidence && evidence !== 'documented' ? ` · ${ROLE_PROVENANCE_LABEL[evidence]}` : ''}
     </Badge>
   )
 }

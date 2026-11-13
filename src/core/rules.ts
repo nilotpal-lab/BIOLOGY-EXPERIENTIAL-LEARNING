@@ -1,4 +1,4 @@
-import type { FoodWebNode, TrophicRole } from './types'
+import type { FoodWebNode } from './types'
 
 /* ============================================================================
  * rules — the documented, explicit eligibility rule.
@@ -63,9 +63,4 @@ export function structuralLossEligibility(
       `Eligible under the structural rule, which uses recorded edges only (reported role: ${node.trophicRole}, ` +
       `role evidence: ${node.roleEvidence}; role does not gate the calculation).`,
   }
-}
-
-/** Convenience: is this role a producer-like role (reported for context only)? */
-export function isProducerLike(role: TrophicRole): boolean {
-  return role === 'producer' || role === 'basal-group'
 }

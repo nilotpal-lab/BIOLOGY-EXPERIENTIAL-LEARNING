@@ -26,6 +26,7 @@ dist-ssr
 # Ephemeral artifacts & test outputs
 screenshots/
 chrome-shots-audit/
+*.zip
 
 freebuff-chat*
 

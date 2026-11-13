@@ -122,8 +122,3 @@ export function computeLayeredLayout(
 
   return { positions, levels, maxLevel }
 }
-
-/** Short description of the layout used, for the graph legend. */
-export function describeLayout(layout: GraphLayout): string {
-  return `${layout.maxLevel + 1} trophic level(s), highest recorded level at the top`
-}

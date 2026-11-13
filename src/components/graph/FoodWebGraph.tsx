@@ -1,7 +1,6 @@
 import cytoscape, { type Core, type ElementDefinition, type EventObject } from 'cytoscape'
 import { Maximize2, Minus, Network, Plus, RotateCcw, Waypoints } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ROLE_LEGEND, STATE_LEGEND } from '../../art/roleColours'
 import { speciesIconDataUri } from '../../art/speciesIcons'
 import { computeLayeredLayout } from '../../core/layout'
 import { TROPHIC_ROLE_LABEL, type FoodWebGraph as FoodWebGraphModel } from '../../core/types'
@@ -604,54 +603,6 @@ export function FoodWebGraph({
               </p>
             ))}
           </div>
-        ) : null}
-      </div>
-    </div>
-  )
-}
-
-/** Legend for role colours and simulation states. */
-export function GraphLegend({ showLinks = true }: { showLinks?: boolean }) {
-  return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      <div>
-        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-fg-faint">
-          Recorded trophic role
-        </p>
-        <ul className="grid grid-cols-2 gap-x-2 gap-y-1">
-          {ROLE_LEGEND.map((item) => (
-            <li key={item.label} className="flex items-center gap-1.5 text-[11px] text-fg-muted">
-              <span
-                aria-hidden="true"
-                className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
-                style={{ border: `2px solid ${item.colour}` }}
-              />
-              {item.label}
-            </li>
-          ))}
-        </ul>
-      </div>
-      <div>
-        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-fg-faint">
-          Simulation state
-        </p>
-        <ul className="space-y-1">
-          {STATE_LEGEND.map((item) => (
-            <li key={item.label} className="flex items-center gap-1.5 text-[11px] text-fg-muted">
-              <span
-                aria-hidden="true"
-                className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
-                style={{ border: `2px solid ${item.colour}` }}
-              />
-              <span className="font-medium text-fg">{item.label}</span> — {item.description}
-            </li>
-          ))}
-        </ul>
-        {showLinks ? (
-          <p className="mt-1.5 text-[11px] text-fg-faint">
-            Food link: <span className="font-medium text-[#2DD4BF]">teal</span>. Consumer link:{' '}
-            <span className="font-medium text-[#818CF8]">periwinkle</span>. Removed links are hidden.
-          </p>
         ) : null}
       </div>
     </div>

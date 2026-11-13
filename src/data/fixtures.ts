@@ -238,10 +238,3 @@ export const VALIDATION_EXPECTATIONS: ExpectedScenario[] = [
     cascadeDepth: 3,
   },
 ]
-
-/** Which fixture a given expectation set applies to. */
-export const VALIDATION_FIXTURE_BY_NODE: Record<string, string> = {
-  small_fish: VALIDATION_FIXTURE_ID,
-  algae: VALIDATION_FIXTURE_ID,
-  P: CHAIN_FIXTURE_ID,
-}

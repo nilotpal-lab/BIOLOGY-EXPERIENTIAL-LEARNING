@@ -1,4 +1,4 @@
-import { SOURCE_STATUS_LABEL, type EcosystemCategory, type FoodWebDataset, type RankingResult, type ScenarioResult } from './types'
+import { SOURCE_STATUS_LABEL, type FoodWebDataset, type ScenarioResult } from './types'
 import type { DatasetComparisonSummary } from './comparisonEngine'
 
 /* ============================================================================
@@ -282,124 +282,8 @@ export function cascadeRoundsExportCsv(result: ScenarioResult, dataset: FoodWebD
 }
 
 /* -------------------------------------------------------------------------- */
-/* Ranking exports                                                            */
-/* -------------------------------------------------------------------------- */
-
-export function rankingExportCsv(ranking: RankingResult): ExportArtifact {
-  const csv = toCsv(
-    [
-      'dataset_id',
-      'dataset_name',
-      'simulation_mode',
-      'ranking_metric',
-      'ranking_metric_definition',
-      'sort_direction',
-      'tie_break',
-      'rank',
-      'node_id',
-      'node_label',
-      'trophic_role',
-      'metric_value',
-      'metric_not_applicable_reason',
-      'links_lost_direct',
-      'links_remaining_direct',
-      'nodes_remaining_direct',
-      'consumers_directly_affected',
-      'food_depleted_consumers',
-      'secondary_removals',
-      'cascade_depth',
-      'all_removed_percent_of_baseline_nodes',
-    ],
-    ranking.rows.map((row) => [
-      ranking.datasetId,
-      ranking.datasetName,
-      ranking.mode,
-      ranking.metric.label,
-      ranking.metric.definition,
-      'descending (larger measured change ranks higher)',
-      'rank by value, then alphabetically by node label, then by node id',
-      row.rank,
-      row.nodeId,
-      row.label,
-      row.role,
-      row.metricValue ?? '',
-      row.metricNotApplicable ?? '',
-      row.linksLost,
-      row.linkCount,
-      row.nodeCount,
-      row.directlyAffectedConsumers,
-      row.foodDepletedConsumers,
-      row.secondaryRemovals,
-      row.cascadeDepth,
-      row.removedPercentOfBaseline ?? '',
-    ]),
-  )
-  return {
-    filename: `${safeId(ranking.datasetId)}_ranking_${ranking.metric.key}.csv`,
-    content: csv,
-    mime: 'text/csv;charset=utf-8',
-  }
-}
-
-/* -------------------------------------------------------------------------- */
 /* Comparison export                                                          */
 /* -------------------------------------------------------------------------- */
-
-export function comparisonExportCsv(summaries: DatasetComparisonSummary[]): ExportArtifact {
-  const rows: unknown[][] = []
-  for (const summary of summaries) {
-    for (const metric of summary.metrics) {
-      rows.push([
-        summary.datasetId,
-        summary.datasetName,
-        summary.ecosystemLabel,
-        summary.sourceStatus,
-        summary.nodeUnit,
-        summary.citation,
-        summary.baselineNodeCount,
-        summary.baselineLinkCount,
-        summary.baselineConnectance ?? '',
-        summary.analysedNodeCount,
-        metric.label,
-        metric.unit,
-        metric.min ?? '',
-        metric.median ?? '',
-        metric.max ?? '',
-        metric.topNodeLabel ?? '',
-        metric.definition,
-        summary.dataNote,
-      ])
-    }
-  }
-
-  return {
-    filename: 'foodwebguard_cross_network_comparison.csv',
-    content: toCsv(
-      [
-        'dataset_id',
-        'dataset_name',
-        'ecosystem_category',
-        'data_status',
-        'node_unit',
-        'citation',
-        'baseline_nodes',
-        'baseline_links',
-        'baseline_connectance',
-        'nodes_analysed',
-        'metric',
-        'unit',
-        'min_across_scenarios',
-        'median_across_scenarios',
-        'max_across_scenarios',
-        'node_with_max',
-        'metric_definition',
-        'data_note',
-      ],
-      rows,
-    ),
-    mime: 'text/csv;charset=utf-8',
-  }
-}
 
 /** Dataset-level CSV including the per-category normalisation. */
 export function comparisonSummaryCsv(summaries: DatasetComparisonSummary[]): ExportArtifact {
@@ -437,10 +321,6 @@ export function comparisonSummaryCsv(summaries: DatasetComparisonSummary[]): Exp
     ),
     mime: 'text/csv;charset=utf-8',
   }
-}
-
-export function groupingLabel(category: EcosystemCategory): string {
-  return category.charAt(0).toUpperCase() + category.slice(1)
 }
 
 /* -------------------------------------------------------------------------- */

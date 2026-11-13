@@ -215,7 +215,7 @@ export function ImportDialog({
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [onClose, open])
 
-  const reset = useCallback(() => {
+  const reset = () => {
     setNodesText('')
     setEdgesText('')
     setJsonText('')
@@ -223,7 +223,7 @@ export function ImportDialog({
     setPreview(null)
     setRepair(false)
     clearDraft()
-  }, [clearDraft])
+  }
 
   const copyToClipboard = (text: string, key: string) => {
     void navigator.clipboard.writeText(text)
