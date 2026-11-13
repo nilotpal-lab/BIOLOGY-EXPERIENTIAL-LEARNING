@@ -3,8 +3,6 @@ import {
   ArrowRight,
   BarChart3,
   BookOpenCheck,
-  Clock,
-  FlaskConical,
   GitCompareArrows,
   HelpCircle,
   Leaf,
@@ -106,13 +104,6 @@ export function Overview({ onNavigate, onOpenImport: _onOpenImport }: OverviewPr
     },
   ]
 
-  const scrollToWhyFoodWebs = () => {
-    const el = document.getElementById('why-food-webs-matter')
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' })
-    }
-  }
-
   return (
     <div className="relative bg-[#F7F6EF] text-[#202B27] overflow-x-hidden">
       <div className="relative z-10 max-w-[1560px] w-full mx-auto px-6 sm:px-10 lg:px-14 pt-3 pb-12 sm:pt-4 sm:pb-16 space-y-8 sm:space-y-10">
@@ -145,7 +136,7 @@ export function Overview({ onNavigate, onOpenImport: _onOpenImport }: OverviewPr
                 FoodWebGuard is an interactive platform to explore real ecological networks, simulate species removal, and analyse how ecosystems respond to change.
               </p>
 
-              {/* CTA Buttons: Open Explorer + Why Food Webs Matter */}
+              {/* CTA Button: Single Primary Action */}
               <div className="flex flex-wrap items-center gap-3 pt-1">
                 <button
                   type="button"
@@ -155,16 +146,6 @@ export function Overview({ onNavigate, onOpenImport: _onOpenImport }: OverviewPr
                   <Network size={16} />
                   <span>Open Explorer</span>
                   <ArrowRight size={14} />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={scrollToWhyFoodWebs}
-                  className="inline-flex items-center gap-2 rounded-[10px] border border-[#E5E6DC] bg-[#FCFBF7] hover:bg-[#F0F2E9] text-[#202B27] px-4 py-2.5 min-h-[44px] text-xs sm:text-[13.5px] font-medium shadow-2xs transition-colors cursor-pointer"
-                >
-                  <Leaf size={15} className="text-[#35563B]" />
-                  <span>Why Food Webs Matter</span>
-                  <ArrowRight size={13} className="text-[#899B78]" />
                 </button>
               </div>
 
@@ -301,65 +282,6 @@ export function Overview({ onNavigate, onOpenImport: _onOpenImport }: OverviewPr
             ))}
           </div>
         </div>
-
-        {/* =====================================================================
-            EDUCATIONAL SECTION: "Why Food Webs Matter"
-            Anchored for smooth scrolling from hero button
-            ===================================================================== */}
-        <section
-          id="why-food-webs-matter"
-          className="mt-8 sm:mt-12 pt-8 sm:pt-10 border-t border-[#E5E6DC] scroll-mt-20 space-y-8"
-        >
-          <div className="max-w-3xl space-y-2">
-            <span className="text-[11px] font-bold tracking-[0.2em] text-[#35563B] uppercase">
-              FOUNDATIONAL ECOLOGICAL PRINCIPLES
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-serif font-normal text-[#202B27] tracking-tight">
-              Why Food Webs Matter in Ecosystem Science
-            </h2>
-            <p className="text-xs sm:text-sm text-[#68716B] leading-relaxed">
-              Food webs describe the complex architecture of trophic interactions. While traditional population studies observe species in isolation, network topology reveals indirect cascades, keystone species, and whole-system resilience.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-5 space-y-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FDEEEB] text-[#D96B50]">
-                <FlaskConical size={18} />
-              </div>
-              <h3 className="text-base font-serif font-medium text-[#202B27]">
-                Trophic Cascades & Keystone Species
-              </h3>
-              <p className="text-xs text-[#68716B] leading-relaxed">
-                Removing an apex predator or keystone consumer triggers domino effects throughout non-adjacent trophic levels. Without interactive topological modelling, secondary extinctions remain unpredictable.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-5 space-y-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#E8EDE0] text-[#35563B]">
-                <Network size={18} />
-              </div>
-              <h3 className="text-base font-serif font-medium text-[#202B27]">
-                Connectance & Complexity-Stability
-              </h3>
-              <p className="text-xs text-[#68716B] leading-relaxed">
-                Connectance (C = L / S²) determines how energy flows through feeding links. FoodWebGuard calculates empirical linkage density, predator-prey ratios, and modularity across 6 verified research ecosystems.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-5 space-y-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FEF9E7] text-[#D8933B]">
-                <Clock size={18} />
-              </div>
-              <h3 className="text-base font-serif font-medium text-[#202B27]">
-                Dynamic Propagation vs. Static Counts
-              </h3>
-              <p className="text-xs text-[#68716B] leading-relaxed">
-                Static species counts conceal systemic fragility. Our simulation engine executes multi-round cascade sweeps, tracking secondary link loss and community survival until equilibrium is reached.
-              </p>
-            </div>
-          </div>
-        </section>
       </div>
 
       {/* =====================================================================
