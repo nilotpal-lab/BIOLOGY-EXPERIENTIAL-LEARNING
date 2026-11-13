@@ -48,7 +48,7 @@ export function ScenarioControls({
   onOpenReport,
   graph,
   onSelectSpecies,
-  onNavigate,
+  onNavigate: _onNavigate,
 }: {
   dataset: FoodWebDataset | null
   node: FoodWebNode | null
@@ -271,22 +271,14 @@ export function ScenarioControls({
               : `Immediate removal broke ${result.directlyRemovedLinks.length} connection(s). Surviving predators retain backup food.`}
           </p>
 
-          {onNavigate && (
-            <div className="pt-1 flex flex-col gap-1.5">
+          {onOpenReport && (
+            <div className="pt-1">
               <button
                 type="button"
-                onClick={() => onNavigate('simulation')}
-                className="w-full text-left flex items-center justify-between px-2.5 py-1.5 rounded-lg border border-primary/30 bg-primary/[0.08] text-primary text-[11px] font-semibold hover:bg-primary/[0.15] transition-colors"
+                onClick={onOpenReport}
+                className="w-full text-left flex items-center justify-between px-2.5 py-1.5 rounded-lg border border-primary/30 bg-primary/[0.08] text-primary text-[11px] font-semibold hover:bg-primary/[0.15] transition-colors cursor-pointer"
               >
-                <span>Open in Simulation Laboratory</span>
-                <span>→</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onNavigate('timeline')}
-                className="w-full text-left flex items-center justify-between px-2.5 py-1.5 rounded-lg border border-line-soft bg-surface text-fg text-[11px] font-semibold hover:bg-surface-2 transition-colors"
-              >
-                <span>View Step-by-Step Cascade Timeline</span>
+                <span>View Full Academic Report & Log</span>
                 <span>→</span>
               </button>
             </div>

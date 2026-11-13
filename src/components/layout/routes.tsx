@@ -1,26 +1,23 @@
 import {
   BookOpenCheck,
-  Clock,
   Compass,
   FlaskConical,
   GitCompareArrows,
-  Globe2,
-  Layers,
   LayoutDashboard,
   ShieldAlert,
-  Upload,
 } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 
 /* ============================================================================
- * routes — the six canonical top-level destinations matching the visual reference:
- * 1. Overview (Page 1)
- * 2. Explorer (Page 2 — Authoritative reference)
- * 3. Experiment Studio (Page 3)
- * 4. Insights & Compare
- * 5. Conservation Atlas
- * 6. Data Library
- * Plus Methodology & Validation (accessible via header help icon ? and #/methodology).
+ * routes — the canonical top-level destinations:
+ * 1. Overview (Home)
+ * 2. Explorer (Food Web Graph, Disturbance Simulation & Cascade Timeline)
+ * 3. Experiment Studio (All-Species Sensitivity & Dunne R50)
+ * 4. Insights & Compare (Cross-Ecosystem Analytics)
+ * 5. Data Library (Verified Research Networks, Demos & CSV/JSON Import)
+ * 6. Methodology & Validation (Scientific Definitions & Live Test Suite)
+ * Legacy routes (simulation, timeline, features, conservation, import) are
+ * automatically mapped to their canonical destination.
  * ========================================================================== */
 
 export type RouteId =
@@ -58,40 +55,13 @@ export const ROUTES: RouteItem[] = [
     tag: 'Start',
   },
   {
-    id: 'features',
-    label: 'Features',
-    legacyName: 'Features',
-    heading: 'Features & Capabilities',
-    icon: <Layers size={16} />,
-    description: 'Interactive visualization, simulations, cascade timelines and analytics',
-    tag: 'Tools',
-  },
-  {
     id: 'explore',
-    label: 'Explore',
-    legacyName: 'Explore food web',
-    heading: 'Food Web Explorer',
+    label: 'Explore & Simulate',
+    legacyName: 'Food Web Explorer',
+    heading: 'Food Web Explorer & Simulation Laboratory',
     icon: <Compass size={16} />,
-    description: 'Visualise and explore species interactions in ecological networks',
+    description: 'Visualise species interactions, simulate removals & track cascade timelines',
     tag: 'Graph',
-  },
-  {
-    id: 'simulation',
-    label: 'Simulation',
-    legacyName: 'Simulation Laboratory',
-    heading: 'Simulation Laboratory',
-    icon: <FlaskConical size={16} />,
-    description: 'Remove species and observe cascading ecosystem response',
-    tag: 'Simulate',
-  },
-  {
-    id: 'timeline',
-    label: 'Cascade Timeline',
-    legacyName: 'Cascade Timeline',
-    heading: 'Cascade Timeline',
-    icon: <Clock size={16} />,
-    description: 'Explore step-by-step cascading effects of species removals',
-    tag: 'Timeline',
   },
   {
     id: 'experiment',
@@ -99,7 +69,7 @@ export const ROUTES: RouteItem[] = [
     legacyName: 'Scenario analysis',
     heading: 'Experiment Studio',
     icon: <FlaskConical size={16} />,
-    description: 'Run what-if scenarios to explore how changes affect the food web',
+    description: 'Run automated all-species sensitivity ranking and Dunne et al. R50 attacks',
     tag: 'Simulate',
   },
   {
@@ -112,35 +82,17 @@ export const ROUTES: RouteItem[] = [
     tag: 'Compare',
   },
   {
-    id: 'conservation',
-    label: 'Conservation Atlas',
-    legacyName: 'Conservation Atlas',
-    heading: 'Conservation Atlas',
-    icon: <Globe2 size={16} />,
-    description: 'Trophic level distributions, ecosystem biomes & empirical research profiles',
-    tag: 'Atlas',
-  },
-  {
     id: 'library',
     label: 'Data Library',
     legacyName: 'Dataset library',
     heading: 'Data Library',
     icon: <BookOpenCheck size={16} />,
-    description: 'Verified research networks, illustrative demos & CSV/JSON import',
+    description: 'Verified research networks, illustrative demos & CSV/JSON intake studio',
     tag: 'Library',
   },
   {
-    id: 'import',
-    label: 'Dataset Import',
-    legacyName: 'Dataset import',
-    heading: 'Dataset Import',
-    icon: <Upload size={16} />,
-    description: 'Use your own food web data (CSV / JSON) to build and analyse custom ecosystems',
-    tag: 'Import',
-  },
-  {
     id: 'methodology',
-    label: 'Methodology',
+    label: 'Methodology & Validation',
     legacyName: 'Methodology & validation',
     heading: 'Methodology & validation',
     icon: <ShieldAlert size={16} />,
@@ -152,17 +104,17 @@ export const ROUTES: RouteItem[] = [
 const ROUTE_ALIASES: Record<string, RouteId> = {
   home: 'overview',
   overview: 'overview',
-  features: 'features',
-  feature: 'features',
+  features: 'overview',
+  feature: 'overview',
   explore: 'explore',
   explorer: 'explore',
   workspace: 'explore',
-  simulation: 'simulation',
-  simulate: 'simulation',
-  lab: 'simulation',
-  timeline: 'timeline',
-  'cascade-timeline': 'timeline',
-  cascades: 'timeline',
+  simulation: 'explore',
+  simulate: 'explore',
+  lab: 'explore',
+  timeline: 'explore',
+  'cascade-timeline': 'explore',
+  cascades: 'explore',
   experiment: 'experiment',
   studio: 'experiment',
   scenario: 'experiment',
@@ -170,14 +122,14 @@ const ROUTE_ALIASES: Record<string, RouteId> = {
   compare: 'compare',
   insights: 'compare',
   benchmark: 'compare',
-  conservation: 'conservation',
-  atlas: 'conservation',
+  conservation: 'compare',
+  atlas: 'compare',
   library: 'library',
   datasets: 'library',
   data: 'library',
-  import: 'import',
-  'dataset-import': 'import',
-  upload: 'import',
+  import: 'library',
+  'dataset-import': 'library',
+  upload: 'library',
   methodology: 'methodology',
   about: 'methodology',
   verify: 'methodology',
@@ -201,8 +153,9 @@ export function useHashRoute(): [RouteId, (route: RouteId) => void] {
   }, [])
 
   const navigate = (next: RouteId) => {
-    if (globalThis.location) globalThis.location.hash = `#/${next}`
-    setRoute(next)
+    const canonical = ROUTE_ALIASES[next] ?? next
+    if (globalThis.location) globalThis.location.hash = `#/${canonical}`
+    setRoute(canonical)
   }
 
   return [route, navigate]

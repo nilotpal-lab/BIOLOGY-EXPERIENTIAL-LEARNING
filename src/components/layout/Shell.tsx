@@ -2,12 +2,8 @@ import {
   ArrowRight,
   BarChart3,
   BookOpenCheck,
-  Clock,
   Compass,
-  FlaskConical,
   GitCompareArrows,
-  Globe2,
-  Layers,
   LayoutDashboard,
   Leaf,
   Menu,
@@ -16,7 +12,6 @@ import {
   PanelLeftOpen,
   Search,
   ShieldCheck,
-  Upload,
   X,
 } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
@@ -37,7 +32,7 @@ interface ShellProps {
 export function Shell({
   route,
   onNavigate,
-  onOpenImport,
+  onOpenImport: _onOpenImport,
   children,
 }: ShellProps) {
   const { dataset, datasets, selectDataset, notice, setNotice } = useAppState()
@@ -45,7 +40,7 @@ export function Shell({
   const [searchQuery, setSearchQuery] = useState('')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
-  const isPublicPage = route === 'overview' || route === 'features'
+  const isPublicPage = route === 'overview'
 
   const navigate = (next: RouteId) => {
     setMobileMenuOpen(false)
@@ -102,27 +97,11 @@ export function Shell({
   const appNavItems = [
     {
       id: 'explore',
-      label: 'Explore',
+      label: 'Explore & Simulate',
       icon: <Compass size={18} />,
       active: route === 'explore',
       action: () => navigate('explore'),
-      tooltip: 'Interactive food web graph & species',
-    },
-    {
-      id: 'simulation',
-      label: 'Simulation',
-      icon: <FlaskConical size={18} />,
-      active: route === 'simulation',
-      action: () => navigate('simulation'),
-      tooltip: 'Simulate direct & cascading species removals',
-    },
-    {
-      id: 'timeline',
-      label: 'Cascade Timeline',
-      icon: <Clock size={18} />,
-      active: route === 'timeline',
-      action: () => navigate('timeline'),
-      tooltip: 'Round-by-round extinction cascades',
+      tooltip: 'Interactive food web graph, species disturbance & cascade timeline',
     },
     {
       id: 'experiment',
@@ -130,7 +109,7 @@ export function Shell({
       icon: <BarChart3 size={18} />,
       active: route === 'experiment' || route === 'scenario',
       action: () => navigate('experiment'),
-      tooltip: 'Automated all-species sensitivity ranking',
+      tooltip: 'Automated all-species sensitivity ranking & Dunne R50',
     },
     {
       id: 'compare',
@@ -138,31 +117,15 @@ export function Shell({
       icon: <GitCompareArrows size={18} />,
       active: route === 'compare',
       action: () => navigate('compare'),
-      tooltip: 'Comparative ecosystem analysis & benchmarks',
-    },
-    {
-      id: 'conservation',
-      label: 'Conservation Atlas',
-      icon: <Globe2 size={18} />,
-      active: route === 'conservation',
-      action: () => navigate('conservation'),
-      tooltip: 'Trophic distributions, biomes & empirical profiles',
+      tooltip: 'Comparative ecosystem analysis & cross-biome benchmarks',
     },
     {
       id: 'library',
-      label: 'Research Library',
+      label: 'Data Library',
       icon: <BookOpenCheck size={18} />,
       active: route === 'library',
       action: () => navigate('library'),
-      tooltip: '6 verified real-world empirical networks',
-    },
-    {
-      id: 'import',
-      label: 'Dataset Import',
-      icon: <Upload size={18} />,
-      active: route === 'import',
-      action: onOpenImport ? onOpenImport : () => navigate('import'),
-      tooltip: 'Import custom CSV or JSON food webs',
+      tooltip: '6 verified real-world empirical networks & custom data intake',
     },
     {
       id: 'methodology',
@@ -170,7 +133,7 @@ export function Shell({
       icon: <ShieldCheck size={18} />,
       active: route === 'methodology',
       action: () => navigate('methodology'),
-      tooltip: 'Formulas, scientific rules & live tests',
+      tooltip: 'Scientific formulas, cascade rules & live tests',
     },
   ]
 
@@ -178,7 +141,7 @@ export function Shell({
     <div className="min-h-screen bg-[#F7F6EF] text-[#202B27] flex flex-col font-sans antialiased selection:bg-[#E8EDE0] selection:text-[#263D2D]">
       {/* =====================================================================
           1. PUBLIC-FACING WEBSITE HEADER (Image 1 & Image 2)
-          Used when viewing Home (overview) or Features page.
+          Used when viewing Home (overview) page.
           ===================================================================== */}
       {isPublicPage ? (
         <header className="sticky top-0 z-40 w-full border-b border-[#E5E6DC] bg-[#FCFBF7]/95 backdrop-blur-md">
@@ -203,7 +166,7 @@ export function Shell({
               </div>
             </button>
 
-            {/* Centre Navigation: Home · Features · Datasets · About */}
+            {/* Centre Navigation: Home · Datasets · About */}
             <nav aria-label="Public navigation" className="hidden md:flex items-center space-x-1 h-full">
               <button
                 type="button"
@@ -216,18 +179,6 @@ export function Shell({
                 )}
               >
                 Home
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('features')}
-                className={cn(
-                  'h-full px-4 text-sm font-medium transition-colors relative flex items-center',
-                  route === 'features'
-                    ? 'text-[#35563B] font-semibold border-b-2 border-[#35563B]'
-                    : 'text-[#68716B] hover:text-[#202B27] border-b-2 border-transparent',
-                )}
-              >
-                Features
               </button>
               <button
                 type="button"
@@ -245,19 +196,17 @@ export function Shell({
               </button>
             </nav>
 
-            {/* Right: Blank on Home per 01_Landing_Page.png, Open Explorer on Features per 02_Features_Page.png */}
+            {/* Right: Open Explorer CTA Button */}
             <div className="flex items-center gap-3">
-              {route === 'features' && (
-                <button
-                  type="button"
-                  onClick={() => navigate('explore')}
-                  className="hidden sm:inline-flex items-center gap-2 rounded-[10px] bg-[#35563B] hover:bg-[#263D2D] text-white px-4 py-2 text-xs sm:text-[13px] font-semibold shadow-xs transition-colors"
-                >
-                  <Network size={15} />
-                  <span>Open Explorer</span>
-                  <ArrowRight size={14} />
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => navigate('explore')}
+                className="hidden sm:inline-flex items-center gap-2 rounded-[10px] bg-[#35563B] hover:bg-[#263D2D] text-white px-4 py-2 text-xs sm:text-[13px] font-semibold shadow-xs transition-colors"
+              >
+                <Network size={15} />
+                <span>Open Explorer</span>
+                <ArrowRight size={14} />
+              </button>
 
               <button
                 type="button"
@@ -291,15 +240,12 @@ export function Shell({
                 <button
                   type="button"
                   onClick={() => {
-                    navigate('features')
+                    navigate('explore')
                     setMobileMenuOpen(false)
                   }}
-                  className={cn(
-                    'flex items-center px-3 py-2.5 min-h-[40px] rounded-xl text-xs font-semibold text-left cursor-pointer',
-                    route === 'features' ? 'bg-[#E8EDE0] text-[#35563B]' : 'text-[#68716B] hover:bg-[#F0F2E9]',
-                  )}
+                  className="flex items-center px-3 py-2.5 min-h-[40px] rounded-xl text-xs font-semibold text-left text-[#35563B] bg-[#E8EDE0] hover:bg-[#DCE4D2] cursor-pointer"
                 >
-                  Features
+                  Open Explorer
                 </button>
                 <button
                   type="button"
@@ -504,17 +450,6 @@ export function Shell({
                   <LayoutDashboard size={14} />
                   <span>Home</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigate('features')
-                    setMobileMenuOpen(false)
-                  }}
-                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-[#68716B] hover:bg-[#F0F2E9] min-h-[40px] cursor-pointer"
-                >
-                  <Layers size={14} />
-                  <span>Features</span>
-                </button>
               </div>
             </div>
           )}
@@ -614,7 +549,7 @@ export function Shell({
               </button>
             </nav>
 
-            {/* Quick Links back to Public Pages */}
+            {/* Quick Link back to Home Landing Page */}
             <div className="pt-2 mt-2 border-t border-[#E5E6DC] space-y-1">
               <button
                 type="button"
@@ -628,19 +563,6 @@ export function Shell({
               >
                 <span className="text-[#899B78]"><LayoutDashboard size={17} /></span>
                 {!sidebarCollapsed && <span className="truncate">Home</span>}
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('features')}
-                title={sidebarCollapsed ? 'Features & Capabilities' : undefined}
-                className={cn(
-                  'flex w-full items-center rounded-xl text-xs font-medium text-left transition-colors cursor-pointer',
-                  sidebarCollapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2',
-                  'text-[#68716B] hover:bg-[#F0F2E9] hover:text-[#202B27]',
-                )}
-              >
-                <span className="text-[#899B78]"><Layers size={17} /></span>
-                {!sidebarCollapsed && <span className="truncate">Features</span>}
               </button>
             </div>
           </aside>

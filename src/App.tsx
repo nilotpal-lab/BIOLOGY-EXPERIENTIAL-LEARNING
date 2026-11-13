@@ -5,21 +5,21 @@ import { useHashRoute } from './components/layout/routes'
 import { CompareResults } from './pages/CompareResults'
 import { DatasetLibraryPage } from './pages/DatasetLibraryPage'
 import { Explore } from './pages/Explore'
-import { SimulationPage } from './pages/SimulationPage'
-import { CascadeTimelinePage } from './pages/CascadeTimelinePage'
 import { Methodology } from './pages/Methodology'
-import { DatasetImportPage } from './pages/DatasetImportPage'
 import { Overview } from './pages/Overview'
-import { FeaturesPage } from './pages/FeaturesPage'
 import { ScenarioAnalysis } from './pages/ScenarioAnalysis'
-import { ConservationAtlas } from './pages/ConservationAtlas'
 import { AppStateProvider, useAppState } from './state/AppState'
 
 /**
- * Routed — the six canonical destinations plus methodology and the import dialog.
+ * Routed — the canonical top-level destinations:
+ * 1. Overview (Home landing page)
+ * 2. Explorer (Interactive topology, disturbance simulation & cascade timeline)
+ * 3. Experiment Studio (All-species sensitivity ranking & Dunne R50 attacks)
+ * 4. Compare Results (Cross-ecosystem comparative analytics)
+ * 5. Dataset Library (Verified research networks & custom data intake)
+ * 6. Methodology (Formulas, scientific rules & live in-browser test runner)
  *
- * Navigation is hash-based so every section has a real, bookmarkable address,
- * and every navigation item opens an actual screen (Prompt §5).
+ * Custom data intake is handled by the ImportDialog.
  */
 function Routed() {
   const [route, navigate] = useHashRoute()
@@ -30,17 +30,12 @@ function Routed() {
     <>
       <Shell route={route} onNavigate={navigate} onOpenImport={() => setImportOpen(true)}>
         {route === 'overview' ? <Overview onNavigate={navigate} onOpenImport={() => setImportOpen(true)} /> : null}
-        {route === 'features' ? <FeaturesPage onNavigate={navigate} onOpenImport={() => setImportOpen(true)} /> : null}
         {route === 'explore' ? <Explore onNavigate={navigate} /> : null}
-        {route === 'simulation' ? <SimulationPage onNavigate={navigate} /> : null}
-        {route === 'timeline' ? <CascadeTimelinePage onNavigate={navigate} /> : null}
         {route === 'experiment' ? <ScenarioAnalysis onNavigate={navigate} /> : null}
         {route === 'compare' ? <CompareResults onNavigate={navigate} /> : null}
-        {route === 'conservation' ? <ConservationAtlas onNavigate={navigate} /> : null}
         {route === 'library' ? (
           <DatasetLibraryPage onNavigate={navigate} onOpenImport={() => setImportOpen(true)} />
         ) : null}
-        {route === 'import' ? <DatasetImportPage onNavigate={navigate} /> : null}
         {route === 'methodology' ? <Methodology /> : null}
       </Shell>
 
@@ -67,8 +62,6 @@ function Routed() {
               : `"${preview.dataset.name}" was imported. It is now the active network — open the Explorer to work with it.`,
           })
           setImportOpen(false)
-          // Stay on the Data Library: the import already became the active
-          // network, and the notice says where to work with it next.
         }}
       />
     </>

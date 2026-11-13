@@ -60,7 +60,7 @@ export function Overview({ onNavigate, onOpenImport: _onOpenImport }: OverviewPr
       description: 'Remove species and observe cascading effects',
       icon: <FlaskConical size={18} />,
       bg: 'bg-[#FDEEEB] text-[#D96B50]',
-      action: () => onNavigate('simulation'),
+      action: () => onNavigate('explore'),
     },
     {
       id: 'timeline',
@@ -68,7 +68,7 @@ export function Overview({ onNavigate, onOpenImport: _onOpenImport }: OverviewPr
       description: 'Explore ecosystem collapse round by round',
       icon: <Clock size={18} />,
       bg: 'bg-[#FEF9E7] text-[#D8933B]',
-      action: () => onNavigate('timeline'),
+      action: () => onNavigate('explore'),
     },
     {
       id: 'experiment',
@@ -92,7 +92,7 @@ export function Overview({ onNavigate, onOpenImport: _onOpenImport }: OverviewPr
       description: 'Trophic level distributions, ecosystem biomes & research profiles',
       icon: <Globe2 size={18} />,
       bg: 'bg-[#E0F2F1] text-[#00796B]',
-      action: () => onNavigate('conservation'),
+      action: () => onNavigate('compare'),
     },
     {
       id: 'library',
@@ -399,11 +399,11 @@ export function Overview({ onNavigate, onOpenImport: _onOpenImport }: OverviewPr
               </button>
               <button
                 type="button"
-                onClick={() => onNavigate('simulation')}
+                onClick={() => onNavigate('explore')}
                 className="inline-flex items-center gap-2 rounded-xl border border-[#E5E6DC] bg-white hover:bg-[#F0F2E9] text-[#202B27] px-4 py-2 text-xs font-medium shadow-2xs transition-colors"
               >
                 <FlaskConical size={14} className="text-[#D96B50]" />
-                <span>Simulation Lab</span>
+                <span>Simulate Disturbance</span>
               </button>
             </div>
           </div>

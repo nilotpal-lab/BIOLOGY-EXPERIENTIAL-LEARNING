@@ -78,7 +78,7 @@ export interface CompareResultsProps {
   onNavigate?: (route: RouteId) => void
 }
 
-export function CompareResults({ onNavigate }: CompareResultsProps = {}) {
+export function CompareResults({ onNavigate: _onNavigate }: CompareResultsProps = {}) {
   const { datasets, compareIds, toggleCompare, comparison, comparisonRunning, runComparison } = useAppState()
   const [expandedGraphId, setExpandedGraphId] = useState<string | null>(null)
 
@@ -259,21 +259,11 @@ export function CompareResults({ onNavigate }: CompareResultsProps = {}) {
         </div>
       </div>
 
-      {/* Studio Tab Navigation */}
-      <div className="flex items-center gap-2 border-b border-[#E5E6DC] pb-1">
-        <button
-          type="button"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all border cursor-pointer bg-[#35563B] text-white border-[#35563B] shadow-xs"
-        >
-          <span>Multi-Ecosystem Comparison</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => onNavigate?.('conservation')}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all border cursor-pointer bg-white text-[#68716B] border-[#E5E6DC] hover:text-[#202B27] hover:bg-[#F7F6EF]"
-        >
-          <span>Conservation Biome Atlas</span>
-        </button>
+      {/* Studio View Header */}
+      <div className="flex items-center gap-2 border-b border-[#E5E6DC] pb-2">
+        <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-[#35563B] text-white shadow-2xs">
+          Multi-Ecosystem Comparison & Cross-Biome Analytics
+        </span>
       </div>
 
       {/* =====================================================================
