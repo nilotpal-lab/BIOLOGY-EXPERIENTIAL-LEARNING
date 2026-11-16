@@ -1,6 +1,6 @@
 import cytoscape, { type Core, type ElementDefinition, type EventObject } from 'cytoscape'
-import { Maximize2, Minus, Network, Plus, RotateCcw, Waypoints } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Maximize2, Minimize2, Minus, Network, Plus, RotateCcw, Waypoints } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { speciesIconDataUri } from '../../art/speciesIcons'
 import { computeLayeredLayout } from '../../core/layout'
 import { TROPHIC_ROLE_LABEL, type FoodWebGraph as FoodWebGraphModel } from '../../core/types'
@@ -122,6 +122,8 @@ export function FoodWebGraph({
   const [showLabels, setShowLabels] = useState(true)
   const [linksHighlighted, setLinksHighlighted] = useState(highlightLinks)
   const [zoomLevel, setZoomLevel] = useState(1)
+  const wrapperRef = useRef<HTMLDivElement | null>(null)
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   const removedKey = removedNodeIds.join('|')
   const affectedKey = directlyAffectedIds.join('|')
@@ -387,10 +389,83 @@ export function FoodWebGraph({
     setZoomLevel(next)
   }
 
+  const toggleFullscreen = useCallback(async () => {
+    if (!isFullscreen) {
+      setIsFullscreen(true)
+      if (wrapperRef.current && document.fullscreenEnabled && !document.fullscreenElement) {
+        try {
+          await wrapperRef.current.requestFullscreen()
+        } catch {
+          // CSS fixed-overlay fallback is automatically active
+        }
+      }
+    } else {
+      setIsFullscreen(false)
+      if (document.fullscreenElement) {
+        try {
+          await document.exitFullscreen()
+        } catch {
+          // ignore
+        }
+      }
+    }
+  }, [isFullscreen])
+
+  // Sync state if user exits browser native fullscreen (e.g. via Esc)
+  useEffect(() => {
+    const handleFsChange = () => {
+      const isNativeFs = Boolean(document.fullscreenElement)
+      if (!isNativeFs && isFullscreen) {
+        setIsFullscreen(false)
+      }
+    }
+    document.addEventListener('fullscreenchange', handleFsChange)
+    return () => document.removeEventListener('fullscreenchange', handleFsChange)
+  }, [isFullscreen])
+
+  // Esc key fallback for CSS-only fullscreen overlay
+  useEffect(() => {
+    if (!isFullscreen) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsFullscreen(false)
+        if (document.fullscreenElement) {
+          try {
+            document.exitFullscreen()
+          } catch {
+            // ignore
+          }
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isFullscreen])
+
+  // Re-fit and resize Cytoscape when entering or exiting fullscreen
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (cyRef.current) {
+        cyRef.current.resize()
+        cyRef.current.fit(undefined, 48)
+        setZoomLevel(cyRef.current.zoom())
+      }
+    }, 100)
+    return () => clearTimeout(timer)
+  }, [isFullscreen])
+
   const hasNodes = graph.nodes.length > 0
 
   return (
-    <div className={cn('relative flex min-h-0 flex-col', className)}>
+    <div
+      ref={wrapperRef}
+      className={cn(
+        'relative flex min-h-0 flex-col',
+        isFullscreen
+          ? 'fixed inset-0 z-[60] bg-[#FCFBF7] p-3 sm:p-5 shadow-2xl'
+          : className,
+      )}
+    >
       {/* Top Floating Graph Controls Toolbar (Matching Image 1 Reference) */}
       {!hideControls && (
         <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-[#E5E6DC] bg-[#FCFBF7] p-2 shadow-2xs">
@@ -477,6 +552,18 @@ export function FoodWebGraph({
 
           {/* Right: Reset View & Zoom Controls */}
           <div className="flex items-center gap-2">
+            {isFullscreen && (
+              <button
+                type="button"
+                onClick={toggleFullscreen}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#35563B] hover:bg-[#263D2D] px-2.5 py-1.5 text-xs font-semibold text-white transition-colors shadow-2xs cursor-pointer"
+                title="Exit full screen (Esc)"
+              >
+                <Minimize2 size={13} />
+                <span>Exit Full Screen</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={resetLayout}
@@ -515,15 +602,17 @@ export function FoodWebGraph({
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  cyRef.current?.fit(undefined, 48)
-                  if (cyRef.current) setZoomLevel(cyRef.current.zoom())
-                }}
-                className="ml-1 border-l border-[#E5E6DC] p-1 pl-1.5 min-h-[28px] min-w-[28px] flex items-center justify-center text-[#68716B] hover:text-[#35563B] transition-colors"
-                title="Fit to canvas"
-                aria-label="Fit to canvas"
+                onClick={toggleFullscreen}
+                className={cn(
+                  'ml-1 border-l border-[#E5E6DC] p-1 pl-1.5 min-h-[28px] min-w-[28px] flex items-center justify-center transition-colors cursor-pointer',
+                  isFullscreen
+                    ? 'text-[#35563B] font-bold hover:text-[#263D2D]'
+                    : 'text-[#68716B] hover:text-[#35563B]',
+                )}
+                title={isFullscreen ? 'Exit full screen (Esc)' : 'Full screen'}
+                aria-label={isFullscreen ? 'Exit full screen' : 'Full screen'}
               >
-                <Maximize2 size={13} />
+                {isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
               </button>
             </div>
           </div>
