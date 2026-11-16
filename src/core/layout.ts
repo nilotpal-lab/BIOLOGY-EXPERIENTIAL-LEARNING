@@ -34,6 +34,7 @@ export function computeTrophicLevels(graph: FoodWebGraph): Map<string, number> {
   for (let pass = 0; pass < iterations; pass += 1) {
     let changed = false
     for (const edge of graph.edges) {
+      if (edge.source === edge.target) continue // Prevent self-loop tier inflation
       const sourceLevel = levels.get(edge.source)
       const targetLevel = levels.get(edge.target)
       if (sourceLevel === undefined || targetLevel === undefined) continue

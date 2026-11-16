@@ -137,6 +137,8 @@ const ROLE_ALIASES: Record<string, TrophicRole> = {
   'primary consumer': 'primary-consumer',
   'secondary-consumer': 'secondary-consumer',
   'secondary consumer': 'secondary-consumer',
+  'tertiary-consumer': 'secondary-consumer',
+  'tertiary consumer': 'secondary-consumer',
   'apex-predator': 'apex-predator',
   'apex predator': 'apex-predator',
   'top-predator': 'apex-predator',
