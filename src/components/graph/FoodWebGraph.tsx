@@ -43,6 +43,7 @@ export interface FoodWebGraphProps {
   hideControls?: boolean
   hideLegend?: boolean
   wheelSensitivity?: number
+  primaryRemovedNodeId?: string | null
 }
 
 function buildElements(
@@ -104,10 +105,17 @@ export function FoodWebGraph({
   hideControls = false,
   hideLegend = false,
   wheelSensitivity = 0.8,
+  primaryRemovedNodeId = null,
 }: FoodWebGraphProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const cyRef = useRef<Core | null>(null)
   const lastStructureKeyRef = useRef<string>('')
+  const selectedNodeIdRef = useRef(selectedNodeId)
+  selectedNodeIdRef.current = selectedNodeId
+  const primaryRemovedNodeIdRef = useRef(primaryRemovedNodeId)
+  primaryRemovedNodeIdRef.current = primaryRemovedNodeId
+  const onSelectNodeRef = useRef(onSelectNode)
+  onSelectNodeRef.current = onSelectNode
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
   const [ready, setReady] = useState(false)
   const [layoutMode, setLayoutMode] = useState<'trophic' | 'force'>('trophic')
@@ -181,10 +189,10 @@ export function FoodWebGraph({
     ro.observe(container)
 
     cy.on('tap', 'node', (event: EventObject) => {
-      onSelectNode(event.target.id() as string)
+      onSelectNodeRef.current(event.target.id() as string)
     })
     cy.on('tap', (event: EventObject) => {
-      if (event.target === cy) onSelectNode(null)
+      if (event.target === cy) onSelectNodeRef.current(null)
     })
     cy.on('mouseover', 'node', (event: EventObject) => {
       const node = event.target
@@ -195,7 +203,10 @@ export function FoodWebGraph({
       const renderedY = node.renderedPosition('y') as unknown as number
       let statusLine = 'Status: Present (Stable)'
       if (node.hasClass('removed')) {
-        statusLine = selectedNodeId === node.id()
+        const isPrimary = primaryRemovedNodeIdRef.current
+          ? primaryRemovedNodeIdRef.current === node.id()
+          : selectedNodeIdRef.current === node.id() || removedNodeIds[0] === node.id()
+        statusLine = isPrimary
           ? 'Status: 🎯 Direct Removal Target'
           : 'Status: ✕ Starved in Cascade (0 food left)'
       } else if (node.hasClass('depleted')) {
@@ -302,8 +313,7 @@ export function FoodWebGraph({
               edge.addClass('consumer-link')
               touched.add(edge.id())
             })
-            if (structureChanged) cy.fit()
-      cy.edges().forEach((edge) => {
+            cy.edges().forEach((edge) => {
               if (!touched.has(edge.id()) && !edge.hasClass('hidden')) edge.addClass('dimmed')
             })
           }

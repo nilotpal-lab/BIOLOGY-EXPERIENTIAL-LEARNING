@@ -132,11 +132,11 @@ export function ScenarioControls({
                 title={preset.description}
               >
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-fg">{preset.title}</span>
-                    <span className="text-[10px] text-fg-faint font-mono">({preset.speciesName})</span>
+                  <div className="flex items-center justify-between gap-1 min-w-0">
+                    <span className="font-bold text-fg truncate">{preset.title}</span>
+                    <span className="text-[10px] text-fg-faint font-mono shrink-0 truncate max-w-[120px]">({preset.speciesName})</span>
                   </div>
-                  <span className="text-[10.5px] text-fg-muted block leading-tight">{preset.expectedOutcome}</span>
+                  <span className="text-[10.5px] text-fg-muted block leading-tight mt-0.5 break-words">{preset.expectedOutcome}</span>
                 </div>
               </button>
             ))}
@@ -244,31 +244,31 @@ export function ScenarioControls({
             </span>
           </div>
 
-          <p className="text-xs font-semibold text-fg leading-snug">
+          <p className="text-xs font-semibold text-fg leading-snug break-words">
             {result.primaryNodeLabel} removed ({result.mode === 'cascade' ? 'Cascade Mode' : 'Direct Mode'})
           </p>
 
-          <div className="grid grid-cols-2 gap-1.5 text-xs text-center">
-            <div className="p-1.5 rounded-lg border border-line-soft bg-surface">
-              <span className="text-[9.5px] text-fg-faint block">Species Remaining</span>
-              <span className="font-bold text-fg tabular-nums">
+          <div className="grid grid-cols-2 gap-1.5 text-xs text-center min-w-0">
+            <div className="p-1.5 rounded-lg border border-line-soft bg-surface min-w-0">
+              <span className="text-[9.5px] text-fg-faint block truncate">Species Remaining</span>
+              <span className="font-bold text-fg tabular-nums truncate block">
                 {result.scenario.nodeCount} / {result.baseline.nodeCount}
               </span>
             </div>
-            <div className="p-1.5 rounded-lg border border-line-soft bg-surface">
-              <span className="text-[9.5px] text-fg-faint block">Feeding Links Lost</span>
-              <span className="font-bold text-[#D96B50] tabular-nums">
+            <div className="p-1.5 rounded-lg border border-line-soft bg-surface min-w-0">
+              <span className="text-[9.5px] text-fg-faint block truncate">Feeding Links Lost</span>
+              <span className="font-bold text-[#D96B50] tabular-nums text-[11px] block truncate" title={`-${result.scenario.linksLost} (${formatPercent(result.scenario.linkLossPercent.value)})`}>
                 -{result.scenario.linksLost} {result.scenario.linkLossPercent.value !== null ? `(-${formatPercent(result.scenario.linkLossPercent.value)})` : ''}
               </span>
             </div>
           </div>
 
-          <p className="text-[11px] text-fg-muted leading-relaxed">
+          <p className="text-[11px] text-fg-muted leading-relaxed break-words">
             {result.mode === 'cascade' && result.scenario.secondaryRemovals > 0
               ? `🚨 ${result.scenario.secondaryRemovals} dependent consumer(s) ran out of food and starved across ${result.rounds.length} round(s).`
               : result.mode === 'cascade'
-              ? `🛡️ Surviving consumers possessed backup foods in their diet. Zero secondary starvations occurred.`
-              : `Immediate removal broke ${result.directlyRemovedLinks.length} connection(s). Surviving predators retain backup food.`}
+              ? `🛡️ Surviving consumers possessed backup foods in their diet. Zero secondary starvations occurred (matches Direct Removal due to dietary redundancy).`
+              : `Immediate removal broke ${result.directlyRemovedLinks.length} connection(s). ${result.scenario.foodDepletedConsumerIds.length > 0 ? `${result.scenario.foodDepletedConsumerIds.length} consumer(s) lost 100% of food and would starve in a cascade.` : 'Surviving predators retain backup food.'}`}
           </p>
 
           {onOpenReport && (

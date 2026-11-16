@@ -195,14 +195,14 @@ export function CascadeTimeline({
           type="button"
           onClick={() => onStepChange(1)}
           className={cn(
-            'flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors border',
+            'flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors border max-w-[220px]',
             step === 1
               ? 'bg-[#B33D46] text-white border-[#B33D46] shadow-xs'
               : 'bg-surface text-fg-muted border-line hover:border-line-strong hover:bg-surface-2',
           )}
         >
-          <Zap size={11} />
-          <span>Direct: {result.primaryNodeLabel}</span>
+          <Zap size={11} className="shrink-0" />
+          <span className="truncate" title={result.primaryNodeLabel}>Direct: {result.primaryNodeLabel}</span>
         </button>
 
         {rounds.map((round, idx) => {
@@ -245,12 +245,12 @@ export function CascadeTimeline({
         </div>
 
         {currentDetails.species.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1 shrink-0">
-            <span className="text-[10.5px] font-semibold text-fg-faint mr-1">Collapsed:</span>
+          <div className="flex flex-wrap items-center gap-1 min-w-0 max-w-full">
+            <span className="text-[10.5px] font-semibold text-fg-faint mr-1 shrink-0">Collapsed:</span>
             {currentDetails.species.map((sp) => (
               <span
                 key={sp}
-                className="inline-flex items-center rounded-md bg-danger-soft px-1.5 py-0.5 text-[10.5px] font-semibold text-danger border border-danger/20"
+                className="inline-flex items-center rounded-md bg-danger-soft px-1.5 py-0.5 text-[10.5px] font-semibold text-danger border border-danger/20 break-words"
               >
                 {sp}
               </span>

@@ -11,7 +11,9 @@ import {
   RotateCcw,
   Search,
   SlidersHorizontal,
+  Trash2,
   Tv,
+  Upload,
   X,
 } from 'lucide-react'
 import { useMemo, useState, useEffect } from 'react'
@@ -23,6 +25,7 @@ import { SpeciesIcon } from '../components/SpeciesIcon'
 import { BaselineVsScenario } from '../components/results/MetricCards'
 import { WhatChanged } from '../components/results/WhatChanged'
 import { AcademicReportModal } from '../components/results/AcademicReportModal'
+import { getDatasetThumbnail } from '../art/datasetThumbnails'
 import {
   Badge,
   Button,
@@ -40,7 +43,13 @@ import { ECOSYSTEM_LABEL, TROPHIC_ROLE_LABEL, TROPHIC_ROLES, type TrophicRole } 
 import { useAppState } from '../state/AppState'
 import type { RouteId } from '../components/layout/Shell'
 
-export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }) {
+export function Explore({
+  onNavigate,
+  onOpenImport,
+}: {
+  onNavigate: (route: RouteId) => void
+  onOpenImport?: () => void
+}) {
   const {
     dataset,
     datasets,
@@ -53,11 +62,12 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
     runSelectedScenario,
     resetScenario,
     result,
-    removeFromScenario,
+    removeImportedDataset,
+    setNotice,
   } = useAppState()
 
   const [viewMode, setViewMode] = useState<'lab' | 'presentation'>('lab')
-  const [drawerState, setDrawerState] = useState<'collapsed' | 'expanded' | 'closed'>('collapsed')
+  const [drawerState, setDrawerState] = useState<'collapsed' | 'expanded' | 'closed'>('closed')
   const [isPlaying, setIsPlaying] = useState(false)
   const [presentationSidebar, setPresentationSidebar] = useState<'none' | 'species' | 'inspector'>('none')
   const [search, setSearch] = useState('')
@@ -67,19 +77,27 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
   const [rightPanelOpen, setRightPanelOpen] = useState(true)
   const [reportModalOpen, setReportModalOpen] = useState(false)
   const [cascadeStep, setCascadeStep] = useState<number | null>(null)
+  const [hudDismissed, setHudDismissed] = useState(false)
 
-  // Reset cascade playback when scenario result changes or resets
+  // When a scenario is simulated, show the report immediately in lab view,
+  // while keeping presentation view clean until the user requests the drawer.
   useEffect(() => {
-    if (result?.mode === 'cascade' && result.rounds.length > 0) {
-      setCascadeStep(1 + result.rounds.length)
+    if (result) {
+      setHudDismissed(false)
+      if (result.mode === 'cascade' && result.rounds.length > 0) {
+        setCascadeStep(1 + result.rounds.length)
+        setDrawerState('expanded')
+      } else {
+        setCascadeStep(null)
+        setIsPlaying(false)
+        setDrawerState(viewMode === 'presentation' ? 'collapsed' : 'expanded')
+      }
     } else {
       setCascadeStep(null)
       setIsPlaying(false)
+      setHudDismissed(false)
     }
-    if (result) {
-      setDrawerState('collapsed')
-    }
-  }, [result])
+  }, [result, viewMode])
 
   const activeRemovedNodeIds = useMemo(() => {
     if (!result) return []
@@ -137,9 +155,16 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
           title="No valid graph is loaded"
           description="Load an illustrative demo network from the Dataset library, or import a documented CSV or JSON food web. Scenario analysis stays disabled until a network is loaded."
           action={
-            <Button variant="primary" onClick={() => onNavigate('library')}>
-              Open the dataset library
-            </Button>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <Button variant="primary" onClick={() => onNavigate('library')}>
+                Open the dataset library
+              </Button>
+              {onOpenImport && (
+                <Button variant="outline" icon={<Upload size={14} />} onClick={onOpenImport}>
+                  Import custom dataset
+                </Button>
+              )}
+            </div>
           }
         />
       </Card>
@@ -223,8 +248,8 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
         <div className="relative rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] overflow-hidden shadow-xs">
           {/* Non-obstructive Floating Metric HUD */}
           <div className="absolute top-3 left-3 z-20 pointer-events-none max-w-xl">
-            {result ? (
-              <div className="pointer-events-auto flex flex-wrap gap-2 p-2 rounded-xl bg-white/90 backdrop-blur-md border border-[#E5E6DC] shadow-xs text-xs">
+            {result && !hudDismissed ? (
+              <div className="pointer-events-auto flex flex-wrap items-center gap-2 p-2 rounded-xl bg-white/90 backdrop-blur-md border border-[#E5E6DC] shadow-xs text-xs">
                 <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[#F7F6EF] border border-[#E5E6DC]">
                   <span className="text-[#68716B]">Nodes remaining:</span>
                   <span className="font-bold tabular-nums text-[#202B27]">
@@ -249,6 +274,15 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
                     (-{formatPercent(result.scenario.linkLossPercent.value)})
                   </span>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setHudDismissed(true)}
+                  className="p-1 text-[#68716B] hover:text-[#202B27] rounded hover:bg-black/5 transition-colors cursor-pointer"
+                  title="Dismiss notification overlay"
+                  aria-label="Dismiss notification"
+                >
+                  <X size={13} />
+                </button>
               </div>
             ) : null}
           </div>
@@ -315,9 +349,14 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
                 node={selectedNode}
                 result={result}
                 isSelected={Boolean(selectedNodeId)}
-                onSelectForSimulation={(id) => removeFromScenario(id)}
+                onSelectForSimulation={(id) => {
+                  selectNode(id)
+                  runSelectedScenario(id)
+                  setDrawerState('expanded')
+                }}
                 onResetSimulation={resetScenario}
                 canRun={graph.nodes.length > 0}
+                ecosystem={dataset.ecosystem}
               />
             </div>
           )}
@@ -377,7 +416,7 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
               size="sm"
               variant="primary"
               icon={<Play size={13} />}
-              onClick={runSelectedScenario}
+              onClick={() => runSelectedScenario()}
               disabled={!selectedNodeId}
               className="h-8 text-xs font-semibold px-3 bg-[#35563B] text-white hover:bg-[#263D2D]"
             >
@@ -502,9 +541,9 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
               <div className="flex items-center gap-2 rounded-xl border border-[#E5E6DC] bg-[#F7F6EF] p-1 pr-2.5 shadow-2xs max-w-[260px] sm:max-w-[300px]">
                 <div className="hidden h-7 w-9 sm:block rounded-lg overflow-hidden shrink-0 border border-[#E5E6DC] bg-white">
                   <img
-                    src="/hero-ecosystem.webp"
+                    src={getDatasetThumbnail(dataset?.id, dataset?.ecosystem)}
                     alt="Ecosystem thumbnail"
-                    className="h-full w-full object-cover object-[70%_30%]"
+                    className="h-full w-full object-cover"
                   />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -512,7 +551,13 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
                     id="explore-network-select"
                     aria-label="Loaded network"
                     value={dataset?.id ?? ''}
-                    onChange={(e) => selectDataset(e.target.value)}
+                    onChange={(e) => {
+                      if (e.target.value === '__import_custom_dataset__') {
+                        onOpenImport?.()
+                        return
+                      }
+                      selectDataset(e.target.value)
+                    }}
                     className="border-none bg-transparent p-0 text-xs font-bold text-[#202B27] focus:ring-0 cursor-pointer w-full truncate"
                   >
                     <optgroup label="— Illustrative Demo Networks —">
@@ -555,9 +600,14 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
                           ))}
                       </optgroup>
                     ) : null}
+                    {onOpenImport && (
+                      <optgroup label="— Custom Intake —">
+                        <option value="__import_custom_dataset__">＋ Import Custom Dataset (CSV/JSON)...</option>
+                      </optgroup>
+                    )}
                   </SelectInput>
                   <p className="text-[9.5px] text-[#68716B] truncate leading-tight">
-                    {dataset ? `${ECOSYSTEM_LABEL[dataset.ecosystem]} (UK)` : 'Ecosystem'}
+                    {dataset ? `${ECOSYSTEM_LABEL[dataset.ecosystem]} ecosystem · ${dataset.nodes.length} taxa` : 'Ecosystem'}
                   </p>
                 </div>
               </div>
@@ -585,9 +635,70 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
                 {rightPanelOpen ? <PanelRightClose size={13} /> : <PanelRightOpen size={13} />}
                 <span>{rightPanelOpen ? 'Hide inspector' : 'Inspector'}</span>
               </button>
+
+              {result && (
+                <button
+                  type="button"
+                  onClick={() => setHudDismissed((prev) => !prev)}
+                  className={cn(
+                    'inline-flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-lg border transition-colors',
+                    !hudDismissed
+                      ? 'border-[#35563B] bg-[#E8EDE0] text-[#35563B]'
+                      : 'border-[#E5E6DC] bg-[#F7F6EF] text-[#68716B] hover:text-[#202B27]',
+                  )}
+                  title={hudDismissed ? 'Show simulation notification banner' : 'Hide simulation notification banner'}
+                  aria-label={hudDismissed ? 'Show simulation banner' : 'Hide simulation banner'}
+                >
+                  <Play size={11} className={cn(!hudDismissed && 'fill-[#35563B] text-[#35563B]')} />
+                  <span>{hudDismissed ? 'Show banner' : 'Banner active'}</span>
+                </button>
+              )}
             </div>
 
             <div className="flex items-center gap-2">
+              {dataset?.userProvided && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const name = dataset.name
+                    removeImportedDataset(dataset.id)
+                    setNotice({
+                      tone: 'success',
+                      title: 'Custom dataset removed',
+                      message: `"${name}" was removed. Restored baseline ecosystem.`,
+                    })
+                  }}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 hover:text-rose-900 border border-rose-200 px-2.5 py-1 rounded-lg transition-colors cursor-pointer shadow-2xs h-7"
+                  title="Remove this custom dataset and return to default network"
+                  aria-label="Remove custom dataset"
+                >
+                  <Trash2 size={12} />
+                  <span>Remove Custom</span>
+                </button>
+              )}
+              {onOpenImport && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  icon={<Upload size={12} />}
+                  onClick={onOpenImport}
+                  title="Import custom dataset (CSV or JSON format)"
+                  className="text-[11.5px] h-7 px-2.5 font-semibold border-[#899B78] text-[#35563B] bg-white hover:bg-[#E8EDE0] hover:border-[#35563B] shadow-2xs transition-all cursor-pointer"
+                >
+                  Import Dataset
+                </Button>
+              )}
+              {result && (
+                <Button
+                  size="sm"
+                  variant="primary"
+                  icon={<FileText size={12} />}
+                  onClick={() => setReportModalOpen(true)}
+                  className="text-[11.5px] h-7 px-2.5 font-semibold bg-[#35563B] text-white hover:bg-[#263D2D]"
+                >
+                  Report
+                </Button>
+              )}
               <Button
                 size="sm"
                 variant="outline"
@@ -601,52 +712,80 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
             </div>
           </div>
 
-          {/* Interactive Graph Component */}
-          <div className="flex-1 relative overflow-hidden">
-            {/* Floating Simulation HUD in Standard Lab View */}
-            {result && (
-              <div className="absolute top-3 left-3 z-20 flex flex-wrap items-center gap-2 p-2 rounded-xl bg-white/95 backdrop-blur-md border border-[#E5E6DC] shadow-md text-xs max-w-lg pointer-events-auto">
-                <span className="font-bold text-[#202B27] flex items-center gap-1.5">
+          {/* Active Simulation Status Banner (Inline: NEVER covers graph nodes or canvas text behind it!) */}
+          {result && !hudDismissed && (
+            <div className="flex flex-wrap items-center justify-between px-3 py-2 border-b border-[#E5E6DC] bg-white text-xs gap-2 min-w-0 shadow-2xs">
+              <div className="flex flex-wrap items-center gap-2 min-w-0 flex-1">
+                <span className="font-bold text-[#202B27] flex items-center gap-1.5 shrink-0">
                   <Play size={12} className="text-[#35563B] fill-[#35563B]" />
-                  <span>{result.primaryNodeLabel} Removed</span>
+                  <span className="truncate max-w-[150px]" title={result.primaryNodeLabel}>
+                    {result.primaryNodeLabel} Removed
+                  </span>
                 </span>
-                <span className="text-[#68716B]">·</span>
-                <span className="text-[#68716B]">
-                  Nodes: <strong className="text-[#202B27]">{result.scenario.nodeCount}/{result.baseline.nodeCount}</strong>
+                <span className="text-[#68716B] hidden sm:inline">·</span>
+                <span className="text-[#68716B] shrink-0">
+                  Nodes: <strong className="text-[#202B27]">{result.scenario.nodeCount}/{result.baseline.nodeCount}</strong> ({result.scenario.totalRemoved} node(s) removed)
                 </span>
-                <span className="text-[#68716B]">·</span>
-                <span className="text-[#D96B50] font-semibold">
-                  Links: -{result.scenario.linksLost} {result.scenario.linkLossPercent.value !== null ? `(-${formatPercent(result.scenario.linkLossPercent.value)})` : ''}
+                <span className="text-[#68716B] hidden sm:inline">·</span>
+                <span className="text-[#D96B50] font-semibold shrink-0">
+                  Links remaining: <strong className="text-[#202B27]">{result.scenario.linkCount}/{result.baseline.linkCount}</strong> (-{result.scenario.linksLost} links{result.scenario.linkLossPercent.value !== null ? `, -${formatPercent(result.scenario.linkLossPercent.value)}` : ''} lost)
                 </span>
-                {result.scenario.secondaryRemovals > 0 && (
-                  <span className="px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 font-bold border border-rose-200">
-                    +{result.scenario.secondaryRemovals} starved
+                {result.scenario.secondaryRemovals > 0 ? (
+                  <span className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 font-bold border border-rose-200 text-[11px] shrink-0">
+                    +{result.scenario.secondaryRemovals} starved in cascade
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded-full bg-[#E8EDE0] text-[#35563B] font-semibold border border-[#35563B]/20 text-[11px] shrink-0">
+                    {result.mode === 'cascade' ? '0 secondary extinctions (redundancy)' : 'Direct removal mode'}
                   </span>
                 )}
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => setDrawerState((prev) => (prev === 'expanded' ? 'collapsed' : 'expanded'))}
-                  className="h-6 text-[10.5px] px-2 py-0 border-[#35563B] text-[#35563B] font-semibold"
+                  icon={<FileText size={11} />}
+                  onClick={() => setReportModalOpen(true)}
+                  className="h-7 text-[11px] px-2.5 py-0 border-[#35563B] text-[#35563B] font-semibold shrink-0 hover:bg-[#E8EDE0]"
+                  aria-label="What changed?"
+                  title="View formal academic report and detailed ecological breakdown"
                 >
-                  {drawerState === 'expanded' ? 'Hide Details' : 'What Changed?'}
+                  What Changed? / Report
                 </Button>
                 <button
                   type="button"
                   onClick={resetScenario}
-                  className="p-1 text-[#68716B] hover:text-[#202B27]"
-                  title="Reset simulation"
+                  className="p-1.5 text-[#68716B] hover:text-[#202B27] rounded-md transition-colors shrink-0 hover:bg-black/5"
+                  title="Reset simulation to baseline"
                   aria-label="Reset simulation"
                 >
-                  <RotateCcw size={12} />
+                  <RotateCcw size={13} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setHudDismissed(true)}
+                  className="p-1.5 text-[#68716B] hover:text-[#202B27] rounded-md hover:bg-black/5 transition-colors shrink-0"
+                  title="Dismiss notification (keeps simulation active, uncovers canvas text behind)"
+                  aria-label="Dismiss notification"
+                >
+                  <X size={14} />
                 </button>
               </div>
-            )}
+            </div>
+          )}
+
+          {/* Interactive Graph Component */}
+          <div className="flex-1 relative overflow-hidden">
             <FoodWebGraph
               graph={graph}
               removedNodeIds={activeRemovedNodeIds}
               selectedNodeId={selectedNode?.id ?? selectedNodeId}
-              onSelectNode={selectNode}
+              primaryRemovedNodeId={result?.primaryNodeId}
+              onSelectNode={(id) => {
+                selectNode(id)
+                if (id) setRightPanelOpen(true)
+              }}
               directlyAffectedIds={result?.scenario.directlyAffectedConsumerIds ?? []}
               foodDepletedIds={result?.scenario.foodDepletedConsumerIds ?? []}
               highlightLinks={highlightLinks}
@@ -656,6 +795,15 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
           </div>
         </div>
 
+        {/* Mobile Backdrop Scrim when Inspector is open on small viewports */}
+        {rightPanelOpen && (
+          <div
+            className="fixed inset-0 z-35 bg-black/30 backdrop-blur-2xs lg:hidden"
+            onClick={() => setRightPanelOpen(false)}
+            aria-hidden="true"
+          />
+        )}
+
         {/* Right Side: Species Inspector Panel (Matching 03_Explorer_Page.png) */}
         {rightPanelOpen && (
           <div className="fixed inset-y-0 right-0 z-40 w-full sm:w-[360px] lg:static lg:z-auto lg:w-80 xl:w-[380px] shrink-0 h-full overflow-y-auto space-y-3 bg-[#FCFBF7] p-3 lg:p-0 shadow-2xl lg:shadow-none border-l lg:border-l-0 border-[#E5E6DC]">
@@ -664,10 +812,14 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
               node={selectedNode}
               result={result}
               isSelected={Boolean(selectedNodeId || selectedNode)}
-              onSelectForSimulation={(id) => removeFromScenario(id)}
+              onSelectForSimulation={(id) => {
+                selectNode(id)
+                runSelectedScenario(id)
+              }}
               onResetSimulation={resetScenario}
               onClose={() => setRightPanelOpen(false)}
               canRun={graph.nodes.length > 0}
+              ecosystem={dataset.ecosystem}
             />
 
             {/* Embedded Simulation Controls in Inspector */}
@@ -688,7 +840,13 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
                 node={selectedNode}
                 mode={mode}
                 onModeChange={setMode}
-                onRun={runSelectedScenario}
+                onRun={() => {
+                  const targetId = selectedNode?.id ?? selectedNodeId
+                  if (targetId) {
+                    selectNode(targetId)
+                    runSelectedScenario(targetId)
+                  }
+                }}
                 onReset={resetScenario}
                 result={result}
                 onOpenReport={() => setReportModalOpen(true)}
@@ -830,14 +988,24 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
           )}
           aria-label="Scenario Results Summary"
         >
-          <div className="flex items-center justify-between pb-2 border-b border-[#E5E6DC]">
-            <div className="flex flex-wrap items-center gap-2 text-xs">
-              <span className="font-bold text-[#202B27]">Simulation Quantitative Results:</span>
-              <span className="text-[#68716B]">
+          <div className="flex items-center justify-between pb-2 border-b border-[#E5E6DC] gap-2">
+            <div className="flex flex-wrap items-center gap-2 text-xs min-w-0 flex-1 break-words">
+              <span className="font-bold text-[#202B27] shrink-0">Simulation Quantitative Results:</span>
+              <span className="text-[#68716B] break-words">
                 Target: <strong className="text-[#202B27]">{result.primaryNodeLabel}</strong> · {result.mode === 'cascade' ? 'Cascade mode' : 'Direct mode'} · {result.scenario.totalRemoved} node(s) removed total ({result.scenario.secondaryRemovals} starved)
               </span>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Button
+                size="sm"
+                variant="outline"
+                icon={<FileText size={12} />}
+                onClick={() => setReportModalOpen(true)}
+                className="h-7 text-xs px-2.5 font-semibold text-[#35563B] border-[#35563B]/30 hover:bg-[#E8EDE0]"
+                aria-label="View formal printable academic report"
+              >
+                Academic Report
+              </Button>
               <Button
                 size="sm"
                 variant="ghost"
@@ -858,6 +1026,15 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
               <Button
                 size="sm"
                 variant="ghost"
+                onClick={() => setDrawerState('closed')}
+                className="h-7 text-xs px-2 text-[#68716B] hover:text-[#202B27]"
+                aria-label="Close results drawer"
+              >
+                <X size={13} className="mr-1" /> Close
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
                 onClick={resetScenario}
                 className="h-7 text-xs px-2 text-[#68716B] hover:text-[#202B27]"
                 aria-label="Reset simulation"
@@ -867,9 +1044,18 @@ export function Explore({ onNavigate }: { onNavigate: (route: RouteId) => void }
             </div>
           </div>
 
-          <div className={cn(drawerState === 'expanded' ? 'pt-3 space-y-4 max-h-[45vh] overflow-y-auto' : 'sr-only')}>
+          <div className={cn(drawerState === 'expanded' ? 'pt-3 space-y-4 max-h-[50vh] overflow-y-auto' : 'sr-only')}>
             <BaselineVsScenario baseline={result.baseline} result={result} labelFor={labelFor} />
             <WhatChanged result={result} labelFor={labelFor} />
+            {result.mode === 'cascade' && result.rounds.length > 0 && cascadeStep !== null ? (
+              <CascadeTimeline
+                result={result}
+                step={cascadeStep}
+                onStepChange={setCascadeStep}
+                isPlaying={isPlaying}
+                onTogglePlay={() => setIsPlaying((prev) => !prev)}
+              />
+            ) : null}
           </div>
         </div>
       )}

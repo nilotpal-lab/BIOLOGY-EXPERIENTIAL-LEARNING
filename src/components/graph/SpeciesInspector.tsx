@@ -11,6 +11,7 @@ import { SpeciesIcon } from '../SpeciesIcon'
 import { Badge, Button, cn } from '../ui/primitives'
 import {
   TROPHIC_ROLE_LABEL,
+  type EcosystemCategory,
   type FoodWebGraph,
   type FoodWebNode,
   type ScenarioResult,
@@ -49,6 +50,7 @@ interface SpeciesInspectorProps {
   onNavigateToSimulation?: () => void
   onClose?: () => void
   canRun: boolean
+  ecosystem?: EcosystemCategory
 }
 
 export function SpeciesInspector({
@@ -61,6 +63,7 @@ export function SpeciesInspector({
   onNavigateToSimulation,
   onClose,
   canRun,
+  ecosystem,
 }: SpeciesInspectorProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'relationships' | 'metrics'>('overview')
   const [feedingCollapsed, setFeedingCollapsed] = useState(false)
@@ -100,22 +103,22 @@ export function SpeciesInspector({
   const state = nodeScenarioState(node.id, result, isSelected)
   const totalDegree = foodSources.length + consumers.length
 
-  // Calculate realistic trophic level
+  // Calculate authentic topological trophic level
   const trophicLevels = computeTrophicLevels(graph)
   const calculatedLevel = (trophicLevels.get(node.id) ?? 0) + 1
-  const trophicDisplay = (calculatedLevel + (foodSources.length > 0 ? (totalDegree % 3) * 0.1 : 0)).toFixed(1)
+  const trophicDisplay = calculatedLevel.toFixed(1)
 
   return (
     <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4.5 sm:p-5 shadow-2xs space-y-4">
       {/* =====================================================================
           HEADER (Matching Image 1): Large Name in Lora, Scientific Name, Close ✕
           ===================================================================== */}
-      <div className="flex items-start justify-between gap-2 pb-3 border-b border-[#E5E6DC]">
-        <div>
-          <h2 className="text-2xl font-serif font-normal text-[#202B27] leading-tight">
+      <div className="flex items-start justify-between gap-2 pb-3 border-b border-[#E5E6DC] min-w-0">
+        <div className="min-w-0 flex-1 break-words">
+          <h2 className="text-2xl font-serif font-normal text-[#202B27] leading-tight break-words">
             {node.name}
           </h2>
-          <p className="text-xs italic text-[#68716B] mt-0.5">
+          <p className="text-xs italic text-[#68716B] mt-0.5 break-words">
             {node.scientificName || `${node.name.toLowerCase().replace(/\s+/g, '_')} sp.`}
           </p>
         </div>
@@ -132,11 +135,11 @@ export function SpeciesInspector({
         )}
       </div>
 
-      {/* Explains why a species is already selected when the page first loads
-          (QA mobile + non-native: inspector opened with no explanation). */}
+      {/* Contextual guidance depending on selection state */}
       <p className="text-[11px] text-[#68716B] leading-relaxed">
-        Showing an example species. Click any node in the food web, or a row in the
-        species list, to inspect a different organism.
+        {isSelected
+          ? 'Inspecting feeding interactions, trophic level, and topological connectivity.'
+          : 'Showing an initial species. Click any organism in the food web or list to inspect it.'}
       </p>
 
       {/* =====================================================================
@@ -218,34 +221,44 @@ export function SpeciesInspector({
           TAB 1: OVERVIEW (Matching Image 1 Specifications)
           ===================================================================== */}
       {activeTab === 'overview' && (
-        <div className="space-y-4 text-xs">
+        <div className="space-y-4 text-xs min-w-0">
           {/* 4 Attributes Grid: Trophic Level · Diet · Average Size · Habitat */}
           <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="p-2.5 rounded-xl border border-[#E5E6DC] bg-[#F7F6EF]">
-              <span className="text-[10.5px] text-[#68716B] block">Trophic Level</span>
-              <span className="font-bold text-[#202B27] text-sm tabular-nums">{trophicDisplay}</span>
+            <div className="p-2.5 rounded-xl border border-[#E5E6DC] bg-[#F7F6EF] min-w-0">
+              <span className="text-[10.5px] text-[#68716B] block truncate">Trophic Level</span>
+              <span className="font-bold text-[#202B27] text-sm tabular-nums block">{trophicDisplay}</span>
             </div>
-            <div className="p-2.5 rounded-xl border border-[#E5E6DC] bg-[#F7F6EF]">
-              <span className="text-[10.5px] text-[#68716B] block">Diet</span>
-              <span className="font-bold text-[#202B27] text-sm">
+            <div className="p-2.5 rounded-xl border border-[#E5E6DC] bg-[#F7F6EF] min-w-0">
+              <span className="text-[10.5px] text-[#68716B] block truncate">Diet</span>
+              <span className="font-bold text-[#202B27] text-xs sm:text-sm block truncate" title={TROPHIC_ROLE_LABEL[node.trophicRole]}>
                 {TROPHIC_ROLE_LABEL[node.trophicRole]}
               </span>
             </div>
-            <div className="p-2.5 rounded-xl border border-[#E5E6DC] bg-[#F7F6EF]">
-              <span className="text-[10.5px] text-[#68716B] block">Degree (Links)</span>
-              <span className="font-bold text-[#202B27] text-sm tabular-nums">
-                {totalDegree} ({foodSources.length} in · {consumers.length} out)
-              </span>
+            <div className="p-2.5 rounded-xl border border-[#E5E6DC] bg-[#F7F6EF] min-w-0">
+              <span className="text-[10.5px] text-[#68716B] block truncate">Degree (Links)</span>
+              <div className="flex items-baseline gap-1 flex-wrap min-w-0">
+                <span className="font-bold text-[#202B27] text-sm tabular-nums">{totalDegree}</span>
+                <span className="text-[10px] text-[#68716B] font-medium truncate block max-w-full" title={`(${foodSources.length} in · ${consumers.length} out)`}>
+                  ({foodSources.length} in · {consumers.length} out)
+                </span>
+              </div>
             </div>
-            <div className="p-2.5 rounded-xl border border-[#E5E6DC] bg-[#F7F6EF]">
-              <span className="text-[10.5px] text-[#68716B] block">Habitat</span>
-              <span className="font-bold text-[#202B27] text-sm truncate">
-                {graph.datasetId.startsWith('FW')
+            <div className="p-2.5 rounded-xl border border-[#E5E6DC] bg-[#F7F6EF] min-w-0">
+              <span className="text-[10.5px] text-[#68716B] block truncate">Habitat</span>
+              {(() => {
+                const isFw = ecosystem === 'freshwater' || graph.datasetId.includes('FW')
+                const isMar = ecosystem === 'marine' || graph.datasetId.includes('MAR')
+                const habitatText = isFw
                   ? 'Freshwater (Lakes/Rivers)'
-                  : graph.datasetId.startsWith('MAR')
+                  : isMar
                   ? 'Marine (Coastal/Estuary)'
-                  : 'Terrestrial'}
-              </span>
+                  : 'Terrestrial (Forest/Land)'
+                return (
+                  <span className="font-bold text-[#202B27] text-xs sm:text-sm block truncate" title={habitatText}>
+                    {habitatText}
+                  </span>
+                )
+              })()}
             </div>
           </div>
 
@@ -278,18 +291,18 @@ export function SpeciesInspector({
                           <div
                             key={id}
                             className={cn(
-                              'flex flex-col items-center p-1.5 rounded-lg border text-center transition-all',
+                              'flex flex-col items-center p-1.5 rounded-lg border text-center transition-all min-w-0 overflow-hidden',
                               isLostPrey
                                 ? 'border-rose-300 bg-rose-50/70 text-rose-900'
                                 : 'border-[#E5E6DC] bg-[#F7F6EF]',
                             )}
                           >
                             <SpeciesIcon iconKey={target?.iconKey} size={28} />
-                            <span className={cn('text-[10px] font-medium truncate w-full mt-0.5', isLostPrey && 'line-through text-rose-800')}>
+                            <span className={cn('text-[10px] font-medium truncate w-full mt-0.5', isLostPrey && 'line-through text-rose-800')} title={target?.name ?? id}>
                               {target?.name ?? id}
                             </span>
                             {isLostPrey && (
-                              <span className="text-[8.5px] font-bold text-rose-600">✕ Lost Prey</span>
+                              <span className="text-[8.5px] font-bold text-rose-600 truncate max-w-full">✕ Lost Prey</span>
                             )}
                           </div>
                         )
@@ -314,10 +327,10 @@ export function SpeciesInspector({
                         return (
                           <div
                             key={id}
-                            className="flex flex-col items-center p-1.5 rounded-lg border border-[#E5E6DC] bg-[#F7F6EF] text-center"
+                            className="flex flex-col items-center p-1.5 rounded-lg border border-[#E5E6DC] bg-[#F7F6EF] text-center min-w-0 overflow-hidden"
                           >
                             <SpeciesIcon iconKey={target?.iconKey} size={28} />
-                            <span className="text-[10px] font-medium text-[#202B27] truncate w-full mt-0.5">
+                            <span className="text-[10px] font-medium text-[#202B27] truncate w-full mt-0.5" title={target?.name ?? id}>
                               {target?.name ?? id}
                             </span>
                           </div>
@@ -379,9 +392,11 @@ export function SpeciesInspector({
             {foodSources.length ? (
               <ul className="space-y-1">
                 {foodSources.map((id) => (
-                  <li key={id} className="p-2 rounded-lg bg-[#F7F6EF] border border-[#E5E6DC] flex items-center justify-between">
-                    <span className="font-semibold text-[#202B27]">{graph.nodeById.get(id)?.name ?? id}</span>
-                    <Badge tone="secondary">Prey</Badge>
+                  <li key={id} className="p-2 rounded-lg bg-[#F7F6EF] border border-[#E5E6DC] flex items-center justify-between gap-2 min-w-0">
+                    <span className="font-semibold text-[#202B27] truncate min-w-0 flex-1" title={graph.nodeById.get(id)?.name ?? id}>
+                      {graph.nodeById.get(id)?.name ?? id}
+                    </span>
+                    <Badge tone="secondary" className="shrink-0">Prey</Badge>
                   </li>
                 ))}
               </ul>
@@ -397,9 +412,11 @@ export function SpeciesInspector({
             {consumers.length ? (
               <ul className="space-y-1">
                 {consumers.map((id) => (
-                  <li key={id} className="p-2 rounded-lg bg-[#F7F6EF] border border-[#E5E6DC] flex items-center justify-between">
-                    <span className="font-semibold text-[#202B27]">{graph.nodeById.get(id)?.name ?? id}</span>
-                    <Badge tone="primary">Predator</Badge>
+                  <li key={id} className="p-2 rounded-lg bg-[#F7F6EF] border border-[#E5E6DC] flex items-center justify-between gap-2 min-w-0">
+                    <span className="font-semibold text-[#202B27] truncate min-w-0 flex-1" title={graph.nodeById.get(id)?.name ?? id}>
+                      {graph.nodeById.get(id)?.name ?? id}
+                    </span>
+                    <Badge tone="primary" className="shrink-0">Predator</Badge>
                   </li>
                 ))}
               </ul>
@@ -415,21 +432,21 @@ export function SpeciesInspector({
           ===================================================================== */}
       {activeTab === 'metrics' && (
         <div className="space-y-2 text-xs">
-          <div className="p-2.5 rounded-xl border border-[#E5E6DC] bg-[#F7F6EF] flex justify-between">
-            <span className="text-[#68716B]">Incoming Degree (Prey)</span>
-            <span className="font-bold text-[#202B27] tabular-nums">{foodSources.length}</span>
+          <div className="p-2.5 rounded-xl border border-[#E5E6DC] bg-[#F7F6EF] flex justify-between items-center min-w-0">
+            <span className="text-[#68716B] truncate">Incoming Degree (Prey)</span>
+            <span className="font-bold text-[#202B27] tabular-nums shrink-0">{foodSources.length}</span>
           </div>
-          <div className="p-2.5 rounded-xl border border-[#E5E6DC] bg-[#F7F6EF] flex justify-between">
-            <span className="text-[#68716B]">Outgoing Degree (Predators)</span>
-            <span className="font-bold text-[#202B27] tabular-nums">{consumers.length}</span>
+          <div className="p-2.5 rounded-xl border border-[#E5E6DC] bg-[#F7F6EF] flex justify-between items-center min-w-0">
+            <span className="text-[#68716B] truncate">Outgoing Degree (Predators)</span>
+            <span className="font-bold text-[#202B27] tabular-nums shrink-0">{consumers.length}</span>
           </div>
-          <div className="p-2.5 rounded-xl border border-[#E5E6DC] bg-[#F7F6EF] flex justify-between">
-            <span className="text-[#68716B]">Total Degree</span>
-            <span className="font-bold text-[#202B27] tabular-nums">{totalDegree}</span>
+          <div className="p-2.5 rounded-xl border border-[#E5E6DC] bg-[#F7F6EF] flex justify-between items-center min-w-0">
+            <span className="text-[#68716B] truncate">Total Degree</span>
+            <span className="font-bold text-[#202B27] tabular-nums shrink-0">{totalDegree}</span>
           </div>
-          <div className="p-2.5 rounded-xl border border-[#E5E6DC] bg-[#F7F6EF] flex justify-between">
-            <span className="text-[#68716B]">Trophic Status</span>
-            <span className="font-bold text-[#35563B]">{STATE_LABEL[state]}</span>
+          <div className="p-2.5 rounded-xl border border-[#E5E6DC] bg-[#F7F6EF] flex justify-between items-center min-w-0">
+            <span className="text-[#68716B] truncate">Trophic Status</span>
+            <span className="font-bold text-[#35563B] truncate ml-2">{STATE_LABEL[state]}</span>
           </div>
         </div>
       )}

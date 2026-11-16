@@ -8,6 +8,7 @@ import {
   Loader2,
   Play,
   Search,
+  Upload,
   Users,
   X,
 } from 'lucide-react'
@@ -43,17 +44,20 @@ import {
   type TrophicRole,
 } from '../core/types'
 import { useAppState } from '../state/AppState'
+import { getDatasetThumbnail } from '../art/datasetThumbnails'
 import type { RouteId } from '../components/layout/routes'
 
 interface ScenarioAnalysisProps {
   onNavigate?: (route: RouteId) => void
+  onOpenImport?: () => void
 }
 
-export function ScenarioAnalysis({ onNavigate }: ScenarioAnalysisProps) {
+export function ScenarioAnalysis({ onNavigate, onOpenImport }: ScenarioAnalysisProps) {
   const {
     dataset,
     datasets,
     selectDataset,
+    selectNode,
     graph,
     baseline,
     ranking,
@@ -158,15 +162,29 @@ export function ScenarioAnalysis({ onNavigate }: ScenarioAnalysisProps) {
           : `${top.metricValue} nodes`
         : 'significant impact'
 
+    const lowImpactSpecies = ranking.rows
+      .filter((r) => r.metricValue === 0 || (r.metricValue !== null && r.metricValue <= 5))
+      .slice(0, 2)
+      .map((r) => r.label)
+    const lowImpactText = lowImpactSpecies.length > 0
+      ? `Peripheral and basal taxa (e.g. ${lowImpactSpecies.join(', ')}) exhibit isolated, lower ecosystem-wide disruption.`
+      : 'Basal and peripheral taxa generally exhibit lower systemic cascading disruptions.'
+
+    const apexPredators = graph?.nodes.filter((n) => n.trophicRole === 'apex-predator' || n.trophicRole === 'secondary-consumer') ?? []
+    const apexNames = apexPredators.slice(0, 2).map((n) => n.name)
+    const apexText = apexNames.length > 0
+      ? `Higher-order predators (such as ${apexNames.join(' and ')}) show moderate cascade footprints buffered by generalized diets.`
+      : 'Top consumers generally show moderate systemic impact due to polyphagous feeding redundancy.'
+
     return [
       `${top.label} removal causes the largest cascade, affecting ${topImpact} of the ecosystem.`,
       second && third
         ? `${second.label} and ${third.label} are also highly influential, with significant secondary effects.`
         : 'Intermediate consumers provide vital pathways that stabilize trophic energy transfer.',
-      'Most low-trophic species (e.g. Shrimp, Snail) have smaller ecosystem-wide impacts.',
-      'Top predators like Grey Heron show moderate influence due to multiple food sources.',
+      lowImpactText,
+      apexText,
     ]
-  }, [ranking, analysis])
+  }, [ranking, analysis, graph])
 
   // Maximum metrics for Vulnerability Summary
   const vulnerabilitySummary = useMemo(() => {
@@ -178,17 +196,16 @@ export function ScenarioAnalysis({ onNavigate }: ScenarioAnalysisProps) {
         maxDepth: 0,
       }
     }
-    const maxLinkLossNum = Math.max(
-      ...Array.from(analysis.scenarios.values()).map((s) => s.direct.scenario.linkLossPercent.value ?? 0),
-    )
-    const maxCascadePercentNum = Math.max(
-      ...Array.from(analysis.scenarios.values()).map(
-        (s) => s.cascade.scenario.removedPercentOfBaseline.value ?? 0,
-      ),
-    )
-    const maxDepthNum = Math.max(
-      ...Array.from(analysis.scenarios.values()).map((s) => s.cascade.scenario.cascadeDepth),
-    )
+    const scenariosList = Array.from(analysis.scenarios.values())
+    const maxLinkLossNum = scenariosList.length > 0
+      ? Math.max(...scenariosList.map((s) => s.direct.scenario.linkLossPercent.value ?? 0))
+      : 0
+    const maxCascadePercentNum = scenariosList.length > 0
+      ? Math.max(...scenariosList.map((s) => s.cascade.scenario.removedPercentOfBaseline.value ?? 0))
+      : 0
+    const maxDepthNum = scenariosList.length > 0
+      ? Math.max(...scenariosList.map((s) => s.cascade.scenario.cascadeDepth))
+      : 0
 
     return {
       mostInfluential: ranking.rows[0].label,
@@ -233,13 +250,13 @@ export function ScenarioAnalysis({ onNavigate }: ScenarioAnalysisProps) {
             </p>
           </div>
 
-          {/* Freshwater Ecosystem Illustration */}
+          {/* Dynamic Ecosystem Artwork */}
           <div className="lg:col-span-4 h-36 lg:h-full relative overflow-hidden flex items-center justify-end">
             <div className="absolute inset-0 bg-gradient-to-r from-[#FCFBF7] via-[#FCFBF7]/50 to-transparent z-1 lg:w-32" />
             <img
-              src="/hero-freshwater-artwork.webp"
-              alt="Freshwater ecosystem"
-              className="w-full h-full object-cover object-[80%_25%] max-h-44"
+              src={getDatasetThumbnail(dataset.id, dataset.ecosystem)}
+              alt={`${dataset.name} habitat illustration`}
+              className="w-full h-full object-cover max-h-44"
             />
           </div>
         </div>
@@ -283,18 +300,18 @@ export function ScenarioAnalysis({ onNavigate }: ScenarioAnalysisProps) {
           {/* =====================================================================
               2. CONTROLS ROW: DATASET SELECTOR & ANALYSIS SETTINGS (Image 06)
               ===================================================================== */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* 1. Select Dataset */}
-        <div className="xl:col-span-4 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-2.5">
+        <div className="lg:col-span-5 xl:col-span-4 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs space-y-2.5">
           <p className="text-[11px] font-bold uppercase tracking-wider text-[#68716B]">
             1. Select Dataset
           </p>
           <div className="flex items-center gap-2 rounded-xl border border-[#E5E6DC] bg-white p-2">
             <div className="h-10 w-14 rounded-lg overflow-hidden border border-[#E5E6DC] shrink-0 bg-[#F7F6EF]">
               <img
-                src="/hero-ecosystem.webp"
+                src={getDatasetThumbnail(dataset.id, dataset.ecosystem)}
                 alt="Ecosystem preview"
-                className="w-full h-full object-cover object-[70%_25%]"
+                className="w-full h-full object-cover"
               />
             </div>
             <div className="min-w-0 flex-1">
@@ -302,7 +319,13 @@ export function ScenarioAnalysis({ onNavigate }: ScenarioAnalysisProps) {
                 id="analytics-dataset-select"
                 aria-label="Loaded network"
                 value={dataset.id}
-                onChange={(e: ChangeEvent<HTMLSelectElement>) => selectDataset(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+                  if (e.target.value === '__import_custom_dataset__') {
+                    onOpenImport?.()
+                    return
+                  }
+                  selectDataset(e.target.value)
+                }}
                 className="w-full text-xs font-bold text-[#202B27] border-none p-0 focus:ring-0 cursor-pointer"
               >
                 <optgroup label="— Illustrative Demo Networks —">
@@ -334,16 +357,21 @@ export function ScenarioAnalysis({ onNavigate }: ScenarioAnalysisProps) {
                       ))}
                   </optgroup>
                 ) : null}
+                {onOpenImport && (
+                  <optgroup label="— Custom Intake —">
+                    <option value="__import_custom_dataset__">＋ Import Custom Dataset (CSV/JSON)...</option>
+                  </optgroup>
+                )}
               </SelectInput>
               <p className="text-[10px] text-[#68716B] truncate">
-                {ECOSYSTEM_LABEL[dataset.ecosystem]} (UK)
+                {ECOSYSTEM_LABEL[dataset.ecosystem]} ecosystem · {dataset.nodes.length} species
               </p>
             </div>
           </div>
         </div>
 
         {/* 2. Analysis Settings & Action Button */}
-        <div className="xl:col-span-8 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="lg:col-span-7 xl:col-span-8 rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-4 shadow-2xs flex flex-wrap items-center justify-between gap-3">
           <div className="space-y-1.5">
             <p className="text-[11px] font-bold uppercase tracking-wider text-[#68716B]">
               2. Analysis Settings
@@ -377,6 +405,18 @@ export function ScenarioAnalysis({ onNavigate }: ScenarioAnalysisProps) {
           </div>
 
           <div className="flex items-center gap-2">
+            {onOpenImport && (
+              <Button
+                variant="outline"
+                size="sm"
+                icon={<Upload size={13} />}
+                onClick={onOpenImport}
+                title="Import custom dataset (CSV or JSON)"
+                className="text-xs py-2 px-3 border-[#899B78] text-[#35563B] bg-white hover:bg-[#E8EDE0] font-semibold"
+              >
+                Import Dataset
+              </Button>
+            )}
             {analysisRunning ? (
               <Button
                 variant="outline"
@@ -631,16 +671,61 @@ export function ScenarioAnalysis({ onNavigate }: ScenarioAnalysisProps) {
 
             {/* The Species Rankings Table */}
             <div className="overflow-x-auto rounded-xl border border-[#E5E6DC] bg-white">
-              <table className="w-full text-left text-xs">
+              <table className="w-full text-left text-xs min-w-[680px]">
                 <thead className="bg-[#F7F6EF] text-[10.5px] uppercase font-bold text-[#68716B] border-b border-[#E5E6DC]">
                   <tr>
                     <th className="py-2.5 px-3 w-8">#</th>
                     <th className="py-2.5 px-3">Species</th>
-                    <th className="py-2.5 px-3">Link Loss %</th>
-                    <th className="py-2.5 px-3 text-center">Directly Affected</th>
-                    <th className="py-2.5 px-3 text-center">Secondary Removals</th>
-                    <th className="py-2.5 px-3">Cascade Removed %</th>
-                    <th className="py-2.5 px-3 text-center">Cascade Depth</th>
+                    <th
+                      className="py-2.5 px-3 cursor-pointer hover:text-[#202B27] select-none"
+                      onClick={() => handleSelectMetric('linkLossPercent')}
+                      title="Sort by Link Loss %"
+                    >
+                      <div className="flex items-center gap-1">
+                        <span>Link Loss %</span>
+                        {currentMetricKey === 'linkLossPercent' && <span className="text-[#35563B]">▼</span>}
+                      </div>
+                    </th>
+                    <th
+                      className="py-2.5 px-3 text-center cursor-pointer hover:text-[#202B27] select-none"
+                      onClick={() => handleSelectMetric('directlyAffectedConsumers')}
+                      title="Sort by Directly Affected Consumers"
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        <span>Directly Affected</span>
+                        {currentMetricKey === 'directlyAffectedConsumers' && <span className="text-[#35563B]">▼</span>}
+                      </div>
+                    </th>
+                    <th
+                      className="py-2.5 px-3 text-center cursor-pointer hover:text-[#202B27] select-none"
+                      onClick={() => handleSelectMetric('secondaryRemovals')}
+                      title="Sort by Secondary Removals"
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        <span>Secondary Removals</span>
+                        {currentMetricKey === 'secondaryRemovals' && <span className="text-[#35563B]">▼</span>}
+                      </div>
+                    </th>
+                    <th
+                      className="py-2.5 px-3 cursor-pointer hover:text-[#202B27] select-none"
+                      onClick={() => handleSelectMetric('cascadeRemovedPercent')}
+                      title="Sort by Cascade Removed %"
+                    >
+                      <div className="flex items-center gap-1">
+                        <span>Cascade Removed %</span>
+                        {currentMetricKey === 'cascadeRemovedPercent' && <span className="text-[#35563B]">▼</span>}
+                      </div>
+                    </th>
+                    <th
+                      className="py-2.5 px-3 text-center cursor-pointer hover:text-[#202B27] select-none"
+                      onClick={() => handleSelectMetric('cascadeDepth')}
+                      title="Sort by Cascade Depth"
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        <span>Cascade Depth</span>
+                        {currentMetricKey === 'cascadeDepth' && <span className="text-[#35563B]">▼</span>}
+                      </div>
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E5E6DC]/60">
@@ -678,9 +763,17 @@ export function ScenarioAnalysis({ onNavigate }: ScenarioAnalysisProps) {
                                 className="rounded bg-[#F7F6EF] p-0.5 shrink-0"
                               />
                               <div className="min-w-0">
-                                <span className="font-bold text-[#202B27] block truncate">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    selectNode(row.nodeId)
+                                    onNavigate?.('explore')
+                                  }}
+                                  className="font-bold text-[#202B27] hover:text-[#35563B] text-left block truncate underline decoration-[#35563B]/30 hover:decoration-[#35563B] transition-colors"
+                                  title={`Inspect & simulate ${row.label} in Explorer`}
+                                >
                                   {row.label}
-                                </span>
+                                </button>
                                 {node?.scientificName && (
                                   <span className="text-[9.5px] italic text-[#68716B] block truncate">
                                     {node.scientificName}
@@ -754,8 +847,8 @@ export function ScenarioAnalysis({ onNavigate }: ScenarioAnalysisProps) {
               </table>
             </div>
 
-            {/* Pagination Controls */}
-            <div className="flex items-center justify-between text-xs pt-1">
+            {/* Pagination Controls with Windowed Ellipsis (Never Overflows) */}
+            <div className="flex flex-wrap items-center justify-between text-xs pt-1 gap-2">
               <span className="text-[#68716B]">
                 {search || roleFilter !== 'all' ? (
                   `Showing ${filteredRows.length} of ${ranking?.rows.length ?? baseline.nodeCount} species`
@@ -765,35 +858,51 @@ export function ScenarioAnalysis({ onNavigate }: ScenarioAnalysisProps) {
                   `${filteredRows.length} species ranked`
                 )}
               </span>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 shrink-0">
                 <button
                   type="button"
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page <= 1}
                   className="h-7 w-7 rounded-lg border border-[#E5E6DC] bg-white text-[#202B27] flex items-center justify-center disabled:opacity-40"
+                  aria-label="Previous page"
                 >
                   ‹
                 </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => setPage(p)}
-                    className={cn(
-                      'h-7 w-7 rounded-lg text-xs font-bold transition-colors',
-                      page === p
-                        ? 'bg-[#35563B] text-white'
-                        : 'border border-[#E5E6DC] bg-white text-[#202B27] hover:bg-[#F7F6EF]',
-                    )}
-                  >
-                    {p}
-                  </button>
-                ))}
+                {(() => {
+                  const getPages = (cur: number, total: number) => {
+                    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+                    if (cur <= 4) return [1, 2, 3, 4, 5, 'ellipsis-right', total]
+                    if (cur >= total - 3) return [1, 'ellipsis-left', total - 4, total - 3, total - 2, total - 1, total]
+                    return [1, 'ellipsis-left', cur - 1, cur, cur + 1, 'ellipsis-right', total]
+                  }
+                  return getPages(page, totalPages).map((p, idx) =>
+                    typeof p === 'number' ? (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setPage(p)}
+                        className={cn(
+                          'h-7 w-7 rounded-lg text-xs font-bold transition-colors',
+                          page === p
+                            ? 'bg-[#35563B] text-white'
+                            : 'border border-[#E5E6DC] bg-white text-[#202B27] hover:bg-[#F7F6EF]',
+                        )}
+                      >
+                        {p}
+                      </button>
+                    ) : (
+                      <span key={`el-${idx}`} className="px-1 text-[#68716B] text-xs">
+                        …
+                      </span>
+                    ),
+                  )
+                })()}
                 <button
                   type="button"
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page >= totalPages}
                   className="h-7 w-7 rounded-lg border border-[#E5E6DC] bg-white text-[#202B27] flex items-center justify-center disabled:opacity-40"
+                  aria-label="Next page"
                 >
                   ›
                 </button>
@@ -812,12 +921,12 @@ export function ScenarioAnalysis({ onNavigate }: ScenarioAnalysisProps) {
                   <div className="h-7 w-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center mb-1">
                     <span className="text-xs font-bold">🌿</span>
                   </div>
-                  <div>
-                    <p className="font-bold text-lg text-[#202B27] truncate">
-                      1
+                  <div className="min-w-0">
+                    <p className="font-bold text-sm text-[#202B27] truncate" title={vulnerabilitySummary.mostInfluential}>
+                      {vulnerabilitySummary.mostInfluential}
                     </p>
                     <span className="text-[10px] text-[#68716B] leading-tight block">
-                      Most influential species ({vulnerabilitySummary.mostInfluential})
+                      Most influential keystone taxon
                     </span>
                   </div>
                 </div>
@@ -884,42 +993,53 @@ export function ScenarioAnalysis({ onNavigate }: ScenarioAnalysisProps) {
             </div>
 
             <div className="space-y-2.5 pt-1">
-              {top5Species.map((sp, idx) => {
+              {(() => {
+                const maxVal = Math.max(30, ...top5Species.map((s) => s.metricValue))
                 const colors = ['#EF9A88', '#F1B36F', '#F3D98B', '#F3D98B', '#B5D39A']
-                const barColor = colors[idx] || '#F3D98B'
-                return (
-                  <div key={sp.id} className="flex items-center gap-2.5 text-xs">
-                    <div className="flex items-center gap-1.5 w-24 shrink-0">
-                      <SpeciesIcon iconKey={sp.iconKey} size={22} />
-                      <span className="font-bold text-[#202B27] truncate">{sp.name}</span>
-                    </div>
+                return top5Species.map((sp, idx) => {
+                  const barColor = colors[idx] || '#F3D98B'
+                  const widthPct = maxVal > 0 ? Math.max(6, Math.min(100, (sp.metricValue / maxVal) * 100)) : 0
+                  return (
+                    <div key={sp.id} className="flex items-center gap-2.5 text-xs">
+                      <div className="flex items-center gap-1.5 w-24 shrink-0">
+                        <SpeciesIcon iconKey={sp.iconKey} size={22} />
+                        <span className="font-bold text-[#202B27] truncate">{sp.name}</span>
+                      </div>
 
-                    <div className="flex-1 h-3.5 rounded-full bg-[#E5E6DC] overflow-hidden flex items-center">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{
-                          width: `${Math.max(8, Math.min(100, sp.metricValue * 2.5))}%`,
-                          backgroundColor: barColor,
-                        }}
-                      />
-                    </div>
+                      <div className="flex-1 h-3.5 rounded-full bg-[#E5E6DC] overflow-hidden flex items-center">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{
+                            width: `${widthPct}%`,
+                            backgroundColor: barColor,
+                          }}
+                        />
+                      </div>
 
-                    <span className="font-mono tabular-nums text-xs font-bold text-[#202B27] shrink-0 w-12 text-right">
-                      {sp.formattedValue}
-                    </span>
-                  </div>
-                )
-              })}
+                      <span className="font-mono tabular-nums text-xs font-bold text-[#202B27] shrink-0 w-12 text-right">
+                        {sp.formattedValue}
+                      </span>
+                    </div>
+                  )
+                })
+              })()}
             </div>
 
             {/* Bottom Scale & Axis Label */}
             <div className="pt-2 border-t border-[#E5E6DC]/60">
-              <div className="flex justify-between text-[9px] font-mono text-[#68716B] px-1">
-                <span>0</span>
-                <span>10</span>
-                <span>20</span>
-                <span>30</span>
-              </div>
+              {(() => {
+                const maxVal = Math.max(30, ...top5Species.map((s) => s.metricValue))
+                const p33 = Math.round(maxVal * 0.33)
+                const p66 = Math.round(maxVal * 0.66)
+                return (
+                  <div className="flex justify-between text-[9px] font-mono text-[#68716B] px-1">
+                    <span>0</span>
+                    <span>{p33}</span>
+                    <span>{p66}</span>
+                    <span>{Math.round(maxVal)}</span>
+                  </div>
+                )
+              })()}
               <p className="text-center text-[10px] text-[#68716B] mt-1">
                 Cascade Removed % <span className="text-[11px] cursor-help">ⓘ</span>
               </p>
