@@ -35,8 +35,8 @@ function Delta({ before, after }: { before: number; after: number }) {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-0.5 text-[11px] tabular-nums',
-        difference === 0 ? 'text-fg-faint' : difference > 0 ? 'text-secondary' : 'text-highlight',
+        'inline-flex items-center gap-0.5 text-[11px] tabular-nums font-semibold',
+        difference === 0 ? 'text-slate-500' : difference > 0 ? 'text-emerald-700' : 'text-rose-700',
       )}
     >
       <Icon size={12} aria-hidden="true" />
@@ -62,30 +62,30 @@ export function BaselineVsScenario({
   return (
     <div className="space-y-3">
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-line-soft bg-surface-2 p-3">
-          <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-fg-faint">
+        <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-2xs">
+          <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-600">
             Nodes remaining
             <HelpHint text={DEFINITIONS.nodeCount} label="Nodes remaining" />
           </div>
-          <div className="mt-1 text-xl font-semibold tabular-nums text-fg">
+          <div className="mt-1 text-xl font-bold tabular-nums text-slate-900">
             {scenario.nodeCount}
-            <span className="text-[13px] font-normal text-fg-faint"> of {baseline.nodeCount}</span>
+            <span className="text-[13px] font-normal text-slate-500"> of {baseline.nodeCount}</span>
           </div>
           <Delta before={baseline.nodeCount} after={scenario.nodeCount} />
-          <p className="mt-1 text-[10.5px] text-fg-faint">Surviving species in ecosystem</p>
+          <p className="mt-1 text-[10.5px] text-slate-500">Surviving species in ecosystem</p>
         </div>
 
-        <div className="rounded-xl border border-line-soft bg-surface-2 p-3">
-          <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-fg-faint">
+        <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-2xs">
+          <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-600">
             Links remaining
             <HelpHint text={DEFINITIONS.linkCount} label="Links remaining" />
           </div>
-          <div className="mt-1 text-xl font-semibold tabular-nums text-fg">
+          <div className="mt-1 text-xl font-bold tabular-nums text-slate-900">
             {scenario.linkCount}
-            <span className="text-[13px] font-normal text-fg-faint"> of {baseline.linkCount}</span>
+            <span className="text-[13px] font-normal text-slate-500"> of {baseline.linkCount}</span>
           </div>
           <Delta before={baseline.linkCount} after={scenario.linkCount} />
-          <p className="mt-1 text-[10.5px] text-fg-faint">Active feeding relationships</p>
+          <p className="mt-1 text-[10.5px] text-slate-500">Active feeding relationships</p>
         </div>
 
         <MetricReadout

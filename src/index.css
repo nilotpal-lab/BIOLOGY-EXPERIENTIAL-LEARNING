@@ -293,12 +293,91 @@
     print-color-adjust: exact !important;
   }
 
+  /* When Academic Report Modal is open, hide all background app elements */
+  body.report-modal-open #root,
+  body.report-modal-open > *:not(#academic-report-portal) {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* Completely unroll the report modal portal so it prints all pages without truncation */
+  #academic-report-portal {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  #academic-report-portal .academic-report-backdrop {
+    position: static !important;
+    inset: auto !important;
+    background: #ffffff !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 100% !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+
+  #academic-report-portal .academic-report-card {
+    position: static !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    max-height: none !important;
+    height: auto !important;
+    overflow: visible !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+
+  #academic-report-canvas {
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    max-height: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+  }
+
   header,
   nav,
   aside,
   button,
   .no-print {
     display: none !important;
+  }
+
+  /* Keep sections and tables together cleanly across page breaks */
+  #academic-report-canvas section,
+  .print-avoid-break {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    margin-bottom: 1.25rem !important;
+  }
+
+  #academic-report-canvas table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    break-inside: auto;
+  }
+
+  #academic-report-canvas tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
   }
 
   .fwg-card,

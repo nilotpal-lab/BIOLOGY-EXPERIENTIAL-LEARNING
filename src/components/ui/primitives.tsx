@@ -110,7 +110,7 @@ export function Card({
   // prop honest at the call site while accepting any of the four tags.
   const RefTag = Tag as unknown as 'div'
   return (
-    <RefTag ref={cardRef as RefObject<HTMLDivElement | null>} className={cn('fwg-card p-4 sm:p-5', className)}>
+    <RefTag ref={cardRef as RefObject<HTMLDivElement | null>} className={cn('fwg-card p-4 sm:p-5 min-w-0', className)}>
       {children}
     </RefTag>
   )
@@ -130,15 +130,15 @@ export function CardHeading({
   className?: string
 }) {
   return (
-    <div className={cn('mb-3 flex flex-wrap items-start justify-between gap-3', className)}>
-      <div className="min-w-0">
-        <h3 className="flex items-center gap-2 text-[15px] font-semibold text-fg">
-          {icon ? <span aria-hidden="true" className="text-primary">{icon}</span> : null}
-          {title}
+    <div className={cn('mb-3 flex flex-wrap items-start justify-between gap-3 min-w-0', className)}>
+      <div className="min-w-0 flex-1 break-words">
+        <h3 className="flex items-center gap-2 text-[15px] font-semibold text-fg break-words">
+          {icon ? <span aria-hidden="true" className="text-primary shrink-0">{icon}</span> : null}
+          <span className="break-words">{title}</span>
         </h3>
-        {subtitle ? <p className="mt-1 text-[13px] leading-snug text-fg-muted">{subtitle}</p> : null}
+        {subtitle ? <p className="mt-1 text-[13px] leading-snug text-fg-muted break-words">{subtitle}</p> : null}
       </div>
-      {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+      {actions ? <div className="flex flex-wrap items-center gap-2 shrink-0">{actions}</div> : null}
     </div>
   )
 }
@@ -306,14 +306,14 @@ export function Callout({
   } as const
 
   return (
-    <div className={cn('rounded-xl border px-3.5 py-3 text-[13px] leading-relaxed', tones[tone], className)}>
+    <div className={cn('rounded-xl border px-3.5 py-3 text-[13px] leading-relaxed min-w-0 break-words', tones[tone], className)}>
       {title ? (
-        <p className="mb-1 flex items-center gap-1.5 font-semibold">
+        <p className="mb-1 flex items-center gap-1.5 font-semibold break-words">
           {icon ?? <Info size={14} aria-hidden="true" />}
           {title}
         </p>
       ) : null}
-      <div>{children}</div>
+      <div className="min-w-0 break-words">{children}</div>
     </div>
   )
 }
@@ -330,10 +330,10 @@ export function EmptyState({
   icon?: ReactNode
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-line-soft px-5 py-8 text-center">
+    <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-line-soft px-5 py-8 text-center min-w-0 break-words">
       {icon ? <span className="text-fg-faint" aria-hidden="true">{icon}</span> : null}
-      <p className="text-sm font-medium text-fg">{title}</p>
-      <p className="max-w-md text-[13px] leading-relaxed text-fg-muted">{description}</p>
+      <p className="text-sm font-medium text-fg break-words">{title}</p>
+      <p className="max-w-md text-[13px] leading-relaxed text-fg-muted break-words">{description}</p>
       {action ? <div className="mt-1">{action}</div> : null}
     </div>
   )
@@ -366,34 +366,34 @@ export function MetricReadout({
 
   const emphasisClass =
     metric.value === null
-      ? 'text-fg-faint'
+      ? 'text-slate-500'
       : emphasis === 'primary'
-        ? 'text-primary'
+        ? 'text-slate-900'
         : emphasis === 'secondary'
-          ? 'text-secondary'
+          ? 'text-emerald-700'
           : emphasis === 'highlight'
-            ? 'text-highlight'
+            ? 'text-rose-700'
             : emphasis === 'danger'
-              ? 'text-danger'
-              : 'text-fg'
+              ? 'text-rose-700 font-bold'
+              : 'text-slate-900'
 
   return (
-    <div className="rounded-xl border border-line-soft bg-surface-2 p-3">
-      <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-fg-faint">
-        <span>{label}</span>
+    <div className="rounded-xl border border-slate-200 bg-white p-3 min-w-0 break-words shadow-2xs">
+      <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-600 min-w-0">
+        <span className="truncate">{label}</span>
         {hint ? <HelpHint text={hint} label={label} /> : null}
       </div>
-      <div className={cn('mt-1 text-xl font-semibold tabular-nums', emphasisClass)}>
+      <div className={cn('mt-1 text-xl font-bold tabular-nums break-words', emphasisClass)}>
         {metric.value === null ? (
-          <span className="text-[13px] font-medium">Not applicable</span>
+          <span className="text-[13px] font-medium text-slate-500">Not applicable</span>
         ) : (
           display
         )}
       </div>
       {metric.value === null && metric.notApplicable ? (
-        <p className="mt-1 text-[11px] leading-snug text-fg-faint">{metric.notApplicable}</p>
+        <p className="mt-1 text-[11px] leading-snug text-slate-500 break-words">{metric.notApplicable}</p>
       ) : supporting ? (
-        <p className="mt-1 text-[11px] leading-snug text-fg-faint">{supporting}</p>
+        <div className="mt-1 text-[11px] leading-snug text-slate-600 break-words max-h-24 overflow-y-auto">{supporting}</div>
       ) : null}
     </div>
   )
