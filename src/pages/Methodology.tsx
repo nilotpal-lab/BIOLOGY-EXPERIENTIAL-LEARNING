@@ -399,34 +399,34 @@ export function Methodology() {
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Formula 1: Population Update (Lotka-Volterra) */}
+            {/* Formula 1: Dunne et al. (2002) Community Robustness R50 */}
             <div className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] p-5 shadow-xs flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-semibold uppercase tracking-wider text-[#35563B]">
-                    Dynamic Equilibrium
+                    Community Robustness
                   </span>
                   <span className="rounded-full bg-[#E8EDE0] px-2 py-0.5 text-[10px] font-mono text-[#35563B]">
-                    Trophic Model
+                    Dunne et al. (2002)
                   </span>
                 </div>
                 <h3 className="font-serif text-base font-bold text-[#202B27]">
-                  Population Update Formulation
+                  Extinction Threshold Index (R₅₀)
                 </h3>
                 <p className="mt-1 text-xs text-[#68716B]">
-                  Iterative discrete trophic model accounting for intrinsic reproduction, carrying capacity and predation loss.
+                  Proportion of primary species removals required to cause cumulative collapse of at least 50% of the entire ecosystem.
                 </p>
 
                 {/* Equation Card */}
-                <div className="my-4 rounded-xl border border-[#E5E6DC] bg-[#F7F6EF] p-4 text-center font-serif text-base sm:text-lg text-[#263D2D] tracking-wide select-all overflow-x-auto">
-                  <span className="italic">N</span><sub>i</sub>(t + 1) = <span className="italic">N</span><sub>i</sub>(t) + <span className="italic">r</span><sub>i</sub> <span className="italic">N</span><sub>i</sub>(t) <span className="text-sm font-sans">(1 − <span className="italic">N</span><sub>i</sub>(t) / <span className="italic">K</span><sub>i</sub>)</span> − ∑<sub>j</sub> α<sub>ij</sub> <span className="italic">N</span><sub>i</sub>(t) <span className="italic">N</span><sub>j</sub>(t)
+                <div className="my-4 rounded-xl border border-[#E5E6DC] bg-[#F7F6EF] p-4 text-center font-serif text-lg sm:text-xl text-[#263D2D] tracking-wide select-all overflow-x-auto">
+                  <span className="italic font-bold">R</span><sub>50</sub> = <span className="inline-block align-middle text-center"><span className="border-b border-[#263D2D] block pb-0.5"><span className="italic">k</span><sub>50</sub></span><span className="block pt-0.5 text-base font-sans">N</span></span>
                 </div>
               </div>
 
               <div className="border-t border-[#E5E6DC]/70 pt-3 text-[11px] text-[#68716B] space-y-1">
-                <p>• <span className="font-mono text-[#263D2D]">r<sub>i</sub></span>: Intrinsic per-capita reproductive rate of organism <span className="italic">i</span>.</p>
-                <p>• <span className="font-mono text-[#263D2D]">K<sub>i</sub></span>: Ecological carrying capacity in the target ecosystem.</p>
-                <p>• <span className="font-mono text-[#263D2D]">α<sub>ij</sub></span>: Interaction coefficient specifying per-capita predation pressure by predator <span className="italic">j</span>.</p>
+                <p>• <span className="font-mono text-[#263D2D]">k<sub>50</sub></span>: Minimum primary species removals triggering <span className="font-mono">≥ 50%</span> total extinction.</p>
+                <p>• <span className="font-mono text-[#263D2D]">N</span>: Baseline species richness (total nodes) in the recorded food web.</p>
+                <p>• Tested under 4 sequential protocols: Most Connected, Least Connected, Basal Target, and Random.</p>
               </div>
             </div>
 

@@ -79,7 +79,7 @@ interface AppStateValue {
   mode: ScenarioMode
   setMode: (mode: ScenarioMode) => void
   result: ScenarioResult | null
-  runSelectedScenario: () => void
+  runSelectedScenario: (overrideNodeId?: string) => void
   resetScenario: () => void
 
   metricKey: RankingMetricKey
@@ -256,7 +256,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setResult(null)
   }, [])
 
-  const runSelectedScenario = useCallback(() => {
+  const runSelectedScenario = useCallback((overrideNodeId?: string) => {
     if (!graph || !dataset) {
       setNoticeState({
         tone: 'danger',
@@ -266,7 +266,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       })
       return
     }
-    if (!selectedNodeId) {
+
+    const targetNodeId = overrideNodeId ?? selectedNodeId ?? graph.nodes[0]?.id
+    if (!targetNodeId) {
       setNoticeState({
         tone: 'warning',
         title: 'No species selected',
@@ -276,8 +278,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       return
     }
 
+    if (selectedNodeId !== targetNodeId) {
+      setSelectedNodeId(targetNodeId)
+    }
+
     try {
-      const next = runScenario(graph, dataset.name, selectedNodeId, mode)
+      const next = runScenario(graph, dataset.name, targetNodeId, mode)
       setResult(next)
       setNoticeState(null)
 

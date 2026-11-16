@@ -22,10 +22,12 @@ import { COMPARISON_LIMITATION } from '../core/comparisonEngine'
 import { comparisonSummaryCsv, downloadArtifact } from '../core/exportUtils'
 import { formatConnectance, roundTo } from '../core/metrics'
 import { buildGraph } from '../core/graphModel'
+import { computeTrophicLevels } from '../core/layout'
 import { ECOSYSTEM_LABEL, type FoodWebGraph as GraphType } from '../core/types'
 import { useAppState } from '../state/AppState'
 import { FoodWebGraph } from '../components/graph/FoodWebGraph'
 import { cn } from '../components/ui/primitives'
+import { getDatasetThumbnail } from '../art/datasetThumbnails'
 import type { RouteId } from '../components/layout/routes'
 
 /* ============================================================================
@@ -55,24 +57,6 @@ const ECOSYSTEM_THEME_COLORS = [
   '#C5B2DB', // Ecosystem 5: Muted Lavender
   '#F3D98B', // Ecosystem 6: Soft Yellow
 ]
-
-// Helper to estimate trophic level from role for comparison statistics
-function estimateNodeTrophicLevel(role: string): number {
-  switch (role) {
-    case 'producer':
-      return 1.0
-    case 'primary-consumer':
-      return 2.0
-    case 'secondary-consumer':
-      return 3.1
-    case 'tertiary-consumer':
-      return 4.2
-    case 'apex-predator':
-      return 4.8
-    default:
-      return 2.5
-  }
-}
 
 export interface CompareResultsProps {
   onNavigate?: (route: RouteId) => void
@@ -113,7 +97,7 @@ export function CompareResults({ onNavigate: _onNavigate }: CompareResultsProps 
     return map
   }, [selectedDatasets])
 
-  // Key Structural Metrics computed dynamically
+  // Key Structural Metrics computed dynamically using genuine graph topology
   const structuralMetrics = useMemo(() => {
     return selectedDatasets.map((d, index) => {
       const graph = graphsById.get(d.id)
@@ -121,8 +105,9 @@ export function CompareResults({ onNavigate: _onNavigate }: CompareResultsProps 
       const linkCount = d.edges.length
       const connectance = nodeCount > 1 ? linkCount / (nodeCount * (nodeCount - 1)) : 0
 
-      // Trophic levels of nodes
-      const levels = d.nodes.map((n) => estimateNodeTrophicLevel(n.trophicRole))
+      // Compute authentic topological trophic levels for each node (1-indexed)
+      const trophicMap = graph ? computeTrophicLevels(graph) : new Map<string, number>()
+      const levels = d.nodes.map((n) => (trophicMap.get(n.id) ?? 0) + 1)
       const avgTrophic = levels.length ? levels.reduce((a, b) => a + b, 0) / levels.length : 0
       const maxTrophic = levels.length ? Math.max(...levels) : 0
       const avgDegree = nodeCount > 0 ? (linkCount * 2) / nodeCount : 0
@@ -176,7 +161,7 @@ export function CompareResults({ onNavigate: _onNavigate }: CompareResultsProps 
       structuralMetrics.forEach((sm) => {
         // Count nodes with degree around this point (within +/- 1.5)
         const count = sm.degrees.filter((d) => Math.abs(d - deg) <= 1.5).length
-        row[sm.name] = Math.max(1, count)
+        row[sm.name] = count
       })
       return row
     })
@@ -379,9 +364,9 @@ export function CompareResults({ onNavigate: _onNavigate }: CompareResultsProps 
                 {/* Ecosystem Photo Thumbnail */}
                 <div className="h-10 w-12 rounded-lg overflow-hidden border border-[#E5E6DC] shrink-0 bg-[#F7F6EF]">
                   <img
-                    src="/hero-ecosystem.webp"
+                    src={getDatasetThumbnail(d.id, d.ecosystem)}
                     alt={d.name}
-                    className="w-full h-full object-cover object-[70%_25%]"
+                    className="w-full h-full object-cover"
                   />
                 </div>
 
@@ -506,7 +491,7 @@ export function CompareResults({ onNavigate: _onNavigate }: CompareResultsProps 
           </div>
 
           <div className="overflow-x-auto rounded-xl border border-[#E5E6DC] bg-white">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-left text-xs min-w-[560px]">
               <thead className="bg-[#F7F6EF] text-[10.5px] uppercase font-bold text-[#68716B] border-b border-[#E5E6DC]">
                 <tr>
                   <th className="py-2.5 px-3">Metric</th>
@@ -762,9 +747,20 @@ export function CompareResults({ onNavigate: _onNavigate }: CompareResultsProps 
             <span className="text-[10px] text-[#68716B]">Quartiles & range</span>
           </div>
 
-          {/* Visual Box Plot Canvas */}
-          <div className="h-52 w-full flex items-center justify-around px-2 pt-2">
-            {trophicBoxPlotData.map((box) => {
+          {/* Visual Box Plot Canvas with Calibrated Trophic Y-Axis */}
+          <div className="h-52 w-full flex items-center px-2 pt-2">
+            {/* Left Y-axis guide rail */}
+            <div className="flex flex-col justify-between h-[calc(100%-28px)] my-2 pr-2.5 border-r border-[#E5E6DC] text-[9px] font-mono text-[#68716B] select-none">
+              <span>5.0</span>
+              <span>4.0</span>
+              <span>3.0</span>
+              <span>2.0</span>
+              <span>1.0</span>
+            </div>
+
+            {/* Box Plot Columns */}
+            <div className="flex-1 flex items-center justify-around h-full pl-2">
+              {trophicBoxPlotData.map((box) => {
               // Convert trophic level (1 to 5) to percentage height (0 to 100%)
               const scale = (val: number) => Math.max(0, Math.min(100, ((val - 1) / 4) * 100))
               const bottomPct = scale(box.min)
@@ -826,6 +822,7 @@ export function CompareResults({ onNavigate: _onNavigate }: CompareResultsProps 
                 </div>
               )
             })}
+            </div>
           </div>
         </div>
 

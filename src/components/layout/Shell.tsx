@@ -9,6 +9,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   ShieldCheck,
+  Upload,
   X,
 } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
@@ -22,13 +23,15 @@ interface ShellProps {
   route: RouteId
   onNavigate: (route: RouteId) => void
   onOpenImport?: () => void
+  isImportOpen?: boolean
   children: ReactNode
 }
 
 export function Shell({
   route,
   onNavigate,
-  onOpenImport: _onOpenImport,
+  onOpenImport,
+  isImportOpen,
   children,
 }: ShellProps) {
   const { notice, setNotice } = useAppState()
@@ -74,9 +77,20 @@ export function Shell({
       id: 'library',
       label: 'Data Library',
       icon: <BookOpenCheck size={18} />,
-      active: route === 'library',
+      active: route === 'library' && !isImportOpen,
       action: () => navigate('library'),
       tooltip: '6 verified real-world empirical networks & custom data intake',
+    },
+    {
+      id: 'import',
+      label: 'Dataset Import',
+      icon: <Upload size={18} />,
+      active: !!isImportOpen,
+      action: () => {
+        if (onOpenImport) onOpenImport()
+        else navigate('library')
+      },
+      tooltip: 'Upload custom food web CSV node/link tables or JSON graph',
     },
     {
       id: 'methodology',
@@ -116,6 +130,55 @@ export function Shell({
                 </span>
               </div>
             </button>
+
+            {/* Public Header Navigation */}
+            <nav aria-label="Main navigation" className="hidden md:flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => navigate('explore')}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[#68716B] hover:text-[#202B27] hover:bg-[#F7F6EF] transition-colors cursor-pointer"
+              >
+                Explorer
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('experiment')}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[#68716B] hover:text-[#202B27] hover:bg-[#F7F6EF] transition-colors cursor-pointer"
+              >
+                Experiment Studio
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('compare')}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[#68716B] hover:text-[#202B27] hover:bg-[#F7F6EF] transition-colors cursor-pointer"
+              >
+                Insights & Compare
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('library')}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[#68716B] hover:text-[#202B27] hover:bg-[#F7F6EF] transition-colors cursor-pointer"
+              >
+                Data Library
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (onOpenImport) onOpenImport()
+                  else navigate('library')
+                }}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[#68716B] hover:text-[#202B27] hover:bg-[#F7F6EF] transition-colors cursor-pointer"
+              >
+                Import Dataset
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('methodology')}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[#68716B] hover:text-[#202B27] hover:bg-[#F7F6EF] transition-colors cursor-pointer"
+              >
+                Methodology
+              </button>
+            </nav>
           </div>
         </header>
       ) : (
@@ -147,16 +210,29 @@ export function Shell({
               </button>
             </div>
 
-            {/* Mobile-only toggle for responsive viewports below 1024px */}
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen((prev) => !prev)}
-              aria-expanded={mobileMenuOpen}
-              aria-label="Toggle navigation menu"
-              className="flex lg:hidden h-9 w-9 min-h-[40px] min-w-[40px] items-center justify-center rounded-lg border border-[#E5E6DC] bg-white text-[#202B27] shadow-2xs cursor-pointer"
-            >
-              {mobileMenuOpen ? <X size={15} /> : <Menu size={15} />}
-            </button>
+            {/* Right: Quick actions on desktop + Mobile toggle */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onOpenImport}
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#35563B] bg-[#35563B] text-white text-xs font-semibold hover:bg-[#263D2D] transition-colors shadow-2xs cursor-pointer"
+                title="Import custom CSV/JSON dataset"
+              >
+                <Upload size={13} />
+                <span>Import Dataset</span>
+              </button>
+
+              {/* Mobile-only toggle for responsive viewports below 1024px */}
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen((prev) => !prev)}
+                aria-expanded={mobileMenuOpen}
+                aria-label="Toggle navigation menu"
+                className="flex lg:hidden h-9 w-9 min-h-[40px] min-w-[40px] items-center justify-center rounded-lg border border-[#E5E6DC] bg-white text-[#202B27] shadow-2xs cursor-pointer"
+              >
+                {mobileMenuOpen ? <X size={15} /> : <Menu size={15} />}
+              </button>
+            </div>
           </div>
 
           {/* Mobile App Navigation Dropdown */}

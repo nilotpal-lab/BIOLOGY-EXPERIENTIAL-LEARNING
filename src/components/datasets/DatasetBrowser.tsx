@@ -12,6 +12,7 @@ import {
   MapPin,
   Search,
   Sprout,
+  Trash2,
   Waves,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
@@ -31,6 +32,7 @@ import { Badge, Button, Card, CardHeading, MonoId, cn } from '../ui/primitives'
 import { RESEARCH_SLOTS, RESEARCH_SLOT_SUMMARY } from '../../data/datasetRegistry'
 import { buildGraph } from '../../core/graphModel'
 import { formatConnectance } from '../../core/metrics'
+import { getDatasetThumbnail, getDatasetLocation } from '../../art/datasetThumbnails'
 
 /* ============================================================================
  * DatasetBrowser — Research Library Explorer & Full-Page Dataset Inspector
@@ -66,7 +68,7 @@ function getHabitatTag(ecosystem: EcosystemCategory) {
 }
 
 export function DatasetBrowser({
-  demoDatasets: _demoDatasets,
+  demoDatasets,
   researchDatasets,
   importedDatasets,
   selectedId: _selectedId,
@@ -75,7 +77,7 @@ export function DatasetBrowser({
   onBack,
   onSelect,
   onNavigateExplore,
-  onRemove: _onRemove,
+  onRemove,
   onOpenImport: _onOpenImport,
   compareIds: _compareIds,
   onToggleCompare: _onToggleCompare,
@@ -121,11 +123,14 @@ export function DatasetBrowser({
   const [speciesRoleFilter, setSpeciesRoleFilter] = useState<TrophicRole | 'all'>('all')
   const [linkSearch, setLinkSearch] = useState('')
   const [copiedCitation, setCopiedCitation] = useState(false)
+  const [sourceType, setSourceType] = useState<'all' | 'research' | 'demo'>('all')
 
-  // Primary list combines research datasets and user imported datasets
+  // Primary list combines research datasets, demo datasets and user imported datasets
   const allDatasets = useMemo(() => {
-    return [...researchDatasets, ...importedDatasets]
-  }, [researchDatasets, importedDatasets])
+    if (sourceType === 'research') return [...researchDatasets, ...importedDatasets]
+    if (sourceType === 'demo') return demoDatasets
+    return [...researchDatasets, ...demoDatasets, ...importedDatasets]
+  }, [sourceType, researchDatasets, demoDatasets, importedDatasets])
 
   // Filtered by habitat category tab (for catalog view)
   const filteredDatasets = useMemo(() => {
@@ -296,6 +301,22 @@ export function DatasetBrowser({
                 <ArrowRight size={14} />
               </button>
             )}
+
+            {inspectedDataset.userProvided && (
+              <button
+                type="button"
+                onClick={() => {
+                  onRemove(inspectedDataset.id)
+                  handleInspect(null)
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-xs font-semibold text-rose-700 transition-colors shadow-2xs cursor-pointer"
+                title="Delete this custom imported dataset"
+                aria-label={`Delete custom dataset ${inspectedDataset.name}`}
+              >
+                <Trash2 size={13} />
+                <span>Delete Dataset</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -361,13 +382,13 @@ export function DatasetBrowser({
             {/* Right Landscape Artwork */}
             <div className="lg:col-span-4 h-48 lg:h-56 rounded-2xl overflow-hidden border border-[#E5E6DC] shadow-sm relative">
               <img
-                src="/hero-ecosystem.webp"
+                src={getDatasetThumbnail(inspectedDataset.id, inspectedDataset.ecosystem)}
                 alt={inspectedDataset.name}
-                className="w-full h-full object-cover object-[70%_25%]"
+                className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent flex items-end p-3">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent flex items-end p-3">
                 <p className="text-[11px] text-white/95 font-medium">
-                  {ECOSYSTEM_LABEL[inspectedDataset.ecosystem]} ecosystem habitat profile
+                  {getDatasetLocation(inspectedDataset.id, `${ECOSYSTEM_LABEL[inspectedDataset.ecosystem]} ecosystem habitat profile`)}
                 </p>
               </div>
             </div>
@@ -859,101 +880,150 @@ export function DatasetBrowser({
   }
 
   // =========================================================================
-  // VIEW 2: CATALOG VIEW (Grid of 6 Cards across full 12 columns)
+  // VIEW 2: CATALOG VIEW (Grid of Cards across full 12 columns)
   // =========================================================================
   return (
     <div className="space-y-5 animate-fadeIn">
-      {/* Category Filter Tabs */}
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={() => setActiveCategory('all')}
-          className={cn(
-            'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-2xs cursor-pointer',
-            activeCategory === 'all'
-              ? 'bg-[#35563B] text-white'
-              : 'border border-[#E5E6DC] bg-[#FCFBF7] text-[#202B27] hover:bg-[#F7F6EF]',
-          )}
-        >
-          <span>All Datasets</span>
-          <span
+      {/* Top Filter Bar: Source Collections + Habitat Categories */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-1">
+        {/* Source Collection Filter */}
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setSourceType('all')}
             className={cn(
-              'px-1.5 py-0.5 rounded-md text-[10px] font-mono',
-              activeCategory === 'all' ? 'bg-white/20 text-white' : 'bg-[#E5E6DC] text-[#68716B]',
+              'px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs',
+              sourceType === 'all'
+                ? 'bg-[#202B27] text-white'
+                : 'border border-[#E5E6DC] bg-[#FCFBF7] text-[#68716B] hover:text-[#202B27] hover:bg-[#F7F6EF]',
             )}
           >
-            {categoryCounts.all}
-          </span>
-        </button>
+            All Collections ({researchDatasets.length + demoDatasets.length + importedDatasets.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setSourceType('research')}
+            className={cn(
+              'px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs flex items-center gap-1.5',
+              sourceType === 'research'
+                ? 'bg-[#35563B] text-white'
+                : 'border border-[#E5E6DC] bg-[#FCFBF7] text-[#35563B] hover:bg-[#E8EDE0]',
+            )}
+          >
+            <span>Empirical Research</span>
+            <span className={cn('px-1.5 py-0.5 rounded text-[10px] font-mono', sourceType === 'research' ? 'bg-white/20' : 'bg-[#E5E6DC]')}>
+              {researchDatasets.length}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setSourceType('demo')}
+            className={cn(
+              'px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs flex items-center gap-1.5',
+              sourceType === 'demo'
+                ? 'bg-[#D97706] text-white'
+                : 'border border-[#E5E6DC] bg-[#FCFBF7] text-[#D97706] hover:bg-[#FEF5EA]',
+            )}
+          >
+            <span>Illustrative Demos</span>
+            <span className={cn('px-1.5 py-0.5 rounded text-[10px] font-mono', sourceType === 'demo' ? 'bg-white/20' : 'bg-[#E5E6DC]')}>
+              {demoDatasets.length}
+            </span>
+          </button>
+        </div>
 
-        <button
-          type="button"
-          onClick={() => setActiveCategory('freshwater')}
-          className={cn(
-            'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-2xs cursor-pointer',
-            activeCategory === 'freshwater'
-              ? 'bg-[#35563B] text-white'
-              : 'border border-[#E5E6DC] bg-[#FCFBF7] text-[#202B27] hover:bg-[#F7F6EF]',
-          )}
-        >
-          <Sprout size={13} className={activeCategory === 'freshwater' ? 'text-white' : 'text-[#35563B]'} />
-          <span>Freshwater</span>
-          <span
+        {/* Habitat Category Filter Tabs */}
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveCategory('all')}
             className={cn(
-              'px-1.5 py-0.5 rounded-md text-[10px] font-mono',
-              activeCategory === 'freshwater' ? 'bg-white/20 text-white' : 'bg-[#E5E6DC] text-[#68716B]',
+              'px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer',
+              activeCategory === 'all'
+                ? 'bg-[#35563B] text-white'
+                : 'border border-[#E5E6DC] bg-[#FCFBF7] text-[#202B27] hover:bg-[#F7F6EF]',
             )}
           >
-            {categoryCounts.freshwater}
-          </span>
-        </button>
+            <span>All Habitats</span>
+            <span
+              className={cn(
+                'px-1.5 py-0.5 rounded-md text-[10px] font-mono',
+                activeCategory === 'all' ? 'bg-white/20 text-white' : 'bg-[#E5E6DC] text-[#68716B]',
+              )}
+            >
+              {categoryCounts.all}
+            </span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveCategory('marine')}
-          className={cn(
-            'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-2xs cursor-pointer',
-            activeCategory === 'marine'
-              ? 'bg-[#35563B] text-white'
-              : 'border border-[#E5E6DC] bg-[#FCFBF7] text-[#202B27] hover:bg-[#F7F6EF]',
-          )}
-        >
-          <Waves size={13} className={activeCategory === 'marine' ? 'text-white' : 'text-[#2879B9]'} />
-          <span>Marine</span>
-          <span
+          <button
+            type="button"
+            onClick={() => setActiveCategory('freshwater')}
             className={cn(
-              'px-1.5 py-0.5 rounded-md text-[10px] font-mono',
-              activeCategory === 'marine' ? 'bg-white/20 text-white' : 'bg-[#E5E6DC] text-[#68716B]',
+              'px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer',
+              activeCategory === 'freshwater'
+                ? 'bg-[#35563B] text-white'
+                : 'border border-[#E5E6DC] bg-[#FCFBF7] text-[#202B27] hover:bg-[#F7F6EF]',
             )}
           >
-            {categoryCounts.marine}
-          </span>
-        </button>
+            <Sprout size={13} className={activeCategory === 'freshwater' ? 'text-white' : 'text-[#35563B]'} />
+            <span>Freshwater</span>
+            <span
+              className={cn(
+                'px-1.5 py-0.5 rounded-md text-[10px] font-mono',
+                activeCategory === 'freshwater' ? 'bg-white/20 text-white' : 'bg-[#E5E6DC] text-[#68716B]',
+              )}
+            >
+              {categoryCounts.freshwater}
+            </span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveCategory('terrestrial')}
-          className={cn(
-            'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-2xs cursor-pointer',
-            activeCategory === 'terrestrial'
-              ? 'bg-[#35563B] text-white'
-              : 'border border-[#E5E6DC] bg-[#FCFBF7] text-[#202B27] hover:bg-[#F7F6EF]',
-          )}
-        >
-          <Compass size={13} className={activeCategory === 'terrestrial' ? 'text-white' : 'text-[#D97706]'} />
-          <span>Terrestrial</span>
-          <span
+          <button
+            type="button"
+            onClick={() => setActiveCategory('marine')}
             className={cn(
-              'px-1.5 py-0.5 rounded-md text-[10px] font-mono',
-              activeCategory === 'terrestrial' ? 'bg-white/20 text-white' : 'bg-[#E5E6DC] text-[#68716B]',
+              'px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer',
+              activeCategory === 'marine'
+                ? 'bg-[#35563B] text-white'
+                : 'border border-[#E5E6DC] bg-[#FCFBF7] text-[#202B27] hover:bg-[#F7F6EF]',
             )}
           >
-            {categoryCounts.terrestrial}
-          </span>
-        </button>
+            <Waves size={13} className={activeCategory === 'marine' ? 'text-white' : 'text-[#2879B9]'} />
+            <span>Marine</span>
+            <span
+              className={cn(
+                'px-1.5 py-0.5 rounded-md text-[10px] font-mono',
+                activeCategory === 'marine' ? 'bg-white/20 text-white' : 'bg-[#E5E6DC] text-[#68716B]',
+              )}
+            >
+              {categoryCounts.marine}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveCategory('terrestrial')}
+            className={cn(
+              'px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer',
+              activeCategory === 'terrestrial'
+                ? 'bg-[#35563B] text-white'
+                : 'border border-[#E5E6DC] bg-[#FCFBF7] text-[#202B27] hover:bg-[#F7F6EF]',
+            )}
+          >
+            <Compass size={13} className={activeCategory === 'terrestrial' ? 'text-white' : 'text-[#D97706]'} />
+            <span>Terrestrial</span>
+            <span
+              className={cn(
+                'px-1.5 py-0.5 rounded-md text-[10px] font-mono',
+                activeCategory === 'terrestrial' ? 'bg-white/20 text-white' : 'bg-[#E5E6DC] text-[#68716B]',
+              )}
+            >
+              {categoryCounts.terrestrial}
+            </span>
+          </button>
+        </div>
       </div>
 
-      {/* Full-Width Grid of 6 Dataset Cards (3 Columns) */}
+      {/* Full-Width Grid of Dataset Cards (3 Columns) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {filteredDatasets.map((d) => {
           const habitat = getHabitatTag(d.ecosystem)
@@ -966,14 +1036,24 @@ export function DatasetBrowser({
               key={d.id}
               className="rounded-2xl border border-[#E5E6DC] bg-[#FCFBF7] overflow-hidden flex flex-col justify-between shadow-2xs hover:border-[#899B78] hover:shadow-md transition-all group"
             >
-              {/* Card Artwork Banner with Floating Habitat Tag */}
-              <div className="h-40 relative overflow-hidden bg-[#F0F2E9]">
+              {/* Card Artwork Banner with Floating Habitat & Source Badges */}
+              <div className="h-44 relative overflow-hidden bg-[#F0F2E9]">
                 <img
-                  src="/hero-ecosystem.webp"
+                  src={getDatasetThumbnail(d.id, d.ecosystem)}
                   alt={d.name}
-                  className="w-full h-full object-cover object-[70%_25%] group-hover:scale-103 transition-transform duration-300"
+                  className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-300"
                 />
-                <div className="absolute top-3 right-3 z-10">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
+                <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
+                  {d.isDemo ? (
+                    <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-[#FEF5EA] text-[#D97706] border border-[#F1B36F] shadow-2xs">
+                      Illustrative Demo
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-[#E8EDE0] text-[#35563B] border border-[#B5D39A] shadow-2xs">
+                      Verified Research
+                    </span>
+                  )}
                   <span
                     className={cn(
                       'px-2.5 py-0.5 rounded-lg text-[10.5px] font-bold border shadow-2xs',
@@ -988,14 +1068,19 @@ export function DatasetBrowser({
               {/* Card Body */}
               <div className="p-5 space-y-3 flex-1 flex flex-col justify-between">
                 <div>
-                  <h3 className="font-serif text-lg font-bold text-[#202B27] leading-snug group-hover:text-[#35563B] transition-colors">
-                    {d.name.replace(/·.*/, '').trim()}
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <span className="font-mono text-[11px] font-bold text-[#35563B] bg-[#E8EDE0] px-2 py-0.5 rounded-md border border-[#35563B]/20">
+                      {d.id}
+                    </span>
+                  </div>
+                  <h3 className="font-serif text-base sm:text-lg font-bold text-[#202B27] leading-snug group-hover:text-[#35563B] transition-colors">
+                    {d.name.includes('·') ? d.name.split('·')[1]?.trim() : d.name}
                   </h3>
 
                   {/* Location with map pin */}
-                  <p className="flex items-center gap-1.5 text-xs text-[#68716B] mt-1">
+                  <p className="flex items-center gap-1.5 text-xs text-[#68716B] mt-1.5">
                     <MapPin size={12} className="text-[#899B78] shrink-0" />
-                    <span className="truncate">{d.provenance.origin || 'United Kingdom'}</span>
+                    <span className="truncate">{getDatasetLocation(d.id, d.provenance.origin)}</span>
                   </p>
 
                   {/* 1-2 sentence description */}
@@ -1020,18 +1105,35 @@ export function DatasetBrowser({
                   </div>
 
                   {/* Action Button: View Full Dataset Details → */}
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onSelect(d.id)
-                        handleInspect(d.id)
-                      }}
-                      className="w-full py-2.5 px-4 rounded-xl border border-[#35563B]/30 bg-white hover:bg-[#35563B] hover:text-white text-[#35563B] text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-2xs cursor-pointer"
-                    >
-                      <span>View Full Dataset Details</span>
-                      <ArrowRight size={13} />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onSelect(d.id)
+                          handleInspect(d.id)
+                        }}
+                        className="flex-1 py-2.5 px-4 rounded-xl border border-[#35563B]/30 bg-white hover:bg-[#35563B] hover:text-white text-[#35563B] text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-2xs cursor-pointer"
+                      >
+                        <span>View Full Dataset Details</span>
+                        <ArrowRight size={13} />
+                      </button>
+
+                      {d.userProvided && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onRemove(d.id)
+                          }}
+                          className="py-2.5 px-3 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition-all flex items-center justify-center gap-1 shadow-2xs cursor-pointer shrink-0"
+                          title="Delete custom dataset"
+                          aria-label={`Remove dataset ${d.name}`}
+                        >
+                          <Trash2 size={13} />
+                          <span>Remove</span>
+                        </button>
+                      )}
+                    </div>
 
                     {/* Accessible Export Buttons required by test suite */}
                     <button
@@ -1053,7 +1155,6 @@ export function DatasetBrowser({
                   </div>
                 </div>
               </div>
-            </div>
           )
         })}
       </div>

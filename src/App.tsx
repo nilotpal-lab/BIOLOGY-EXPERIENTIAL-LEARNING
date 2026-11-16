@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ImportDialog } from './components/imports/ImportDialog'
 import { Shell } from './components/layout/Shell'
 import { useHashRoute } from './components/layout/routes'
@@ -26,12 +26,25 @@ function Routed() {
   const { addImportedDataset, setNotice } = useAppState()
   const [importOpen, setImportOpen] = useState(false)
 
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.hash.toLowerCase().includes('import')) {
+      setImportOpen(true)
+    }
+  }, [route])
+
   return (
     <>
-      <Shell route={route} onNavigate={navigate} onOpenImport={() => setImportOpen(true)}>
+      <Shell
+        route={route}
+        onNavigate={navigate}
+        onOpenImport={() => setImportOpen(true)}
+        isImportOpen={importOpen}
+      >
         {route === 'overview' ? <Overview onNavigate={navigate} onOpenImport={() => setImportOpen(true)} /> : null}
-        {route === 'explore' ? <Explore onNavigate={navigate} /> : null}
-        {route === 'experiment' ? <ScenarioAnalysis onNavigate={navigate} /> : null}
+        {route === 'explore' ? <Explore onNavigate={navigate} onOpenImport={() => setImportOpen(true)} /> : null}
+        {route === 'experiment' ? (
+          <ScenarioAnalysis onNavigate={navigate} onOpenImport={() => setImportOpen(true)} />
+        ) : null}
         {route === 'compare' ? <CompareResults onNavigate={navigate} /> : null}
         {route === 'library' ? (
           <DatasetLibraryPage onNavigate={navigate} onOpenImport={() => setImportOpen(true)} />
