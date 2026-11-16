@@ -258,6 +258,27 @@ describe('JSON network import', () => {
       importNetwork({ nodesText: NODES_CSV, edgesText: EDGES_CSV, fileName: 'a.csv' }).blocked,
     ).toBe(false)
   })
+
+  it('validates the built-in 14-species estuarine demo sample datasets (JSON and CSV)', async () => {
+    const { SAMPLE_NODES_CSV, SAMPLE_EDGES_CSV, SAMPLE_JSON } = await import(
+      '../components/imports/ImportDialog'
+    )
+    const jsonPreview = importNetwork({ format: 'json', jsonText: SAMPLE_JSON })
+    expect(jsonPreview.blocked).toBe(false)
+    expect(jsonPreview.dataset?.nodes).toHaveLength(14)
+    expect(jsonPreview.dataset?.edges).toHaveLength(26)
+
+    const csvPreview = importNetwork({
+      format: 'csv',
+      nodesText: SAMPLE_NODES_CSV,
+      edgesText: SAMPLE_EDGES_CSV,
+      datasetName: 'Chesapeake Estuarine Marsh Food Web',
+      ecosystem: 'marine',
+    })
+    expect(csvPreview.blocked).toBe(false)
+    expect(csvPreview.dataset?.nodes).toHaveLength(14)
+    expect(csvPreview.dataset?.edges).toHaveLength(26)
+  })
 })
 
 describe('role normalisation', () => {

@@ -1,0 +1,15 @@
+id,name,trophic_role,scientific_name,icon_key
+phytoplankton,Phytoplankton,producer,Nitzschia closterium,phytoplankton
+eelgrass,Eelgrass,producer,Zostera marina,macrophytes
+cordgrass,Smooth Cordgrass,producer,Spartina alterniflora,macrophytes
+benthic_algae,Benthic Microalgae,producer,Navicula arenaria,phytoplankton
+zooplankton,Estuarine Copepods,primary-consumer,Acartia tonsa,zooplankton
+grass_shrimp,Marsh Grass Shrimp,primary-consumer,Palaemonetes pugio,invertebrate
+eastern_oyster,Eastern Oyster,primary-consumer,Crassostrea virginica,bivalve
+ribbed_mussel,Atlantic Ribbed Mussel,primary-consumer,Geukensia demissa,bivalve
+mummichog,Mummichog Killifish,secondary-consumer,Fundulus heteroclitus,fish
+blue_crab,Atlantic Blue Crab,secondary-consumer,Callinectes sapidus,crustacean
+atlantic_menhaden,Atlantic Menhaden,secondary-consumer,Brevoortia tyrannus,fish
+striped_bass,Striped Bass,secondary-consumer,Morone saxatilis,fish
+great_blue_heron,Great Blue Heron,apex-predator,Ardea herodias,bird
+osprey,Western Osprey,apex-predator,Pandion haliaetus,bird

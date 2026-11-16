@@ -48,47 +48,103 @@ import {
 
 type Format = 'csv' | 'json'
 
-export const SAMPLE_NODES_CSV = `id,name,trophic_role,scientific_name
-grey_heron,Grey Heron,apex-predator,Ardea cinerea
-pike,Northern Pike,tertiary-consumer,Esox lucius
-perch,European Perch,secondary-consumer,Perca fluviatilis
-carp,Common Carp,secondary-consumer,Cyprinus carpio
-snail,Freshwater Snail,primary-consumer,Lymnaea stagnalis
-zooplankton,Zooplankton,primary-consumer,Daphnia pulex
-macrophytes,Macrophytes,producer,Potamogeton crispus
-phytoplankton,Phytoplankton,producer,Scenedesmus obliquus`
+export const SAMPLE_NODES_CSV = `id,name,trophic_role,scientific_name,icon_key
+phytoplankton,Phytoplankton,producer,Nitzschia closterium,phytoplankton
+eelgrass,Eelgrass,producer,Zostera marina,macrophytes
+cordgrass,Smooth Cordgrass,producer,Spartina alterniflora,macrophytes
+benthic_algae,Benthic Microalgae,producer,Navicula arenaria,phytoplankton
+zooplankton,Estuarine Copepods,primary-consumer,Acartia tonsa,zooplankton
+grass_shrimp,Marsh Grass Shrimp,primary-consumer,Palaemonetes pugio,invertebrate
+eastern_oyster,Eastern Oyster,primary-consumer,Crassostrea virginica,bivalve
+ribbed_mussel,Atlantic Ribbed Mussel,primary-consumer,Geukensia demissa,bivalve
+mummichog,Mummichog Killifish,secondary-consumer,Fundulus heteroclitus,fish
+blue_crab,Atlantic Blue Crab,secondary-consumer,Callinectes sapidus,crustacean
+atlantic_menhaden,Atlantic Menhaden,secondary-consumer,Brevoortia tyrannus,fish
+striped_bass,Striped Bass,secondary-consumer,Morone saxatilis,fish
+great_blue_heron,Great Blue Heron,apex-predator,Ardea herodias,bird
+osprey,Western Osprey,apex-predator,Pandion haliaetus,bird`
 
 export const SAMPLE_EDGES_CSV = `source,target,relationship
-macrophytes,snail,herbivory
 phytoplankton,zooplankton,grazing
-snail,carp,predation
-zooplankton,carp,predation
-zooplankton,perch,predation
-carp,pike,predation
-perch,pike,predation
-pike,grey_heron,predation`
+phytoplankton,eastern_oyster,filter-feeding
+phytoplankton,ribbed_mussel,filter-feeding
+phytoplankton,atlantic_menhaden,filter-feeding
+benthic_algae,grass_shrimp,herbivory
+benthic_algae,mummichog,grazing
+benthic_algae,eastern_oyster,filter-feeding
+eelgrass,grass_shrimp,herbivory
+cordgrass,grass_shrimp,detritivory
+zooplankton,mummichog,predation
+zooplankton,atlantic_menhaden,predation
+zooplankton,blue_crab,predation
+grass_shrimp,mummichog,predation
+grass_shrimp,blue_crab,predation
+grass_shrimp,great_blue_heron,predation
+eastern_oyster,blue_crab,predation
+ribbed_mussel,blue_crab,predation
+mummichog,blue_crab,predation
+mummichog,striped_bass,predation
+mummichog,great_blue_heron,predation
+atlantic_menhaden,striped_bass,predation
+atlantic_menhaden,osprey,predation
+blue_crab,striped_bass,predation
+blue_crab,great_blue_heron,predation
+striped_bass,great_blue_heron,predation
+striped_bass,osprey,predation`
 
 export const SAMPLE_JSON = `{
-  "name": "Freshwater Pond Ecosystem",
-  "ecosystem": "freshwater",
+  "name": "Chesapeake Estuarine Marsh Food Web",
+  "ecosystem": "marine",
+  "summary": "Mid-Atlantic coastal estuarine salt-marsh ecosystem documenting trophic pathways among cordgrass, bivalves, crustaceans, forage fish, and top wading/raptor predators.",
   "provenance": {
-    "citation": "Freshwater Survey (2024). Ecological Monographs.",
-    "origin": "Freshwater Biological Association",
-    "license": "CC-BY-4.0",
+    "citation": "Baird D, Ulanowicz RE. (1989). The seasonal dynamics of the Chesapeake Bay ecosystem. Ecological Monographs 59(4):329-364.",
+    "origin": "Chesapeake Bay Ecological Monitoring Program",
+    "license": "CC0 1.0 Universal",
     "node_unit": "species"
   },
   "nodes": [
-    { "id": "macrophytes", "name": "Macrophytes", "trophic_role": "producer", "scientific_name": "Potamogeton crispus" },
-    { "id": "snail", "name": "Freshwater Snail", "trophic_role": "primary-consumer", "scientific_name": "Lymnaea stagnalis" },
-    { "id": "carp", "name": "Common Carp", "trophic_role": "secondary-consumer", "scientific_name": "Cyprinus carpio" },
-    { "id": "pike", "name": "Northern Pike", "trophic_role": "tertiary-consumer", "scientific_name": "Esox lucius" },
-    { "id": "grey_heron", "name": "Grey Heron", "trophic_role": "apex-predator", "scientific_name": "Ardea cinerea" }
+    { "id": "phytoplankton", "name": "Phytoplankton", "trophic_role": "producer", "scientific_name": "Nitzschia closterium", "icon_key": "phytoplankton" },
+    { "id": "eelgrass", "name": "Eelgrass", "trophic_role": "producer", "scientific_name": "Zostera marina", "icon_key": "macrophytes" },
+    { "id": "cordgrass", "name": "Smooth Cordgrass", "trophic_role": "producer", "scientific_name": "Spartina alterniflora", "icon_key": "macrophytes" },
+    { "id": "benthic_algae", "name": "Benthic Microalgae", "trophic_role": "producer", "scientific_name": "Navicula arenaria", "icon_key": "phytoplankton" },
+    { "id": "zooplankton", "name": "Estuarine Copepods", "trophic_role": "primary-consumer", "scientific_name": "Acartia tonsa", "icon_key": "zooplankton" },
+    { "id": "grass_shrimp", "name": "Marsh Grass Shrimp", "trophic_role": "primary-consumer", "scientific_name": "Palaemonetes pugio", "icon_key": "invertebrate" },
+    { "id": "eastern_oyster", "name": "Eastern Oyster", "trophic_role": "primary-consumer", "scientific_name": "Crassostrea virginica", "icon_key": "bivalve" },
+    { "id": "ribbed_mussel", "name": "Atlantic Ribbed Mussel", "trophic_role": "primary-consumer", "scientific_name": "Geukensia demissa", "icon_key": "bivalve" },
+    { "id": "mummichog", "name": "Mummichog Killifish", "trophic_role": "secondary-consumer", "scientific_name": "Fundulus heteroclitus", "icon_key": "fish" },
+    { "id": "blue_crab", "name": "Atlantic Blue Crab", "trophic_role": "secondary-consumer", "scientific_name": "Callinectes sapidus", "icon_key": "crustacean" },
+    { "id": "atlantic_menhaden", "name": "Atlantic Menhaden", "trophic_role": "secondary-consumer", "scientific_name": "Brevoortia tyrannus", "icon_key": "fish" },
+    { "id": "striped_bass", "name": "Striped Bass", "trophic_role": "secondary-consumer", "scientific_name": "Morone saxatilis", "icon_key": "fish" },
+    { "id": "great_blue_heron", "name": "Great Blue Heron", "trophic_role": "apex-predator", "scientific_name": "Ardea herodias", "icon_key": "bird" },
+    { "id": "osprey", "name": "Western Osprey", "trophic_role": "apex-predator", "scientific_name": "Pandion haliaetus", "icon_key": "bird" }
   ],
   "edges": [
-    { "source": "macrophytes", "target": "snail", "relationship": "herbivory" },
-    { "source": "snail", "target": "carp", "relationship": "predation" },
-    { "source": "carp", "target": "pike", "relationship": "predation" },
-    { "source": "pike", "target": "grey_heron", "relationship": "predation" }
+    { "source": "phytoplankton", "target": "zooplankton", "relationship": "grazing" },
+    { "source": "phytoplankton", "target": "eastern_oyster", "relationship": "filter-feeding" },
+    { "source": "phytoplankton", "target": "ribbed_mussel", "relationship": "filter-feeding" },
+    { "source": "phytoplankton", "target": "atlantic_menhaden", "relationship": "filter-feeding" },
+    { "source": "benthic_algae", "target": "grass_shrimp", "relationship": "herbivory" },
+    { "source": "benthic_algae", "target": "mummichog", "relationship": "grazing" },
+    { "source": "benthic_algae", "target": "eastern_oyster", "relationship": "filter-feeding" },
+    { "source": "eelgrass", "target": "grass_shrimp", "relationship": "herbivory" },
+    { "source": "cordgrass", "target": "grass_shrimp", "relationship": "detritivory" },
+    { "source": "zooplankton", "target": "mummichog", "relationship": "predation" },
+    { "source": "zooplankton", "target": "atlantic_menhaden", "relationship": "predation" },
+    { "source": "zooplankton", "target": "blue_crab", "relationship": "predation" },
+    { "source": "grass_shrimp", "target": "mummichog", "relationship": "predation" },
+    { "source": "grass_shrimp", "target": "blue_crab", "relationship": "predation" },
+    { "source": "grass_shrimp", "target": "great_blue_heron", "relationship": "predation" },
+    { "source": "eastern_oyster", "target": "blue_crab", "relationship": "predation" },
+    { "source": "ribbed_mussel", "target": "blue_crab", "relationship": "predation" },
+    { "source": "mummichog", "target": "blue_crab", "relationship": "predation" },
+    { "source": "mummichog", "target": "striped_bass", "relationship": "predation" },
+    { "source": "mummichog", "target": "great_blue_heron", "relationship": "predation" },
+    { "source": "atlantic_menhaden", "target": "striped_bass", "relationship": "predation" },
+    { "source": "atlantic_menhaden", "target": "osprey", "relationship": "predation" },
+    { "source": "blue_crab", "target": "striped_bass", "relationship": "predation" },
+    { "source": "blue_crab", "target": "great_blue_heron", "relationship": "predation" },
+    { "source": "striped_bass", "target": "great_blue_heron", "relationship": "predation" },
+    { "source": "striped_bass", "target": "osprey", "relationship": "predation" }
   ]
 }`
 
@@ -170,6 +226,8 @@ export function ImportDialog({
   const [edgesText, setEdgesText] = useState(draftStr('edgesText'))
   const [jsonText, setJsonText] = useState(draftStr('jsonText'))
   const [fileName, setFileName] = useState<string | undefined>(undefined)
+  const [nodeFileName, setNodeFileName] = useState<string | undefined>(undefined)
+  const [edgeFileName, setEdgeFileName] = useState<string | undefined>(undefined)
   const [datasetName, setDatasetName] = useState(draftStr('datasetName'))
   const [ecosystem, setEcosystem] = useState<EcosystemCategory>(
     draft.ecosystem === 'terrestrial' || draft.ecosystem === 'marine' ? (draft.ecosystem as EcosystemCategory) : 'freshwater',
@@ -220,6 +278,8 @@ export function ImportDialog({
     setEdgesText('')
     setJsonText('')
     setFileName(undefined)
+    setNodeFileName(undefined)
+    setEdgeFileName(undefined)
     setPreview(null)
     setRepair(false)
     clearDraft()
@@ -235,55 +295,130 @@ export function ImportDialog({
     setFormat('csv')
     setNodesText(SAMPLE_NODES_CSV)
     setEdgesText(SAMPLE_EDGES_CSV)
-    setDatasetName('Freshwater Pond Survey (Example)')
-    setEcosystem('freshwater')
-    setCitation('Freshwater Ecological Survey (2024). Ecological Monographs.')
-    setOrigin('Freshwater Biological Association')
-    setLicense('CC-BY-4.0')
+    setNodeFileName('sample-nodes-estuary.csv')
+    setEdgeFileName('sample-links-estuary.csv')
+    setFileName('sample-nodes-estuary.csv + sample-links-estuary.csv')
+    setDatasetName('Chesapeake Estuarine Marsh Food Web')
+    setEcosystem('marine')
+    setCitation('Baird D, Ulanowicz RE. (1989). The seasonal dynamics of the Chesapeake Bay ecosystem. Ecological Monographs 59(4):329-364.')
+    setOrigin('Chesapeake Bay Ecological Monitoring Program')
+    setSourceUrl('https://doi.org/10.2307/1941367')
+    setLicense('CC0 1.0 Universal')
     setNodeUnit('individual species')
+    setPreview(null)
+  }
+
+  const looksLikeNodes = (text: string, name?: string) =>
+    /(^|\n)\s*(id|species_id|node_id|taxon|species)\s*,/i.test(text) || (name ? /node|species|taxa/i.test(name) : false)
+  const looksLikeEdges = (text: string, name?: string) =>
+    /(^|\n)\s*(source|prey|food|from)\s*,/i.test(text) || (name ? /edge|link|interaction/i.test(name) : false)
+
+  const handleNodeFileUpload = async (files: FileList | null) => {
+    if (!files?.length) return
+    const file = files[0]
+    const text = await file.text()
+    setNodesText(text)
+    setNodeFileName(file.name)
+    setFormat('csv')
+    if (!datasetName) setDatasetName(file.name.replace(/[-_]?(nodes?|species|taxa)\.csv$/i, '').replace(/\.[^.]+$/, ''))
+    setPreview(null)
+  }
+
+  const handleEdgeFileUpload = async (files: FileList | null) => {
+    if (!files?.length) return
+    const file = files[0]
+    const text = await file.text()
+    setEdgesText(text)
+    setEdgeFileName(file.name)
+    setFormat('csv')
+    if (!datasetName) setDatasetName(file.name.replace(/[-_]?(links?|edges?|interactions?)\.csv$/i, '').replace(/\.[^.]+$/, ''))
+    setPreview(null)
+  }
+
+  const clearNodeFile = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setNodesText('')
+    setNodeFileName(undefined)
+    setPreview(null)
+  }
+
+  const clearEdgeFile = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setEdgesText('')
+    setEdgeFileName(undefined)
     setPreview(null)
   }
 
   const readFiles = async (files: FileList | null) => {
     if (!files?.length) return
-    const next: string[] = []
+    const next: { name: string; text: string }[] = []
     for (const file of Array.from(files)) {
       const text = await file.text()
-      next.push(`${file.name}\u0000${text}`)
+      next.push({ name: file.name, text })
     }
-    const jsonEntry = next.find((entry) => entry.split('\u0000')[0].toLowerCase().endsWith('.json'))
+    const jsonEntry = next.find((entry) => entry.name.toLowerCase().endsWith('.json'))
     if (jsonEntry) {
-      const [name, text] = jsonEntry.split('\u0000')
-      setFileName(name)
-      setJsonText(text)
+      setFileName(jsonEntry.name)
+      setJsonText(jsonEntry.text)
       setFormat('json')
-      if (!datasetName) setDatasetName(name.replace(/\.[^.]+$/, ''))
+      if (!datasetName) setDatasetName(jsonEntry.name.replace(/\.[^.]+$/, ''))
+      setPreview(null)
       return
     }
-    const csvEntries = next
-      .map((entry) => entry.split('\u0000'))
-      .filter(([, text]) => text.includes(',') || text.trim().length > 0)
-    if (csvEntries[0]) {
-      setFileName(csvEntries[0][0])
+    const csvEntries = next.filter(
+      (entry) => entry.name.toLowerCase().endsWith('.csv') || entry.text.includes(',') || entry.text.trim().length > 0,
+    )
+
+    if (csvEntries.length >= 2) {
       setFormat('csv')
       const [first, second] = csvEntries
-      const looksLikeNodes = (text: string) => /(^|\n)\s*id\s*,/i.test(text)
-      if (looksLikeNodes(first[1])) {
-        setNodesText(first[1])
-        if (second) setEdgesText(second[1])
-      } else if (second && looksLikeNodes(second[1])) {
-        setNodesText(second[1])
-        setEdgesText(first[1])
+      if (looksLikeNodes(first.text, first.name) && looksLikeEdges(second.text, second.name)) {
+        setNodesText(first.text)
+        setNodeFileName(first.name)
+        setEdgesText(second.text)
+        setEdgeFileName(second.name)
+        setFileName(`${first.name} + ${second.name}`)
+      } else if (looksLikeEdges(first.text, first.name) && looksLikeNodes(second.text, second.name)) {
+        setEdgesText(first.text)
+        setEdgeFileName(first.name)
+        setNodesText(second.text)
+        setNodeFileName(second.name)
+        setFileName(`${second.name} + ${first.name}`)
       } else {
-        setNodesText(first[1])
-        if (second) setEdgesText(second[1])
+        setNodesText(first.text)
+        setNodeFileName(first.name)
+        setEdgesText(second.text)
+        setEdgeFileName(second.name)
+        setFileName(`${first.name} + ${second.name}`)
       }
-      if (!datasetName) setDatasetName(first[0].replace(/\.[^.]+$/, ''))
+      if (!datasetName) setDatasetName(first.name.replace(/[-_]?(nodes?|links?|edges?|species)\.csv$/i, '').replace(/\.[^.]+$/, ''))
+      setPreview(null)
+    } else if (csvEntries.length === 1) {
+      const entry = csvEntries[0]
+      setFormat('csv')
+      if (looksLikeEdges(entry.text, entry.name)) {
+        setEdgesText(entry.text)
+        setEdgeFileName(entry.name)
+        setFileName(entry.name)
+      } else {
+        setNodesText(entry.text)
+        setNodeFileName(entry.name)
+        setFileName(entry.name)
+      }
+      if (!datasetName) setDatasetName(entry.name.replace(/[-_]?(nodes?|links?|edges?|species)\.csv$/i, '').replace(/\.[^.]+$/, ''))
+      setPreview(null)
     }
   }
 
   const runValidation = (nextRepair = repair) => {
     const isCsv = format === 'csv'
+    let effectiveUrl = sourceUrl.trim()
+    if (effectiveUrl && !/^(https?:\/\/|doi:|10\.\d{4,9}\/)/i.test(effectiveUrl)) {
+      if (/^(www\.|[a-zA-Z0-9.-]+\.(org|edu|gov|com|net|io|ac\.uk))/i.test(effectiveUrl)) {
+        effectiveUrl = `https://${effectiveUrl}`
+      }
+    }
+
     const result = importNetwork({
       format,
       nodesText: isCsv ? nodesText : undefined,
@@ -294,7 +429,7 @@ export function ImportDialog({
       ecosystem,
       citation: citation || undefined,
       origin: origin || undefined,
-      sourceUrl: sourceUrl || undefined,
+      sourceUrl: effectiveUrl || undefined,
       license: license || undefined,
       nodeUnit: nodeUnit || undefined,
       options: {
@@ -316,7 +451,7 @@ export function ImportDialog({
       next = result
     }
 
-    const url = sourceUrl.trim()
+    const url = effectiveUrl.trim()
     if (url && !/^(https?:\/\/|doi:|10\.\d{4,9}\/)/i.test(url)) {
       next = {
         ...next,
@@ -696,37 +831,263 @@ export function ImportDialog({
             </button>
           </div>
 
-          {/* Visual Dropzone matching Features reference card */}
-          <div className="relative rounded-2xl border-2 border-dashed border-[#899B78]/40 bg-[#F7F6EF] p-6 text-center hover:border-[#35563B] hover:bg-[#E8EDE0]/30 transition-all cursor-pointer group">
-            <input
-              ref={firstFieldRef}
-              type="file"
-              multiple
-              accept=".csv,.json"
-              onChange={(event) => {
-                setPreview(null)
-                void readFiles(event.target.files)
-              }}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-              title="Click or drag files here to upload"
-            />
-            <div className="flex flex-col items-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#E8EDE0] text-[#35563B] group-hover:scale-110 transition-transform shadow-xs">
-                <Upload size={22} />
+          {/* Visual Dropzones */}
+          {format === 'csv' ? (
+            <div className="space-y-3">
+              <div className="grid gap-3 sm:grid-cols-2">
+                {/* Slot 1: Species Nodes CSV */}
+                <div
+                  className={cn(
+                    'relative rounded-2xl border-2 border-dashed p-4 transition-all text-center group cursor-pointer',
+                    nodesText.trim()
+                      ? 'border-[#35563B] bg-[#E8EDE0]/40'
+                      : 'border-[#899B78]/40 bg-[#F7F6EF] hover:border-[#35563B] hover:bg-[#E8EDE0]/20',
+                  )}
+                >
+                  <input
+                    ref={firstFieldRef}
+                    type="file"
+                    accept=".csv"
+                    onChange={(event) => {
+                      setPreview(null)
+                      void handleNodeFileUpload(event.target.files)
+                      event.target.value = ''
+                    }}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    title="Upload Species Nodes CSV"
+                  />
+                  <div className="flex flex-col items-center">
+                    <div
+                      className={cn(
+                        'flex h-10 w-10 items-center justify-center rounded-full shadow-xs transition-transform group-hover:scale-105',
+                        nodesText.trim() ? 'bg-[#35563B] text-white' : 'bg-[#E8EDE0] text-[#35563B]',
+                      )}
+                    >
+                      {nodesText.trim() ? <Check size={18} /> : <FileSpreadsheet size={18} />}
+                    </div>
+                    <h4 className="mt-2 text-xs font-bold text-[#202B27]">
+                      1. Species Nodes CSV
+                    </h4>
+                    <p className="mt-0.5 text-[11px] text-[#68716B]">
+                      {nodeFileName
+                        ? nodeFileName
+                        : nodesText.trim()
+                        ? 'Species data entered'
+                        : 'Click to browse or drop CSV file'}
+                    </p>
+                    <div className="mt-2 flex items-center gap-1.5">
+                      <span
+                        className={cn(
+                          'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-mono font-bold',
+                          nodesText.trim()
+                            ? 'bg-[#35563B] text-white'
+                            : 'bg-[#FCFBF7] border border-[#E5E6DC] text-[#68716B]',
+                        )}
+                      >
+                        {nodesText.trim()
+                          ? `✓ ${Math.max(0, nodesText.trim().split('\n').filter(Boolean).length - 1)} species loaded`
+                          : 'No file chosen'}
+                      </span>
+                      {nodesText.trim() ? (
+                        <button
+                          type="button"
+                          onClick={clearNodeFile}
+                          className="relative z-20 rounded-full bg-[#E5E6DC] p-0.5 text-[#68716B] hover:bg-[#C84B31] hover:text-white transition-colors"
+                          title="Clear nodes file"
+                        >
+                          <X size={12} />
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Slot 2: Feeding Links CSV */}
+                <div
+                  className={cn(
+                    'relative rounded-2xl border-2 border-dashed p-4 transition-all text-center group cursor-pointer',
+                    edgesText.trim()
+                      ? 'border-[#35563B] bg-[#E8EDE0]/40'
+                      : 'border-[#899B78]/40 bg-[#F7F6EF] hover:border-[#35563B] hover:bg-[#E8EDE0]/20',
+                  )}
+                >
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={(event) => {
+                      setPreview(null)
+                      void handleEdgeFileUpload(event.target.files)
+                      event.target.value = ''
+                    }}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    title="Upload Feeding Links CSV"
+                  />
+                  <div className="flex flex-col items-center">
+                    <div
+                      className={cn(
+                        'flex h-10 w-10 items-center justify-center rounded-full shadow-xs transition-transform group-hover:scale-105',
+                        edgesText.trim() ? 'bg-[#35563B] text-white' : 'bg-[#E8EDE0] text-[#35563B]',
+                      )}
+                    >
+                      {edgesText.trim() ? <Check size={18} /> : <FileSpreadsheet size={18} />}
+                    </div>
+                    <h4 className="mt-2 text-xs font-bold text-[#202B27]">
+                      2. Feeding Links CSV
+                    </h4>
+                    <p className="mt-0.5 text-[11px] text-[#68716B]">
+                      {edgeFileName
+                        ? edgeFileName
+                        : edgesText.trim()
+                        ? 'Link data entered'
+                        : 'Click to browse or drop CSV file'}
+                    </p>
+                    <div className="mt-2 flex items-center gap-1.5">
+                      <span
+                        className={cn(
+                          'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-mono font-bold',
+                          edgesText.trim()
+                            ? 'bg-[#35563B] text-white'
+                            : 'bg-[#FCFBF7] border border-[#E5E6DC] text-[#68716B]',
+                        )}
+                      >
+                        {edgesText.trim()
+                          ? `✓ ${Math.max(0, edgesText.trim().split('\n').filter(Boolean).length - 1)} links loaded`
+                          : 'No file chosen'}
+                      </span>
+                      {edgesText.trim() ? (
+                        <button
+                          type="button"
+                          onClick={clearEdgeFile}
+                          className="relative z-20 rounded-full bg-[#E5E6DC] p-0.5 text-[#68716B] hover:bg-[#C84B31] hover:text-white transition-colors"
+                          title="Clear links file"
+                        >
+                          <X size={12} />
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
               </div>
-              <h4 className="mt-3 font-serif text-base font-bold text-[#202B27]">
-                {fileName ? fileName : 'Upload Dataset Files'}
-              </h4>
-              <p className="mt-1 text-xs text-[#68716B]">
-                {fileName
-                  ? 'File selected. You can select another file or proceed with metadata and validation.'
-                  : 'Drag and drop your CSV files or JSON file here, or click to browse'}
-              </p>
-              <span className="mt-2 rounded-full bg-[#FCFBF7] border border-[#E5E6DC] px-3 py-1 text-[11px] font-mono text-[#899B78]">
-                Supports: .csv, .json (up to {LARGE_FILE_THRESHOLDS.nodes} species nodes)
-              </span>
+
+              {/* Multi-file dropzone option */}
+              <div className="relative rounded-xl border border-dashed border-[#899B78]/30 bg-[#F7F6EF] py-2 px-3 text-center hover:border-[#35563B] transition-all cursor-pointer">
+                <input
+                  type="file"
+                  multiple
+                  accept=".csv,.json"
+                  onChange={(event) => {
+                    setPreview(null)
+                    void readFiles(event.target.files)
+                    event.target.value = ''
+                  }}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  title="Or drop both CSV files together"
+                />
+                <span className="text-[11px] text-[#68716B]">
+                  💡 <strong>Drag & Drop Shortcut:</strong> You can also select or drop both CSV files together into this area at once.
+                </span>
+              </div>
+
+              {/* Status Alert Banner */}
+              {nodesText.trim() && !edgesText.trim() && (
+                <div className="flex items-center gap-2 rounded-xl border border-[#F1B36F]/40 bg-[#FFF8EE] p-3 text-xs text-[#7D4507]">
+                  <AlertTriangle size={15} className="text-[#F1B36F] shrink-0" />
+                  <span>
+                    <strong>Species Nodes file loaded!</strong> Now please select or drop your <strong>Feeding Links CSV</strong> in Slot 2 above to complete the network.
+                  </span>
+                </div>
+              )}
+
+              {!nodesText.trim() && edgesText.trim() && (
+                <div className="flex items-center gap-2 rounded-xl border border-[#F1B36F]/40 bg-[#FFF8EE] p-3 text-xs text-[#7D4507]">
+                  <AlertTriangle size={15} className="text-[#F1B36F] shrink-0" />
+                  <span>
+                    <strong>Feeding Links file loaded!</strong> Now please select or drop your <strong>Species Nodes CSV</strong> in Slot 1 above to define species names.
+                  </span>
+                </div>
+              )}
+
+              {nodesText.trim() && edgesText.trim() && (
+                <div className="flex items-center gap-2 rounded-xl border border-[#35563B]/30 bg-[#E8EDE0]/50 p-3 text-xs text-[#263D2D]">
+                  <CheckCircle2 size={15} className="text-[#35563B] shrink-0" />
+                  <span>
+                    <strong>Both CSV files loaded successfully!</strong> Click <strong>"Validate and preview"</strong> below to inspect your dataset.
+                  </span>
+                </div>
+              )}
             </div>
-          </div>
+          ) : (
+            /* Single JSON Dropzone */
+            <div
+              className={cn(
+                'relative rounded-2xl border-2 border-dashed p-6 text-center transition-all cursor-pointer group',
+                jsonText.trim()
+                  ? 'border-[#35563B] bg-[#E8EDE0]/40'
+                  : 'border-[#899B78]/40 bg-[#F7F6EF] hover:border-[#35563B] hover:bg-[#E8EDE0]/20',
+              )}
+            >
+              <input
+                ref={firstFieldRef}
+                type="file"
+                accept=".json"
+                onChange={(event) => {
+                  setPreview(null)
+                  void readFiles(event.target.files)
+                  event.target.value = ''
+                }}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                title="Click or drag JSON file here to upload"
+              />
+              <div className="flex flex-col items-center">
+                <div
+                  className={cn(
+                    'flex h-12 w-12 items-center justify-center rounded-full shadow-xs transition-transform group-hover:scale-105',
+                    jsonText.trim() ? 'bg-[#35563B] text-white' : 'bg-[#E8EDE0] text-[#35563B]',
+                  )}
+                >
+                  {jsonText.trim() ? <Check size={22} /> : <Upload size={22} />}
+                </div>
+                <h4 className="mt-3 font-serif text-base font-bold text-[#202B27]">
+                  {fileName ? fileName : 'Upload Single JSON Network'}
+                </h4>
+                <p className="mt-1 text-xs text-[#68716B]">
+                  {jsonText.trim()
+                    ? 'JSON network file loaded. Click "Validate and preview" below.'
+                    : 'Click to browse or drag & drop your standalone .json network file here'}
+                </p>
+                <div className="mt-2 flex items-center gap-1.5">
+                  <span
+                    className={cn(
+                      'rounded-full px-3 py-1 text-[11px] font-mono',
+                      jsonText.trim()
+                        ? 'bg-[#35563B] text-white font-bold'
+                        : 'bg-[#FCFBF7] border border-[#E5E6DC] text-[#68716B]',
+                    )}
+                  >
+                    {jsonText.trim() ? '✓ JSON Loaded' : 'No file chosen'}
+                  </span>
+                  {jsonText.trim() ? (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setJsonText('')
+                        setFileName(undefined)
+                        setPreview(null)
+                      }}
+                      className="relative z-20 rounded-full bg-[#E5E6DC] p-1 text-[#68716B] hover:bg-[#C84B31] hover:text-white transition-colors"
+                      title="Clear JSON file"
+                    >
+                      <X size={12} />
+                    </button>
+                  ) : null}
+                </div>
+                <span className="mt-2 text-[10px] font-mono text-[#899B78]">
+                  Supports: .json (up to {LARGE_FILE_THRESHOLDS.nodes} species nodes)
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* =====================================================================
